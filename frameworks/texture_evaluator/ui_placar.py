@@ -653,6 +653,7 @@ if any(key not in history["calibration"] for key in ("nex_reference", "wavelet_i
     if st.button("Recalcular versões", type="primary"):
         with st.spinner("Recalculando GLCM, Wavelet e NEx..."):
             st.success(refresh_history(history_dir))
+            write_outputs(history_dir, build_board(history_dir))
         st.rerun()
     st.stop()
 
@@ -827,4 +828,7 @@ with st.expander("Sobre esta avaliação e as versões", expanded=False):
     target = st.selectbox("Remover versão do histórico", names, key="remove_version")
     if st.button("Remover versão selecionada", key="remove"):
         remove_version(history_dir, target)
+        updated_board = build_board(history_dir)
+        if updated_board is not None:
+            write_outputs(history_dir, updated_board)
         st.rerun()

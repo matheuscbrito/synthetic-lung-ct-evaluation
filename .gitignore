@@ -1,9 +1,13 @@
 # ambientes / caches
 .venv/
+.venv-generator/
 __pycache__/
 *.pyc
 .DS_Store
 node_modules/
+
+# pesos locais dos modelos (grandes, não versionar)
+*.pth
 
 # dados clínicos locais e resultados de execução
 data/

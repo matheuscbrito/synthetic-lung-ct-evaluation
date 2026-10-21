@@ -48,6 +48,7 @@ import numpy as np
 from wavelet.src.load_data import CasePaths, discover_cases
 from wavelet.src.run_pipeline import write_csv
 from wavelet.src.validate_cases import ValidCase, validate_case
+from frameworks.texture_evaluator.decision import brightness_statuses, brightness_verdict, technique_statuses, texture_status
 from frameworks.texture_evaluator.regional import apply_pair_check
 from frameworks.texture_evaluator.run_mvp import calibrate, context_from_dict, context_to_dict, evaluate_pair
 
@@ -444,6 +445,124 @@ def write_markdown(board: dict, output: Path) -> None:
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def json_value(value, key: str | None = None):
+    """Converte valores do CSV/Numpy para JSON tipado e estrito."""
+    if isinstance(value, dict):
+        return {name: json_value(item, name) for name, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_value(item) for item in value]
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float):
+        return value if np.isfinite(value) else None
+    if isinstance(value, Path):
+        return str(value.resolve())
+    if not isinstance(value, str) or key in {"case_id", "name", "folder", "mask_dir", "added"}:
+        return value
+    if value == "" or value.lower() in {"nan", "inf", "-inf"}:
+        return None
+    if re.fullmatch(r"[-+]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?", value):
+        number = float(value)
+        return int(number) if number.is_integer() and "." not in value and "e" not in value.lower() else number
+    return value
+
+
+def case_files(entry: dict) -> dict[str, dict]:
+    """Caminhos exatos para o agente abrir o par que originou cada linha."""
+    mask_dir = Path(entry["mask_dir"]) if entry.get("mask_dir") else None
+    files = {}
+    for paths in case_paths(Path(entry["folder"]), mask_dir):
+        files[paths.case_id] = {
+            "original": str(paths.original.resolve()),
+            "synthetic": str(paths.synthetic.resolve()) if paths.synthetic else None,
+            "mask": str(paths.mask.resolve()) if paths.mask else None,
+        }
+    return files
+
+
+def complete_json(board: dict) -> dict:
+    """Representação completa e legível por máquina do mesmo placar usado pela UI."""
+    by_key = {indicator.key: indicator for indicator in INDICATORS}
+    versions_by_name = {entry["name"]: entry for entry in board["history"]["versions"]}
+    versions = []
+    for name in board["names"]:
+        entry = versions_by_name[name]
+        files = case_files(entry)
+        images = []
+        for row in board["rows"][name]:
+            images.append({
+                "case_id": row["case_id"],
+                "files": files.get(row["case_id"], {}),
+                "verdicts": {
+                    "final": row["final_status"],
+                    "final_label": verdict_label(row),
+                    "final_reasons": row["final_reasons"],
+                    "pair_status": row.get("pair_status"),
+                    "trusted_for_texture_and_brightness": trusted(row),
+                    "brightness": brightness_verdict(row),
+                    "brightness_by_technique": brightness_statuses(row),
+                    "texture": texture_status(row),
+                    "texture_by_technique": technique_statuses(row),
+                },
+                # Todas as colunas produzidas pelo framework ficam disponíveis,
+                # inclusive medidas regionais e diagnósticos intermediários.
+                "measurements": row,
+            })
+        scores = {}
+        for key, (value, low, high) in board["scores"][name].items():
+            indicator = by_key[key]
+            scores[key] = {
+                "group": indicator.group, "label": indicator.label, "meaning": indicator.meaning,
+                "unit": indicator.unit, "ideal": indicator.ideal,
+                "value": value, "ci95_low": low, "ci95_high": high,
+            }
+        versions.append({
+            "name": name,
+            "metadata": entry,
+            "scores": scores,
+            "counts": {group: dict(board["counts"][group][name]) for group in GROUPS},
+            "images": images,
+        })
+
+    comparisons = []
+    for (before, after), metrics in board["comparisons"].items():
+        comparisons.append({
+            "from": before,
+            "to": after,
+            "indicators": {
+                key: {
+                    "group": by_key[key].group,
+                    "label": by_key[key].label,
+                    "gain_toward_ideal": gain,
+                    "ci95_low": low,
+                    "ci95_high": high,
+                    "result": change_label(gain, low, high, by_key[key]),
+                }
+                for key, (gain, low, high) in metrics.items()
+            },
+        })
+
+    payload = {
+        "schema_version": 1,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "description": "Saída completa do mesmo build_board usado pelo Streamlit; nenhuma métrica é recalculada separadamente.",
+        "reference_version": board["history"]["reference"],
+        "calibration": board["history"]["calibration"],
+        "common_case_count": board["n_cases"],
+        "dropped_cases": board["dropped"],
+        "indicator_definitions": {
+            indicator.key: {
+                "group": indicator.group, "label": indicator.label, "meaning": indicator.meaning,
+                "unit": indicator.unit, "ideal": indicator.ideal, "minimum_relevant_change": indicator.min_change,
+            }
+            for indicator in INDICATORS
+        },
+        "versions": versions,
+        "comparisons": comparisons,
+    }
+    return json_value(payload)
+
+
 def figure(board: dict, group: str | None = None):
     """Um painel por indicador ao longo das versões, em preto e branco."""
     names = board["names"]
@@ -479,6 +598,10 @@ def write_outputs(history_dir: Path, board: dict) -> None:
         {"from": a, "to": b, "group": by_key[key].group, "indicator": key, "gain": g, "ci_low": lo, "ci_high": hi, "result": change_label(g, lo, hi, by_key[key])}
         for (a, b), values_ in board["comparisons"].items() for key, (g, lo, hi) in values_.items()
     ])
+    (history_dir / "avaliacao_completa.json").write_text(
+        json.dumps(complete_json(board), indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
     write_markdown(board, history_dir / "placar.md")
     fig = figure(board)
     fig.savefig(history_dir / "placar.png", dpi=170, bbox_inches="tight")

@@ -84,9 +84,25 @@ Para acompanhar o modelo ao longo das iterações. Cada versão é a pasta de sa
 
 Cada par é montado pelo nome (`X.tiff` ↔ `X_generate.tiff` ↔ `X_mask.tiff`) e conferido em [`regional.py`](regional.py). No modo **mesma anatomia** (como o Dsr), um par com correlação < 0,5 com a original é rejeitado como suspeito (arquivo trocado?). No modo **só máscara** (como o Dgen: outro pulmão no mesmo contorno), o par só é conferido pelo nome, e o que compara ponto a ponto (área alterada, correlação espacial, mapa comparado com a original) fica como n/a. O placar e a interface separam **veredito final**, **brilho** e **textura**, com uma linha por técnica (ex.: "Wavelet 2 px (textura fina)"). Na interface, cada técnica mostra a imagem do que ela enxerga no corte escolhido, na original e em cada versão, e o mapa por região (blocos de 16 px) tem dois modos: valor de cada imagem (qualquer versão) e comparado com a original (só mesma anatomia).
 
-`--remove NOME` tira uma versão. O resultado fica em `placar.md` (mediana de cada indicador com intervalo de 95%, vereditos e se cada versão melhorou, piorou ou não mudou em relação à anterior), `placar.csv`, `comparacao.csv` e `por_caso.csv`. Exemplo e validação em [`resultados/placar_versoes/resumo.md`](../../resultados/placar_versoes/resumo.md).
+`--remove NOME` tira uma versão. O resultado fica em `placar.md` (mediana de cada indicador com intervalo de 95%, vereditos e se cada versão melhorou, piorou ou não mudou em relação à anterior), `placar.csv`, `comparacao.csv` e `por_caso.csv`. A saída `avaliacao_completa.json` reúne esses mesmos cálculos numa estrutura para automação: calibração, definições dos indicadores, placar agregado, comparação entre versões e, para cada corte, caminhos dos arquivos, vereditos e todas as medidas extraídas. Ela é gerada pelo mesmo `build_board` usado no Streamlit, para não existir uma segunda lógica de avaliação. Exemplo e validação em [`resultados/placar_versoes/resumo.md`](../../resultados/placar_versoes/resumo.md).
 
 Depois da execução, abra `outputs/mvp/report/index.html` no navegador. Ele explica cada número, mostra os gráficos pareados real × sintética e traz uma ficha visual para cada corte analisado.
+
+## Avaliar uma única imagem gerada
+
+Este é o contrato usado por ferramentas externas, como o LangAgent-Lab. Ele
+reaplica as réguas já calibradas no histórico e grava todas as medidas em JSON:
+
+```bash
+.venv/bin/python -m frameworks.texture_evaluator.evaluate_one \
+  --original CAMINHO/original.tiff \
+  --synthetic CAMINHO/sintetica.tiff \
+  --mask CAMINHO/mascara.tiff \
+  --output CAMINHO/avaliacao.json
+```
+
+O gerador e o agente não fazem parte deste repositório; eles apenas consomem
+essa interface de avaliação.
 
 ## Próximos passos
 
