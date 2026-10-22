@@ -470,12 +470,12 @@ def texture_chart(rows: list[dict], glcm_ceiling: float | None, wavelet_ceiling:
         # entropia normalizada fica toda perto de 0,94: a partir de zero os pontos viram um borrão
         lower = .98 * min(domain_values) if title in {"Wavelet · entropia", "NEx · assinatura espectral"} else 0
         identity = alt.Chart(pd.DataFrame({"x": [lower, upper], "y": [lower, upper]})).mark_line(color="#8a5a22", strokeDash=[4, 4]).encode(x="x:Q", y="y:Q")
-        selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
-        points = alt.Chart(data).mark_circle(size=72, color="#0d6b61").encode(
+        selection = case_selection(nearest=True)
+        points = alt.Chart(data).mark_circle(size=108, color="#0d6b61", cursor="pointer").encode(
             x=alt.X("real:Q", title=f"real · {label}", scale=alt.Scale(domain=[lower, upper])),
             y=alt.Y("sintética:Q", title=f"sintética · {label}", scale=alt.Scale(domain=[lower, upper])),
             tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("real:Q", format=".4g"), alt.Tooltip("sintética:Q", format=".4g"), alt.Tooltip("veredito:N")],
-            size=focused(340, 72),
+            size=focused(420, 108),
             stroke=focused("#f59e0b", "#0a4f48"),
             strokeWidth=focused(3.2, .7),
             opacity=alt.value(.9),
@@ -518,6 +518,18 @@ FOCUS_CASE = None  # corte em foco; definido depois da barra lateral
 def focused(on, off):
     """Destaca o corte em foco. Vem do corte escolhido, não da seleção do gráfico."""
     return alt.condition(alt.datum.case_id == FOCUS_CASE, alt.value(on), alt.value(off))
+
+
+def case_selection(nearest: bool = False):
+    """Seleção única; nos pontos, usa a região mais próxima como alvo do clique."""
+    return alt.selection_point(
+        name="cut",
+        fields=["case_id"],
+        on="click",
+        empty=False,
+        toggle=False,
+        nearest=nearest,
+    )
 
 
 def selectable_chart(container, chart, key: str, mode: str = "textura") -> str | None:
@@ -565,8 +577,8 @@ def metric_chart(rows: list[dict], prefix: str, key: str, domain_rows: list[dict
         y=alt.Y("início:Q", scale=scale, title="Δ (IQR das CTs reais)"), y2="fim:Q",
         color=alt.Color("faixa:N", scale=alt.Scale(domain=list(METRIC_STATUSES), range=["#dff3e5", "#fff0c2", "#fde3e1"]), legend=None))
     rules = alt.Chart(pd.DataFrame({"limite": [-2, -1, 1, 2]})).mark_rule(color="#8a5a22", opacity=.6, strokeDash=[4, 4]).encode(y=alt.Y("limite:Q", scale=scale))
-    selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
-    points = alt.Chart(data).mark_circle(filled=True).encode(
+    selection = case_selection(nearest=True)
+    points = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
         x=alt.X("ordem:Q", title="cortes do dataset"),
         y=alt.Y("z:Q", scale=scale, title="Δ (IQR das CTs reais)"),
         color=alt.Color("classificação:N", scale=colors, legend=None),
@@ -601,8 +613,8 @@ def verdict_matrix(rows: list[dict], mode: str = "textura", case_order: list[str
                     **{technique: (status, reason_of(row, technique)) for technique, status in statuses_of(row).items()}}
         for line, (status, reason) in readings.items():
             cells.append({"case_id": row["case_id"], "corte": case_name(row["case_id"]), "técnica": line, "classificação": status, "o que disse": reason})
-    selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
-    return alt.Chart(pd.DataFrame(cells)).mark_rect(stroke="white", strokeWidth=1.5).encode(
+    selection = case_selection()
+    return alt.Chart(pd.DataFrame(cells)).mark_rect(stroke="white", strokeWidth=1.5, cursor="pointer").encode(
         x=alt.X("corte:N", sort=[case_name(row["case_id"]) for row in order], title=axis_title, axis=alt.Axis(labelAngle=-60, labelFontSize=9)),
         y=alt.Y("técnica:N", sort=[combined, *techniques], title=None, axis=alt.Axis(labelFontWeight="bold", labelLimit=200)),
         color=alt.Color("classificação:N", scale=STATUS_COLORS, legend=alt.Legend(orient="top", title=None)),
@@ -627,8 +639,8 @@ def nex_chart(rows: list[dict], reference: dict, domain_rows: list[dict] | None 
     pad = .08 * (max(values) - min(values))
     scale = alt.Scale(domain=[min(values) - pad, max(values) + pad])
     band = alt.Chart(pd.DataFrame({"início": [reference["p5"]], "fim": [reference["p95"]]})).mark_rect(opacity=.14, color="#2f9e57").encode(y=alt.Y("início:Q", scale=scale, title="NEx da sintética"), y2="fim:Q")
-    selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
-    points = alt.Chart(data).mark_circle(filled=True).encode(
+    selection = case_selection(nearest=True)
+    points = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
         x=alt.X("ordem:Q", title="cortes do dataset"),
         y=alt.Y("NEx sintética:Q", scale=scale, title="NEx da sintética"),
         color=alt.Color("classificação:N", scale=STATUS_COLORS, legend=None),
@@ -650,9 +662,9 @@ def brightness_chart(rows: list[dict]):
         "sat31": [number(row, "sat31_pct") for row in rows],
         "decisão": [STATUS_TEXT[row["brightness_status"]] for row in rows],
     })
-    selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
+    selection = case_selection(nearest=True)
     decision_colors = alt.Scale(domain=["aprovada", "revisão manual", "rejeição direta"], range=["#0b6b32", "#925a10", "#9f1f18"])
-    base = alt.Chart(data).mark_circle(filled=True).encode(
+    base = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
         x=alt.X("ordem:Q", title="cortes do dataset"),
         color=alt.Color("decisão:N", title="GLCM", scale=decision_colors),
         size=focused(285, 118),
