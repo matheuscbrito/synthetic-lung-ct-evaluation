@@ -382,21 +382,21 @@ def case_comparison_table(board: dict, case_id: str, baseline: str, version: str
 
     if mode == "textura":
         specs = [
-            ("GLCM · contraste", lambda row: number(row, "glcm_contrast_pct"), "glcm_contrast_status", "% da original"),
-            ("GLCM · energia", lambda row: pct(row, "glcm_energy_synthetic", "glcm_energy_real"), "glcm_energy_status", "% da original"),
-            ("Wavelet · detalhe 2 px", lambda row: number(row, "wavelet_fine_pct"), "wavelet_fine_status", "% da original"),
-            ("Wavelet · detalhe 4 px", lambda row: number(row, "wavelet_coarse_pct"), "wavelet_coarse_status", "% da original"),
-            ("Wavelet · entropia", lambda row: pct(row, "wavelet_entropy_synthetic", "wavelet_entropy_real"), "wavelet_entropy_status", "% da original"),
-            ("NEx · assinatura espectral", lambda row: number(row, "nex_synthetic"), None, "valor"),
+            ("GLCM · contraste", lambda row: number(row, "glcm_contrast_pct"), "glcm_contrast_status", "% da original", "glcm_contrast_z"),
+            ("GLCM · energia", lambda row: pct(row, "glcm_energy_synthetic", "glcm_energy_real"), "glcm_energy_status", "% da original", "glcm_energy_z"),
+            ("Wavelet · detalhe 2 px", lambda row: number(row, "wavelet_fine_pct"), "wavelet_fine_status", "% da original", "wavelet_fine_z"),
+            ("Wavelet · detalhe 4 px", lambda row: number(row, "wavelet_coarse_pct"), "wavelet_coarse_status", "% da original", "wavelet_coarse_z"),
+            ("Wavelet · entropia", lambda row: pct(row, "wavelet_entropy_synthetic", "wavelet_entropy_real"), "wavelet_entropy_status", "% da original", "wavelet_entropy_z"),
+            ("NEx · assinatura espectral", lambda row: number(row, "nex_synthetic"), None, "valor", None),
         ]
     else:
         specs = [
-            ("GLCM · |Δμ|", lambda row: number(row, "abs_delta_mu"), "brightness_status", "diferença absoluta"),
-            ("GLCM · Sat31", lambda row: number(row, "sat31_pct"), "brightness_status", "% da ROI"),
-            ("Wavelet · LL", lambda row: number(row, "wavelet_ll_synthetic"), "wavelet_ll_status", "valor normalizado"),
+            ("GLCM · |Δμ|", lambda row: number(row, "abs_delta_mu"), "brightness_status", "diferença absoluta", None),
+            ("GLCM · Sat31", lambda row: number(row, "sat31_pct"), "brightness_status", "% da ROI", None),
+            ("Wavelet · LL", lambda row: number(row, "wavelet_ll_synthetic"), "wavelet_ll_status", "valor normalizado", None),
         ]
     data = []
-    for label, value, status_key, unit in specs:
+    for label, value, status_key, unit, z_key in specs:
         old_value, new_value = value(before), value(after)
         if status_key == "brightness_status":
             old_status, new_status = brightness_verdict(before), brightness_verdict(after)
@@ -406,12 +406,17 @@ def case_comparison_table(board: dict, case_id: str, baseline: str, version: str
             old_status, new_status = before[status_key], after[status_key]
         decimals = 3 if unit in {"valor", "valor normalizado", "diferença absoluta"} else 1
         suffix = "%" if "%" in unit else ""
-        data.append({
+        item = {
             "métrica": label,
             baseline: f"{old_value:.{decimals}f}{suffix}",
             version: f"{new_value:.{decimals}f}{suffix}",
             "leitura": f"{STATUS_MARK[old_status]} {old_status} → {STATUS_MARK[new_status]} {new_status}",
-        })
+        }
+        if mode == "textura":
+            item["distância da original"] = (
+                f"{number(before, z_key):+.2f} → {number(after, z_key):+.2f} IQR" if z_key else "faixa própria"
+            )
+        data.append(item)
     return pd.DataFrame(data)
 
 
@@ -466,13 +471,13 @@ def texture_chart(rows: list[dict], glcm_ceiling: float | None, wavelet_ceiling:
         lower = .98 * min(domain_values) if title in {"Wavelet · entropia", "NEx · assinatura espectral"} else 0
         identity = alt.Chart(pd.DataFrame({"x": [lower, upper], "y": [lower, upper]})).mark_line(color="#8a5a22", strokeDash=[4, 4]).encode(x="x:Q", y="y:Q")
         selection = alt.selection_point(name="cut", fields=["case_id"], on="click", empty=False)
-        points = alt.Chart(data).mark_circle(size=75, color="#0d6b61").encode(
+        points = alt.Chart(data).mark_circle(size=72, color="#0d6b61").encode(
             x=alt.X("real:Q", title=f"real · {label}", scale=alt.Scale(domain=[lower, upper])),
             y=alt.Y("sintética:Q", title=f"sintética · {label}", scale=alt.Scale(domain=[lower, upper])),
             tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("real:Q", format=".4g"), alt.Tooltip("sintética:Q", format=".4g"), alt.Tooltip("veredito:N")],
-            size=focused(190, 75),
-            stroke=focused("#17243b", "#0a4f48"),
-            strokeWidth=focused(1.8, .7),
+            size=focused(340, 72),
+            stroke=focused("#f59e0b", "#0a4f48"),
+            strokeWidth=focused(3.2, .7),
             opacity=alt.value(.9),
         ).add_params(selection)
         # O título fora do canvas evita o recorte vertical do Vega quando dois
@@ -515,7 +520,7 @@ def focused(on, off):
     return alt.condition(alt.datum.case_id == FOCUS_CASE, alt.value(on), alt.value(off))
 
 
-def selectable_chart(container, chart, key: str) -> str | None:
+def selectable_chart(container, chart, key: str, mode: str = "textura") -> str | None:
     """Gráfico clicável quando o Streamlit permite; senão, o mesmo gráfico sem clique.
 
     A chave inclui o corte em foco: a cada troca de corte (por clique, tabela ou
@@ -532,7 +537,13 @@ def selectable_chart(container, chart, key: str) -> str | None:
         return None
     picked = event.selection.get("cut", [])
     case = picked[0].get("case_id") if picked else None
-    return case if case != FOCUS_CASE else None
+    if case and case != FOCUS_CASE:
+        # Aplique a troca imediatamente. Esperar todos os outros gráficos
+        # renderizarem deixava seleções antigas competirem com o clique novo.
+        st.session_state["pending_case"] = case
+        st.session_state["pending_mode"] = mode
+        st.rerun()
+    return None
 
 
 def metric_chart(rows: list[dict], prefix: str, key: str, domain_rows: list[dict] | None = None):
@@ -737,7 +748,10 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
         st.caption(f"A mesma janela P1–P99 e os TIFFs originais são usados nas três imagens. Compare a sintética de {comparison_version} com a de {version}; não são PNGs de prévia.")
         st.markdown("##### GLCM e Wavelet, lado a lado")
         st.dataframe(case_comparison_table(board, case_id, comparison_version, version, mode), hide_index=True, width="stretch")
-        st.caption("“% da original” usa a CT original deste mesmo corte como denominador. A classificação mostra a mudança da versão de comparação para a versão aberta.")
+        if mode == "textura":
+            st.caption("“% da original” usa a CT original deste mesmo corte como denominador. Em “distância da original”, aprovação vai de −1 a +1 IQR; ao cruzar esse limite, o rótulo muda mesmo que a diferença visual seja pequena.")
+        else:
+            st.caption("A classificação mostra a mudança da versão de comparação para a versão aberta.")
     else:
         st.image(raw_pair_png(str(history_dir), stamp, case_id, version), width="stretch")
         st.caption("CTs brutas lado a lado — sem mapa, máscara ou métrica sobreposta. A mesma janela de visualização é usada nas duas imagens.")
@@ -1063,7 +1077,7 @@ else:
     show_case(board, history_dir, stamp, case_id, version, mode, comparison_version)
 st.markdown("---")
 st.subheader("Todos os cortes do dataset")
-st.caption("Clique em qualquer ponto, célula ou linha para abrir aquele par no topo, em “Par em foco”.")
+st.caption("Clique em qualquer ponto, célula ou linha para abrir aquele par no topo. O corte aberto fica maior e contornado em todos os gráficos.")
 comparison_rows = board["rows"].get(comparison_version) if comparison_version else None
 shared_rows = [*(comparison_rows or []), *rows]
 if mode == "textura":
@@ -1158,16 +1172,16 @@ if mode == "textura":
 else:
     st.markdown("#### Veredito por corte e por técnica")
     st.caption("Cada coluna é um corte. A primeira linha é o veredito de brilho; as outras mostram o que cada técnica disse. Passe o mouse para ver o motivo e clique para abrir o corte.")
-    clicked_case = selectable_chart(st, verdict_matrix(rows, "brilho"), "brightness_matrix")
+    clicked_case = selectable_chart(st, verdict_matrix(rows, "brilho"), "brightness_matrix", "brilho")
     st.markdown("#### Detalhe de cada técnica")
     glcm_tab, wavelet_tab = st.tabs(["GLCM · Δμ e Sat31", "Wavelet · LL"])
     with glcm_tab:
         st.caption("Cores pela classificação da GLCM: verde = aprovada, amarelo = revisão manual, vermelho = rejeição direta. No Sat31 não há faixa amarela: acima de 15% já reprova.")
-        clicked_case = selectable_chart(st, brightness_chart(rows), "brightness_cohort") or clicked_case
+        clicked_case = selectable_chart(st, brightness_chart(rows), "brightness_cohort", "brilho") or clicked_case
     with wavelet_tab:
         agree = sum(len(set(brightness_statuses(row).values())) == 1 for row in rows)
         st.caption(f"Δ = LL da sintética − LL da real, em IQR da LL entre as CTs reais. Verde = aprovada, amarelo = revisão, vermelho = reprovada. Concorda com a GLCM em {agree} de {len(rows)} cortes.")
-        clicked_case = selectable_chart(st, metric_chart(rows, "wavelet", "ll"), "wavelet_ll") or clicked_case
+        clicked_case = selectable_chart(st, metric_chart(rows, "wavelet", "ll"), "wavelet_ll", "brilho") or clicked_case
     if clicked_case and clicked_case != case_id:
         st.session_state["pending_case"] = clicked_case
         st.session_state["pending_mode"] = "brilho"
