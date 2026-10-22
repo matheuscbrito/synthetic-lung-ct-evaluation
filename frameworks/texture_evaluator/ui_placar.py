@@ -60,7 +60,7 @@ def case_name(case_id: str) -> str:
 
 def png(fig) -> bytes:
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=135, bbox_inches="tight", facecolor="white")
+    fig.savefig(buffer, format="png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return buffer.getvalue()
 
@@ -173,6 +173,34 @@ def texture_decision(row: dict) -> tuple[str, str]:
     return TEXTURE_LABEL[texture_status(row)], " · ".join(reasons) if reasons else "GLCM, Wavelet e NEx dentro das faixas de referência"
 
 
+TRANSITION_LABEL = {
+    "brilho": {"aprovada": "aprovada", "revisão": "revisão manual", "reprovada": "rejeição direta"},
+    "textura": {"aprovada": "aprovada", "revisão": "revisão necessária", "reprovada": "reprovada"},
+}
+TRANSITION_SEVERITY = {"aprovada": 0, "revisão": 1, "reprovada": 2}
+
+
+def transition_rows(board: dict, before: str, after: str, mode: str) -> list[dict]:
+    """Mudança de classificação de cada corte entre duas versões."""
+    old = {row["case_id"]: row for row in board["rows"][before]}
+    new = {row["case_id"]: row for row in board["rows"][after]}
+    decision = brightness_verdict if mode == "brilho" else texture_status
+    result = []
+    for case_id in sorted(old.keys() & new.keys()):
+        previous, current = decision(old[case_id]), decision(new[case_id])
+        delta = TRANSITION_SEVERITY[current] - TRANSITION_SEVERITY[previous]
+        change = "melhorou" if delta < 0 else "piorou" if delta > 0 else "sem mudança"
+        result.append({
+            "case_id": case_id,
+            "corte": case_name(case_id),
+            "antes": TRANSITION_LABEL[mode][previous],
+            "agora": TRANSITION_LABEL[mode][current],
+            "mudança": change,
+            "reprovada → aprovada": previous == "reprovada" and current == "aprovada",
+        })
+    return result
+
+
 def texture_explanation(row: dict) -> str:
     energy = 100 * number(row, "glcm_energy_synthetic") / number(row, "glcm_energy_real")
     text = f"GLCM contraste {number(row, 'glcm_contrast_pct'):.0f}%; energia GLCM {energy:.0f}%; Wavelet 2 px {number(row, 'wavelet_fine_pct'):.0f}%; Wavelet 4 px {number(row, 'wavelet_coarse_pct'):.0f}%"
@@ -250,15 +278,15 @@ def map_png(history_dir: str, stamp: float, case_id: str, layer: str, compared: 
 
 @st.cache_data(show_spinner="Carregando as CTs originais...")
 def raw_pair_png(history_dir: str, stamp: float, case_id: str, version: str) -> bytes:
-    """Mostra os pixels das duas CTs sem mapa, máscara ou transformação."""
+    """Renderiza diretamente os TIFFs, sem usar os PNGs de prévia da execução."""
     history = load_history(Path(history_dir))
     entry = next(item for item in history["versions"] if item["name"] == version)
     case = load_case(entry, case_id)
     values = np.concatenate((case.original[case.lung_mask], case.synthetic[case.lung_mask]))
     low, high = np.percentile(values, (1, 99))
-    fig, axes = plt.subplots(1, 2, figsize=(9, 4.5), squeeze=False)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6), squeeze=False)
     for axis, image, title in zip(axes[0], (case.original, case.synthetic), ("CT real · original", "CT sintética · gerada")):
-        axis.imshow(image, cmap="gray", vmin=low, vmax=high)
+        axis.imshow(image, cmap="gray", vmin=low, vmax=high, interpolation="nearest")
         axis.set_title(title, fontsize=11, fontweight="bold")
         axis.axis("off")
     fig.tight_layout()
@@ -666,7 +694,13 @@ if board is None:
     st.error("O histórico não tem versões avaliadas.")
     st.stop()
 calibration_limits(history)
-names, version = board["names"], board["names"][-1]
+names = board["names"]
+with st.sidebar:
+    st.markdown("---")
+    st.header("2 · Versão")
+    version = st.selectbox("Versão para analisar", names, index=len(names) - 1, key=f"version_{dataset}")
+    if len(names) > 1:
+        st.caption(f"{len(names)} versões usam os mesmos {board['n_cases']} cortes para permitir comparação direta.")
 rows = board["rows"][version]
 stamp = (history_dir / "historico.json").stat().st_mtime
 
@@ -678,7 +712,7 @@ if "pending_case" in st.session_state:
 
 with st.sidebar:
     st.markdown("---")
-    st.header("2 · Corte")
+    st.header("3 · Corte")
     active_mode = st.radio("Filtro a explorar", ["Análise de textura", "Filtro de brilho"], index=0)
     mode = "textura" if active_mode == "Análise de textura" else "brilho"
     if mode == "brilho":
@@ -693,7 +727,7 @@ with st.sidebar:
 FOCUS_CASE = case_id
 
 show_method_cards(mode, history["calibration"]["nex_reference"])
-st.markdown(f"#### Resumo do dataset · {dataset}")
+st.markdown(f"#### Resumo · {dataset} / {version}")
 if mode == "brilho":
     statuses = pd.Series([brightness_decision(row) for row in rows]).value_counts()
     first, second, third = st.columns(3)
@@ -721,6 +755,50 @@ else:
         counts = pd.Series([technique_statuses(row)[technique] for row in rows]).value_counts()
         column.metric(f"{technique}: fora da faixa", int(counts.get("revisão", 0) + counts.get("reprovada", 0)),
                       " · ".join(f"{int(counts.get(status, 0))} {status}" for status in (*METRIC_STATUSES, "inconclusivo") if counts.get(status, 0)).replace("inconclusivo", "inconcl."), delta_color="off", delta_arrow="off")
+
+if len(names) > 1:
+    st.markdown("#### O que mudou entre as versões")
+    comparison_options = [name for name in names if name != version]
+    baseline = st.selectbox("Comparar a versão aberta com", comparison_options, index=0, key=f"baseline_{dataset}_{version}")
+    transitions = transition_rows(board, baseline, version, mode)
+    improved = sum(row["mudança"] == "melhorou" for row in transitions)
+    worsened = sum(row["mudança"] == "piorou" for row in transitions)
+    approved = sum(row["reprovada → aprovada"] for row in transitions)
+    first, second, third = st.columns(3)
+    first.metric("Melhoraram", improved, f"comparado com {baseline}", delta_color="off", delta_arrow="off")
+    second.metric("Pioraram", worsened, f"comparado com {baseline}", delta_color="off", delta_arrow="off")
+    third.metric("Reprovada → aprovada", approved, "mudança completa", delta_color="off", delta_arrow="off")
+    transition_filter = st.segmented_control(
+        "Mostrar mudanças",
+        ["todas", "melhorou", "piorou", "sem mudança", "reprovada → aprovada"],
+        default="todas",
+        key=f"transition_filter_{dataset}_{version}_{mode}",
+    ) or "todas"
+    visible_transitions = [row for row in transitions if transition_filter == "todas"
+                           or transition_filter == "reprovada → aprovada" and row["reprovada → aprovada"]
+                           or row["mudança"] == transition_filter]
+    transition_table = pd.DataFrame(visible_transitions)
+    if transition_table.empty:
+        st.info("Nenhum corte nessa mudança.")
+    else:
+        event = st.dataframe(
+            transition_table,
+            hide_index=True,
+            width="stretch",
+            height=min(350, 36 + 35 * len(transition_table)),
+            column_order=["corte", "antes", "agora", "mudança"],
+            on_select="rerun",
+            selection_mode="single-row",
+            key=f"transitions_{dataset}_{baseline}_{version}_{mode}_{transition_filter}",
+        )
+        selected = event.selection.rows
+        if selected:
+            clicked = transition_table.iloc[selected[0]]["case_id"]
+            if clicked != case_id:
+                st.session_state["pending_case"] = clicked
+                st.session_state["pending_mode"] = mode
+                st.rerun()
+    st.caption(f"Classificação de {active_mode.lower()}; clique em uma linha para abrir o par. A comparação usa exatamente os mesmos cortes nas duas versões.")
 
 if not choices:
     st.info("Nenhum corte nessa categoria. Escolha outro filtro em “Mostrar cortes”.")

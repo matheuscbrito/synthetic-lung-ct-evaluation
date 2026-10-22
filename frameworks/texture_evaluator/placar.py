@@ -134,8 +134,49 @@ def load_rows(folder: Path, name: str) -> list[dict]:
     return rows
 
 
+def _report_path(folder: Path, value: str) -> Path:
+    """Resolve caminhos do relatório, aceitando execuções portáveis ou locais."""
+    path = Path(value)
+    return path if path.is_absolute() else folder / path
+
+
+def report_case_paths(folder: Path) -> list[CasePaths] | None:
+    """Lê os pares de uma execução do agente descrita por ``report.json``.
+
+    Uma execução completa pode reutilizar imagens de uma rodada rápida. Por
+    isso, descobrir apenas os TIFFs presentes na pasta perde alguns cortes; o
+    relatório é a fonte correta e aponta para todos os 37 pares usados.
+    """
+    report_file = folder / "report.json"
+    if not report_file.exists():
+        return None
+    try:
+        report = json.loads(report_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise PlacarError(f"não foi possível ler {report_file}: {error}") from error
+
+    records = report.get("cases")
+    if not isinstance(records, list) or not records:
+        raise PlacarError(f"{report_file} não contém uma lista de casos")
+    paths = []
+    for record in records:
+        case_id = record.get("case_id")
+        files = record.get("evaluation", {}).get("files", {})
+        missing = [key for key in ("original", "synthetic", "mask") if not files.get(key)]
+        if not case_id or missing:
+            detail = ", ".join(missing) if missing else "case_id"
+            raise PlacarError(f"caso incompleto em {report_file}: faltando {detail}")
+        paths.append(CasePaths(
+            case_id=case_id,
+            original=_report_path(folder, files["original"]),
+            synthetic=_report_path(folder, files["synthetic"]),
+            mask=_report_path(folder, files["mask"]),
+        ))
+    return paths
+
+
 def case_paths(folder: Path, mask_dir: Path | None) -> list[CasePaths]:
-    paths = discover_cases(folder)
+    paths = report_case_paths(folder) or discover_cases(folder)
     if mask_dir:
         paths = [CasePaths(p.case_id, p.original, p.synthetic, mask_dir / f"{p.case_id}_mask.tiff") for p in paths]
     return paths
