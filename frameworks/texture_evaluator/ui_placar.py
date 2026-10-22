@@ -196,7 +196,7 @@ def transition_rows(board: dict, before: str, after: str, mode: str) -> list[dic
             "antes": TRANSITION_LABEL[mode][previous],
             "agora": TRANSITION_LABEL[mode][current],
             "mudança": change,
-            "reprovada → aprovada": previous == "reprovada" and current == "aprovada",
+            "passou a aprovada": previous != "aprovada" and current == "aprovada",
         })
     return result
 
@@ -646,10 +646,46 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
 
 st.set_page_config(page_title="Avaliação de CT sintética", page_icon="◌", layout="wide")
 st.markdown("""<style>
-.block-container {max-width: 1450px; padding-top: 2.2rem; padding-bottom: 4rem;}
-[data-testid="stMetric"] {background: #f5f7f6; border: 1px solid #e2e8e5; border-radius: 10px; padding: .85rem 1rem;}
-h1 {letter-spacing: -.04em;} h2, h3 {letter-spacing: -.025em;}
-[data-testid="stSidebar"] {border-right: 1px solid #e5e9e7;}
+:root {color-scheme: light dark;}
+.block-container {max-width: 1380px; padding-top: 2.2rem; padding-bottom: 4rem;}
+h1 {letter-spacing: -.035em;} h2, h3 {letter-spacing: -.022em;}
+[data-testid="stSidebar"] {
+    border-right: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+}
+[data-testid="stMetric"] {
+    min-height: 128px;
+    padding: 1rem 1.1rem;
+    background: color-mix(in srgb, var(--secondary-background-color) 86%, var(--background-color));
+    border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+    border-radius: 14px;
+}
+[data-testid="stMetric"] * {color: var(--text-color) !important;}
+[data-testid="stMetricLabel"] {
+    opacity: .72;
+    font-weight: 620;
+}
+[data-testid="stMetricValue"] {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.025em;
+}
+[data-testid="stMetricDelta"] {
+    width: fit-content;
+    max-width: 100%;
+    margin-top: .4rem;
+    padding: .2rem .5rem;
+    background: color-mix(in srgb, var(--text-color) 9%, transparent);
+    border-radius: 7px;
+    opacity: .78;
+}
+[data-testid="stMetricDelta"] svg {display: none;}
+div[data-baseweb="select"] > div {
+    border-color: color-mix(in srgb, var(--text-color) 22%, transparent);
+}
+*:focus-visible {outline: 2px solid var(--primary-color) !important; outline-offset: 2px;}
+@media (max-width: 760px) {
+    .block-container {padding-top: 1.2rem;}
+    [data-testid="stMetric"] {min-height: 108px;}
+}
 </style>""", unsafe_allow_html=True)
 
 st.title("Avaliação de CT pulmonar sintética")
@@ -763,19 +799,19 @@ if len(names) > 1:
     transitions = transition_rows(board, baseline, version, mode)
     improved = sum(row["mudança"] == "melhorou" for row in transitions)
     worsened = sum(row["mudança"] == "piorou" for row in transitions)
-    approved = sum(row["reprovada → aprovada"] for row in transitions)
+    approved = sum(row["passou a aprovada"] for row in transitions)
     first, second, third = st.columns(3)
     first.metric("Melhoraram", improved, f"comparado com {baseline}", delta_color="off", delta_arrow="off")
     second.metric("Pioraram", worsened, f"comparado com {baseline}", delta_color="off", delta_arrow="off")
-    third.metric("Reprovada → aprovada", approved, "mudança completa", delta_color="off", delta_arrow="off")
+    third.metric("Passaram a aprovadas", approved, f"antes exigiam {('revisão ou reprovação' if mode == 'textura' else 'revisão ou rejeição')}", delta_color="off", delta_arrow="off")
     transition_filter = st.segmented_control(
         "Mostrar mudanças",
-        ["todas", "melhorou", "piorou", "sem mudança", "reprovada → aprovada"],
+        ["todas", "melhorou", "piorou", "sem mudança", "passou a aprovada"],
         default="todas",
         key=f"transition_filter_{dataset}_{version}_{mode}",
     ) or "todas"
     visible_transitions = [row for row in transitions if transition_filter == "todas"
-                           or transition_filter == "reprovada → aprovada" and row["reprovada → aprovada"]
+                           or transition_filter == "passou a aprovada" and row["passou a aprovada"]
                            or row["mudança"] == transition_filter]
     transition_table = pd.DataFrame(visible_transitions)
     if transition_table.empty:
