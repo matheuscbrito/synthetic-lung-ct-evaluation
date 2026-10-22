@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import io
+import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -19,7 +21,7 @@ import streamlit as st
 import altair as alt
 from streamlit.errors import StreamlitAPIException
 
-from frameworks.texture_evaluator.placar import PlacarError, add_version, build_board, load_case, load_history, refresh_history, remove_version, technique_table, write_outputs
+from frameworks.texture_evaluator.placar import PlacarError, add_version, build_board, case_paths, load_case, load_history, refresh_history, remove_version, technique_table, write_outputs
 from frameworks.texture_evaluator.decision import BRIGHTNESS_TECHNIQUES, GLCM_METRICS, METRIC_STATUSES, NEX_STATUS, TECHNIQUES, WAVELET_METRICS, brightness_statuses, brightness_verdict, technique_statuses, texture_status
 from frameworks.texture_evaluator.glcm.src import quantize
 from frameworks.texture_evaluator.regional import MASK_ONLY, PAIR_MIN_CORRELATION
@@ -53,14 +55,61 @@ def short(path: str | Path) -> str:
         return str(path)
 
 
+def discovered_agent_runs(history: dict) -> list[Path]:
+    """Execuções completas do agente ainda não adicionadas ao histórico."""
+    default_root = ROOT.parent / "lung-agent-lab" / "runs" / "real"
+    runs_root = Path(os.environ.get("LUNG_AGENT_RUNS", default_root))
+    if not runs_root.is_dir():
+        return []
+    known = {Path(item["folder"]).resolve() for item in history["versions"]}
+    expected = set(history["originals"])
+    found = []
+    for report_file in sorted(runs_root.glob("*/report.json")):
+        try:
+            report = json.loads(report_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        cases = report.get("cases", [])
+        case_ids = {case.get("case_id") for case in cases if case.get("case_id")}
+        folder = report_file.parent.resolve()
+        if report.get("completed") and case_ids == expected and folder not in known:
+            found.append(folder)
+    return found
+
+
+def validate_complete_version(folder: Path, history: dict) -> None:
+    """Garante comparação honesta: a versão precisa conter toda a referência."""
+    expected = set(history["originals"])
+    found = {paths.case_id for paths in case_paths(folder, None)}
+    missing, extra = sorted(expected - found), sorted(found - expected)
+    if missing or extra:
+        details = []
+        if missing:
+            details.append(f"faltam {len(missing)} dos {len(expected)} cortes")
+        if extra:
+            details.append(f"há {len(extra)} cortes que não pertencem à referência")
+        raise PlacarError("esta não é uma versão completa e comparável do DSR: " + " e ".join(details))
+
+
+def add_complete_version(history_dir: Path, history: dict, name: str, folder: Path) -> str:
+    """Valida e registra uma versão completa, sem duplicar uma mesma pasta."""
+    folder = folder.expanduser().resolve()
+    if folder in {Path(item["folder"]).resolve() for item in history["versions"]}:
+        raise PlacarError(f"essa execução já está no histórico: {folder.name}")
+    validate_complete_version(folder, history)
+    message = add_version(history_dir, name.strip() or folder.name, folder)
+    write_outputs(history_dir, build_board(history_dir))
+    return message
+
+
 def case_name(case_id: str) -> str:
     phase = re.search(r"Gated ([\d.]+A)", case_id)
     return f"{phase.group(1)} · {case_id.rsplit('-', 1)[-1]}" if phase else case_id
 
 
-def png(fig) -> bytes:
+def png(fig, facecolor: str = "white") -> bytes:
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=200, bbox_inches="tight", facecolor="white")
+    fig.savefig(buffer, format="png", dpi=200, bbox_inches="tight", facecolor=facecolor)
     plt.close(fig)
     return buffer.getvalue()
 
@@ -285,12 +334,79 @@ def raw_pair_png(history_dir: str, stamp: float, case_id: str, version: str) -> 
     values = np.concatenate((case.original[case.lung_mask], case.synthetic[case.lung_mask]))
     low, high = np.percentile(values, (1, 99))
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), squeeze=False)
+    fig.patch.set_facecolor("#050607")
     for axis, image, title in zip(axes[0], (case.original, case.synthetic), ("CT real · original", "CT sintética · gerada")):
+        axis.set_facecolor("#050607")
         axis.imshow(image, cmap="gray", vmin=low, vmax=high, interpolation="nearest")
-        axis.set_title(title, fontsize=11, fontweight="bold")
+        axis.set_title(title, fontsize=11, fontweight="bold", color="white", pad=10)
         axis.axis("off")
     fig.tight_layout()
-    return png(fig)
+    return png(fig, "#050607")
+
+
+@st.cache_data(show_spinner="Carregando as três CTs em alta qualidade...")
+def version_triptych_png(history_dir: str, stamp: float, case_id: str, baseline: str, version: str) -> bytes:
+    """Original, sintética de referência e sintética nova na mesma janela."""
+    history = load_history(Path(history_dir))
+    entries = {item["name"]: item for item in history["versions"]}
+    before, after = load_case(entries[baseline], case_id), load_case(entries[version], case_id)
+    images = (before.original, before.synthetic, after.synthetic)
+    masks = (before.lung_mask, before.lung_mask, after.lung_mask)
+    values = np.concatenate([image[mask] for image, mask in zip(images, masks)])
+    low, high = np.percentile(values, (1, 99))
+    titles = ("CT original", f"Sintética · {baseline}", f"Sintética · {version}")
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), squeeze=False)
+    fig.patch.set_facecolor("#050607")
+    for axis, image, title in zip(axes[0], images, titles):
+        axis.set_facecolor("#050607")
+        axis.imshow(image, cmap="gray", vmin=low, vmax=high, interpolation="nearest")
+        axis.set_title(title, fontsize=12, fontweight="bold", color="white", pad=10)
+        axis.axis("off")
+    fig.subplots_adjust(left=.01, right=.99, top=.91, bottom=.01, wspace=.025)
+    return png(fig, "#050607")
+
+
+def case_comparison_table(board: dict, case_id: str, baseline: str, version: str, mode: str) -> pd.DataFrame:
+    """GLCM e Wavelet do mesmo corte nas duas gerações."""
+    before = next(row for row in board["rows"][baseline] if row["case_id"] == case_id)
+    after = next(row for row in board["rows"][version] if row["case_id"] == case_id)
+
+    def pct(row: dict, synthetic: str, real: str) -> float:
+        return 100 * number(row, synthetic) / number(row, real)
+
+    if mode == "textura":
+        specs = [
+            ("GLCM · contraste", lambda row: number(row, "glcm_contrast_pct"), "glcm_contrast_status", "% da original"),
+            ("GLCM · energia", lambda row: pct(row, "glcm_energy_synthetic", "glcm_energy_real"), "glcm_energy_status", "% da original"),
+            ("Wavelet · detalhe 2 px", lambda row: number(row, "wavelet_fine_pct"), "wavelet_fine_status", "% da original"),
+            ("Wavelet · detalhe 4 px", lambda row: number(row, "wavelet_coarse_pct"), "wavelet_coarse_status", "% da original"),
+            ("Wavelet · entropia", lambda row: pct(row, "wavelet_entropy_synthetic", "wavelet_entropy_real"), "wavelet_entropy_status", "% da original"),
+            ("NEx · assinatura espectral", lambda row: number(row, "nex_synthetic"), None, "valor"),
+        ]
+    else:
+        specs = [
+            ("GLCM · |Δμ|", lambda row: number(row, "abs_delta_mu"), "brightness_status", "diferença absoluta"),
+            ("GLCM · Sat31", lambda row: number(row, "sat31_pct"), "brightness_status", "% da ROI"),
+            ("Wavelet · LL", lambda row: number(row, "wavelet_ll_synthetic"), "wavelet_ll_status", "valor normalizado"),
+        ]
+    data = []
+    for label, value, status_key, unit in specs:
+        old_value, new_value = value(before), value(after)
+        if status_key == "brightness_status":
+            old_status, new_status = brightness_verdict(before), brightness_verdict(after)
+        elif status_key is None:
+            old_status, new_status = technique_statuses(before)["NEx"], technique_statuses(after)["NEx"]
+        else:
+            old_status, new_status = before[status_key], after[status_key]
+        decimals = 3 if unit in {"valor", "valor normalizado", "diferença absoluta"} else 1
+        data.append({
+            "métrica": label,
+            f"{baseline} · valor": f"{old_value:.{decimals}f}",
+            f"{version} · valor": f"{new_value:.{decimals}f}",
+            "unidade": unit,
+            "classificação": f"{old_status} → {new_status}",
+        })
+    return pd.DataFrame(data)
 
 
 @st.cache_data(show_spinner=False)
@@ -575,7 +691,7 @@ def show_method_cards(mode: str, reference: dict):
             ], columns=["técnica", "o que ela mede"]), hide_index=True, width="stretch")
 
 
-def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, version: str, mode: str):
+def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, version: str, mode: str, comparison_version: str | None = None):
     row = next(item for item in board["rows"][version] if item["case_id"] == case_id)
     st.markdown("---")
     title, close = st.columns([5, 1], vertical_alignment="bottom")
@@ -584,6 +700,16 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
         st.session_state["pending_case"] = None
         st.session_state["pending_mode"] = mode
         st.rerun()
+    if comparison_version and comparison_version != version:
+        st.markdown("##### Comparação visual do mesmo corte")
+        st.image(version_triptych_png(str(history_dir), stamp, case_id, comparison_version, version), width="stretch")
+        st.caption(f"A mesma janela P1–P99 e os TIFFs originais são usados nas três imagens. Compare a sintética de {comparison_version} com a de {version}; não são PNGs de prévia.")
+        st.markdown("##### GLCM e Wavelet, lado a lado")
+        st.dataframe(case_comparison_table(board, case_id, comparison_version, version, mode), hide_index=True, width="stretch")
+        st.caption("“% da original” usa a CT original deste mesmo corte como denominador. A classificação mostra a mudança da versão de comparação para a versão aberta.")
+    else:
+        st.image(raw_pair_png(str(history_dir), stamp, case_id, version), width="stretch")
+        st.caption("CTs brutas lado a lado — sem mapa, máscara ou métrica sobreposta. A mesma janela de visualização é usada nas duas imagens.")
     if mode == "brilho":
         verdict, statuses = brightness_verdict(row), brightness_statuses(row)
         show, icon = STATUS_BOX[verdict]
@@ -616,8 +742,6 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
                 if technique == "Wavelet":
                     st.caption(f"tipo de mudança (descreve, não decide): {row.get('wavelet_verdict', 'n/a')}")
         choices = {"GLCM · contraste": "glcm_contraste", "Wavelet · detalhe fino": "wavelet_fina", "Wavelet · detalhe grosso": "wavelet_grossa"}
-    st.image(raw_pair_png(str(history_dir), stamp, case_id, version), width="stretch")
-    st.caption("CTs brutas lado a lado — sem mapa, máscara ou métrica sobreposta. A mesma janela de visualização é usada nas duas imagens para permitir comparação direta.")
     tones = glcm_tone_counts(str(history_dir), stamp, case_id, version)
     # na textura os extremos são detalhe técnico; no brilho eles explicam o Sat31
     with st.expander("Extremos da discretização GLCM", expanded=mode == "brilho"):
@@ -731,12 +855,52 @@ if board is None:
     st.stop()
 calibration_limits(history)
 names = board["names"]
+pending_version = st.session_state.pop("pending_version", None)
+version_message = st.session_state.pop("version_message", None)
 with st.sidebar:
     st.markdown("---")
     st.header("2 · Versão")
-    version = st.selectbox("Versão para analisar", names, index=len(names) - 1, key=f"version_{dataset}")
+    default_version = pending_version if pending_version in names else names[-1]
+    version = st.selectbox("Versão para analisar", names, index=names.index(default_version), key=f"version_{dataset}")
     if len(names) > 1:
         st.caption(f"{len(names)} versões usam os mesmos {board['n_cases']} cortes para permitir comparação direta.")
+    if version_message:
+        st.success(version_message)
+    if dataset == "Dsr":
+        with st.expander("Adicionar versão completa", expanded=False):
+            st.caption("Só são aceitas execuções com os mesmos 37 cortes do DSR.")
+            detected_runs = discovered_agent_runs(history)
+            if detected_runs:
+                detected = st.selectbox("Execuções encontradas", detected_runs, format_func=lambda path: path.name, key="detected_run")
+                if st.button("Adicionar execução encontrada", type="primary", width="stretch"):
+                    try:
+                        with st.spinner(f"Avaliando {detected.name} nos 37 cortes..."):
+                            message = add_complete_version(history_dir, history, detected.name, detected)
+                        st.session_state["pending_version"] = detected.name
+                        st.session_state["version_message"] = message
+                        st.rerun()
+                    except PlacarError as error:
+                        st.error(str(error))
+            else:
+                st.caption("Nenhuma execução completa nova foi encontrada em `lung-agent-lab/runs/real`.")
+            with st.form("manual_version"):
+                st.markdown("**Outra pasta**")
+                manual_path = st.text_input("Caminho da execução", placeholder="/caminho/para/candidate-02-full")
+                manual_name = st.text_input("Nome da versão", placeholder="candidate-02-full")
+                submitted = st.form_submit_button("Adicionar outra pasta", width="stretch")
+            if submitted:
+                try:
+                    folder = Path(manual_path).expanduser()
+                    if not manual_path.strip() or not folder.is_dir():
+                        raise PlacarError("informe uma pasta de execução existente")
+                    name = manual_name.strip() or folder.name
+                    with st.spinner(f"Avaliando {name} nos 37 cortes..."):
+                        message = add_complete_version(history_dir, history, name, folder)
+                    st.session_state["pending_version"] = name
+                    st.session_state["version_message"] = message
+                    st.rerun()
+                except PlacarError as error:
+                    st.error(str(error))
 rows = board["rows"][version]
 stamp = (history_dir / "historico.json").stat().st_mtime
 
@@ -792,10 +956,12 @@ else:
         column.metric(f"{technique}: fora da faixa", int(counts.get("revisão", 0) + counts.get("reprovada", 0)),
                       " · ".join(f"{int(counts.get(status, 0))} {status}" for status in (*METRIC_STATUSES, "inconclusivo") if counts.get(status, 0)).replace("inconclusivo", "inconcl."), delta_color="off", delta_arrow="off")
 
+comparison_version = None
 if len(names) > 1:
     st.markdown("#### O que mudou entre as versões")
     comparison_options = [name for name in names if name != version]
     baseline = st.selectbox("Comparar a versão aberta com", comparison_options, index=0, key=f"baseline_{dataset}_{version}")
+    comparison_version = baseline
     transitions = transition_rows(board, baseline, version, mode)
     improved = sum(row["mudança"] == "melhorou" for row in transitions)
     worsened = sum(row["mudança"] == "piorou" for row in transitions)
@@ -841,7 +1007,7 @@ if not choices:
 elif case_id is None:
     st.info("Nenhum par aberto. Clique num ponto, célula ou linha em “Todos os cortes do dataset”, ou escolha um corte na barra lateral.")
 else:
-    show_case(board, history_dir, stamp, case_id, version, mode)
+    show_case(board, history_dir, stamp, case_id, version, mode, comparison_version)
 st.markdown("---")
 st.subheader("Todos os cortes do dataset")
 st.caption("Clique em qualquer ponto, célula ou linha para abrir aquele par no topo, em “Par em foco”.")
