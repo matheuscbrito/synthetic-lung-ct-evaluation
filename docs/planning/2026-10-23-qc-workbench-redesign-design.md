@@ -86,3 +86,23 @@ proportions of tako.ai / tela.com references, not their content.
 
 Component split, CSS organisation, animation timing details, fonts loading
 method (self-hosted packages preferred for a local tool).
+
+## 7. Addendum (2026-10-23): experiments from the agent's notebook
+
+Approved by the researcher (mockup slide 7, "Agent · Experiments"). The Agent
+screen gets a `Runs | Experiments` switch in its left column. Experiments are
+read, read-only, from the agent lab's `CADERNO.md`
+(`../lung-agent-lab/CADERNO.md`, overridable with `LUNG_AGENT_LAB`):
+
+- list of attempts grouped by search (the notebook's legend maps the id
+  prefix to the search, e.g. `"M" = busca de Matheus`), each with change,
+  last improvement %, verdict chip, ★ on the current best;
+- detail: serif title `<id> · <change>`, clickable lineage from baseline via
+  the `base` column, improvement bars for the scopes present (5/10/37) or the
+  raw text when there are no numbers, verdict reason; for the current best,
+  the notebook's per-metric improvement table; otherwise a "Change" card;
+- trajectory chart: improvement along the lineage of each search's best,
+  15% goal line, clickable points;
+- "What we learned" and "Next search" cards from those notebook sections;
+- if parsing fails, the raw markdown is shown instead; if the file is
+  missing, an empty state naming the expected path. Nothing is fabricated.
