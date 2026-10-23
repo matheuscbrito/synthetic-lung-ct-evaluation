@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, imageUrl, type Slice, type Spectrum, type Verdict } from "../api";
 import type { Route } from "../route";
-import { COLOR } from "../status";
 import { Info } from "../components/Info";
+import { Pill } from "../ui/Pill";
 import { Plot, type PlotOptions } from "../components/Plot";
 import { spectrumMarks } from "../components/spectrumMarks";
 import { MetricList } from "../components/VerdictPanel";
@@ -71,13 +71,11 @@ function Column({ slice, verdict }: { slice: Slice; verdict: Verdict }) {
     <>
       <div>
         {groups.map(group => (
-          <span
+          <Pill
             key={group}
-            className="verdict-pill"
-            style={{ borderColor: COLOR[slice[group].verdict] }}
-          >
-            {`${group} ${slice[group].verdict}`}
-          </span>
+            status={slice[group].verdict}
+            label={`${group} ${slice[group].verdict}`}
+          />
         ))}
       </div>
       <MetricList metrics={slice.metrics.filter(m => m.group === verdict)} />

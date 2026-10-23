@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import type { Metric, Slice, Status, Verdict } from "../api";
 import { DEFINITIONS, waveletType, type Term } from "../definitions";
 import { COLOR } from "../status";
@@ -120,7 +120,6 @@ function Column({ slice, verdict }: { slice: Slice; verdict: Verdict }) {
 export function VerdictPanel({ slice }: Props) {
   // um cálculo aberto por vez, em qualquer grupo; troca de corte fecha tudo
   const [openKey, setOpenKey] = useState<string | null>(null);
-  useEffect(() => setOpenKey(null), [slice.case_id]);
   const toggle = (key: string) => setOpenKey(current => (current === key ? null : key));
 
   return (

@@ -75,7 +75,7 @@ export function SliceView({ route, onRoute, version, versions, slices }: Props) 
           <ImageRow version={version} slice={current} />
           <ToolTabs version={version} caseId={current.case_id} maskOnly={current.mask_only} />
         </div>
-        <VerdictPanel slice={current} />
+        <VerdictPanel key={current.case_id} slice={current} />
       </div>
     </div>
   );
