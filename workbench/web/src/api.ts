@@ -129,6 +129,34 @@ export interface WaveletBands {
   type: string;
 }
 
+// Caderno de experimentos do agente (CADERNO.md, somente leitura); espelha workbench/api/notebook.py.
+export interface NotebookRow {
+  id: string;
+  base: string;
+  change: string;
+  gain_text: string;
+  vals: number[];
+  scope: string | null;
+  verdict: string;
+  reason: string;
+  best: boolean;
+  search: string;
+}
+
+export interface NotebookParsed {
+  searches: Record<string, string>;
+  rows: NotebookRow[];
+  metrics: { name: string; best: string; other: string }[];
+  learned: { head: string; body: string }[];
+  next: string[];
+}
+
+export interface Notebook {
+  source: { path: string; exists: boolean };
+  parsed: NotebookParsed | null;
+  raw: string | null;
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);

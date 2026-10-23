@@ -367,3 +367,260 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+/* experimentos do caderno (Runs | Experiments): valores da bancada de mockups, slide 7 */
+.xgroup-head {
+  margin: 16px 0 6px;
+}
+
+.xgroup:first-child .xgroup-head {
+  margin-top: 4px;
+}
+
+.xi {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.xi:hover {
+  background: #efebe4;
+}
+
+.xi.on {
+  background: var(--card);
+  box-shadow: 0 1px 0 var(--line) inset, 0 0 0 1px var(--line);
+}
+
+.xi:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.xid {
+  grid-row: 1 / 3;
+  font-size: 12px;
+  color: var(--ink2);
+  padding-top: 2px;
+}
+
+.xch {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xg {
+  font-size: 12px;
+  text-align: right;
+}
+
+.xv {
+  grid-column: 2;
+  justify-self: start;
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: 3px;
+}
+
+.xbest {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-style: normal;
+  color: #d0662a;
+  font-size: 12px;
+}
+
+.xdetail {
+  margin: 6px 0 16px;
+}
+
+.xhead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.xhead h2 {
+  font: 400 40px/1.1 var(--font-serif);
+  margin: 4px 0;
+}
+
+.xpill {
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.xtag {
+  border: 1px solid #f0d9a8;
+  background: #fdf6e7;
+  color: #9a6408;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.lineage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+.lineage-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lineage .ln {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.lineage .ln.cur {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.lineage .ln-static {
+  cursor: default;
+}
+
+.xcards {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.scopes {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  height: 90px;
+  margin-top: 18px;
+}
+
+.scope {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+
+.scope i {
+  width: 100%;
+  max-width: 60px;
+  border-radius: 6px 6px 2px 2px;
+}
+
+.scope b {
+  font: 500 13px var(--font-mono);
+  color: var(--ink);
+}
+
+.reason {
+  margin-top: 10px;
+  color: var(--ink2);
+  font-size: 13.5px;
+}
+
+.change-text {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 0;
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+.metric-row b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.xgrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 14px;
+  margin-top: 4px;
+  align-items: start;
+}
+
+.lessons ul,
+.lessons ol {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--ink2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lessons li {
+  margin-bottom: 6px;
+}
+
+.lessons b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.next-head {
+  margin-top: 12px;
+}
+
+.caderno-raw {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font: 12px/1.5 var(--font-mono);
+  color: var(--ink2);
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.traj-plot {
+  width: 100%;
+}
