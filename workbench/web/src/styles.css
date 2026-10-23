@@ -1,0 +1,119 @@
+:root {
+  --bg: #f6f7f6;
+  --fg: #1d2421;
+  --muted: #6b7470;
+  --line: #d9dedb;
+  --panel: #ffffff;
+  --accent: #2f6f9e;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+main {
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar select,
+.topbar button,
+.stale button {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  border-radius: 0;
+}
+
+.segmented button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.segmented button:last-child {
+  border-radius: 0 4px 4px 0;
+  margin-left: -1px;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 10px;
+}
+
+.topbar nav a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.topbar nav a[aria-current="page"] {
+  font-weight: 600;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.pill {
+  padding: 1px 8px;
+  border: 2px solid;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.info {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--muted);
+  cursor: help;
+}
+
+.error {
+  padding: 8px 16px;
+  color: #c0392b;
+}
+
+.stale,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.placeholder {
+  color: var(--muted);
+}

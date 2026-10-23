@@ -33,3 +33,5 @@ outputs/
 
 # mockups do brainstorming (visual companion)
 .superpowers/
+# frontend (Vite)
+workbench/web/dist/
