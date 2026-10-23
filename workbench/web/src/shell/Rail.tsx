@@ -4,6 +4,7 @@ import { Logo } from "./Logo";
 
 interface Props {
   active: View;
+  // coluna do agente visível; na tela do agente o item fica selecionado mesmo sem coluna
   agentOpen: boolean;
   onNavigate: (view: View) => void;
   onToggleAgent: () => void;
@@ -57,6 +58,7 @@ const ITEMS: { view: View; label: string; icon: ReactNode }[] = [
 ];
 
 export function Rail({ active, agentOpen, onNavigate, onToggleAgent }: Props) {
+  const agentSelected = agentOpen || active === "agent";
   return (
     <nav className="rail" aria-label="Main">
       <Logo />
@@ -78,8 +80,8 @@ export function Rail({ active, agentOpen, onNavigate, onToggleAgent }: Props) {
       <div className="sp" />
       <button
         type="button"
-        className={agentOpen ? "nav agent-toggle on" : "nav agent-toggle"}
-        aria-pressed={agentOpen}
+        className={agentSelected ? "nav agent-toggle on" : "nav agent-toggle"}
+        aria-pressed={agentSelected}
         onClick={onToggleAgent}
       >
         <span className="ib">{ICON.agent}</span>
