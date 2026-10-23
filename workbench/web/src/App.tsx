@@ -162,7 +162,7 @@ export default function App() {
           </>
         ) : (
           <>
-            {route.view !== "dataset" && (
+            {route.view !== "dataset" && route.view !== "slice" && (
             <PageHeader
               eyebrow={VIEW_LABEL[route.view]}
               title={version || VIEW_LABEL[route.view]}
@@ -196,7 +196,7 @@ export default function App() {
                 />
               )
             ) : route.view === "slice" && slices ? (
-              <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
+              <SliceView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
             ) : route.view === "compare" && slices ? (
               <CompareView route={route} onRoute={setRoute} version={version} slices={slices} />
             ) : route.view === "versions" ? (

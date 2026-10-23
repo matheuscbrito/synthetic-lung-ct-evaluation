@@ -60,7 +60,6 @@ function Pane({ src, contourSrc, caption, view, setView }: PaneProps) {
 
   return (
     <figure className="pane">
-      <figcaption>{caption}</figcaption>
       <div
         ref={viewport}
         className="viewport"
@@ -80,6 +79,7 @@ function Pane({ src, contourSrc, caption, view, setView }: PaneProps) {
           )}
         </div>
       </div>
+      <figcaption className="cap">{caption}</figcaption>
     </figure>
   );
 }
