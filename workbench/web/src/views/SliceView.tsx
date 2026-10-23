@@ -4,6 +4,7 @@ import type { Route } from "../route";
 import { sortSlices } from "../status";
 import { Filmstrip } from "../components/Filmstrip";
 import { ImageRow } from "../components/ImageRow";
+import { ToolTabs } from "../components/ToolTabs";
 import { VerdictPanel } from "../components/VerdictPanel";
 
 interface Props {
@@ -41,7 +42,7 @@ export function SliceView({ route, onRoute, version, slices }: Props) {
         <ImageRow version={version} slice={current} />
         <VerdictPanel slice={current} />
       </div>
-      <div id="tool-area" />
+      <ToolTabs version={version} caseId={current.case_id} pairMode={current.pair_mode} />
     </div>
   );
 }

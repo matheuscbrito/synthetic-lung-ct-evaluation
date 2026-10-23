@@ -389,3 +389,74 @@ main {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.tool-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tool-body {
+  min-width: 0;
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tool-figures {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 2px 12px;
+  margin: 0;
+}
+
+.tool-figures dt {
+  color: var(--muted);
+}
+
+.tool-figures dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tool-controls select {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+}
+
+.tool-map {
+  max-width: 100%;
+  height: auto;
+}
+
+.tool-error,
+.tool-label {
+  margin: 0;
+  color: var(--muted);
+}
