@@ -4,9 +4,14 @@ import { Plot, type PlotOptions } from "../components/Plot";
 import { OTHER, SERIES } from "../palette";
 import { toHash } from "../route";
 import { signedPercent, type Trajectory as Line } from "./experiments";
+import { spreadValues } from "../components/labelSpread";
 
 const GOAL = 15;
 const HEIGHT = 190;
+// margens verticais fixas: a altura da área de dados (para afastar os rótulos) depende delas
+const MARGIN_TOP = 20;
+const MARGIN_BOTTOM = 30;
+const LABEL_GAP_PX = 14;
 const RULE_INK = "#8f8c84";
 
 interface Point {
@@ -30,14 +35,22 @@ export function Trajectory({ trajectories, searches, selected }: Props) {
     const lines: Point[] = trajectories.flatMap(t =>
       t.ids.map((id, step) => ({ search: t.search, step, id, value: t.values[step] })),
     );
-    const ends = trajectories.map(t => lines.find(p => p.search === t.search && p.step === t.ids.length - 1)!);
+    const lastPoints = trajectories.map(t => lines.find(p => p.search === t.search && p.step === t.ids.length - 1)!);
     const current = lines.filter(p => p.id === selected);
     const top = Math.max(GOAL + 10, ...lines.map(p => p.value));
+    // rótulos das pontas afastados em px (escala linear de 0 a top); os pontos ficam onde estão
+    const plotHeight = HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
+    const toPx = (v: number) => ((top - v) / top) * plotHeight;
+    const fromPx = (p: number) => top - (p / plotHeight) * top;
+    const labelYs = spreadValues(lastPoints.map(p => p.value), toPx, fromPx, LABEL_GAP_PX);
+    const ends = lastPoints.map((p, i) => ({ ...p, labelY: labelYs[i] }));
     const longest = Math.max(...trajectories.map(t => t.ids.length));
     const link = (p: Point) => toHash({ view: "agent", exp: p.id });
 
     return {
       height: HEIGHT,
+      marginTop: MARGIN_TOP,
+      marginBottom: MARGIN_BOTTOM,
       marginLeft: 44,
       marginRight: 150,
       x: { domain: [0, Math.max(1, longest - 1)], axis: null },
@@ -76,7 +89,7 @@ export function Trajectory({ trajectories, searches, selected }: Props) {
         }),
         Observable.text(ends, {
           x: "step",
-          y: "value",
+          y: "labelY",
           text: (p: Point) => `${p.search} · ${p.id}`,
           dx: 10,
           textAnchor: "start",

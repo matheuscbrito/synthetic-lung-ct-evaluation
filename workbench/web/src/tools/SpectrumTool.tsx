@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Spectrum } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
-import { spectrumMarks } from "../components/spectrumMarks";
+import { SPECTRUM_MARGINS, spectrumMarks, spectrumYDomain } from "../components/spectrumMarks";
 import { REFERENCE_INK, SERIES } from "../palette";
 import { useToolData } from "./toolData";
 import { spectrumSeries } from "./series";
@@ -22,13 +22,15 @@ export function SpectrumTool({ version, caseId }: Props) {
     if (!data) return null;
     const { band, lines } = spectrumSeries(data);
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
+    const yDomain = spectrumYDomain(band, lines, top);
     return {
       width: WIDTH,
       height: 320,
+      ...SPECTRUM_MARGINS,
       marginLeft: 56,
       marginRight: 84,
       x: { domain: [0, data.nyquist], label: null },
-      y: { type: "log", label: null },
+      y: { type: "log", domain: yDomain, label: null },
       // Real em neutro de referência; sintético na primeira cor da série.
       color: {
         domain: ["real", "synthetic"],
@@ -42,6 +44,8 @@ export function SpectrumTool({ version, caseId }: Props) {
         lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which, z: p.which })),
         direct: true,
         labelOf: key => LABELS[key] ?? key,
+        yDomain,
+        height: 320,
       }),
     };
   }, [data]);

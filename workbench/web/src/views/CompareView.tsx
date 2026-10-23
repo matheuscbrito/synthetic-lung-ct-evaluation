@@ -8,7 +8,7 @@ import { Seg } from "../ui/Seg";
 import { ChipSelect } from "../ui/ChipSelect";
 import { Card } from "../ui/Card";
 import { Plot, type PlotOptions } from "../components/Plot";
-import { spectrumMarks } from "../components/spectrumMarks";
+import { SPECTRUM_MARGINS, spectrumMarks, spectrumYDomain } from "../components/spectrumMarks";
 import { MetricList } from "../components/VerdictPanel";
 import { loadTool } from "../tools/toolData";
 import { spectrumSeries } from "../tools/series";
@@ -139,13 +139,15 @@ export function CompareView({ route, onRoute, version, versions, slices }: Props
         .map(p => ({ f: p.f, power: p.power, key: labelOf(id), z: id })),
     );
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
+    const yDomain = spectrumYDomain(band, lines, top);
     return {
       width: WIDTH,
       height: 320,
+      ...SPECTRUM_MARGINS,
       marginLeft: 56,
       marginRight: 96,
       x: { domain: [0, first.nyquist], label: null },
-      y: { type: "log", label: null },
+      y: { type: "log", domain: yDomain, label: null },
       // Cor pela posição na seleção (ordem dos cortes na rota), com o rótulo do corte na legenda.
       color: {
         domain: ids.map(labelOf),
@@ -159,6 +161,8 @@ export function CompareView({ route, onRoute, version, versions, slices }: Props
         lines,
         direct: ids.length <= 4,
         labelOf: key => key,
+        yDomain,
+        height: 320,
       }),
     };
     // slots e ids mudam juntos com key/version/kind
