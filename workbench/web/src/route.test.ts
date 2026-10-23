@@ -19,4 +19,10 @@ describe("route hash", () => {
   test("unknown view falls back to dataset", () => {
     expect(parseHash("#/nope").view).toBe("dataset");
   });
+
+  test("experiment id round trips through the agent hash", () => {
+    const r = { view: "agent", verdict: "texture", exp: "M12" } as Route;
+    expect(toHash(r)).toBe("#/agent?verdict=texture&exp=M12");
+    expect(parseHash("#/agent?exp=L9").exp).toBe("L9");
+  });
 });

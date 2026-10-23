@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from frameworks.texture_evaluator import placar
 from frameworks.texture_evaluator.placar import PlacarError
 from frameworks.texture_evaluator.run_mvp import context_from_dict
-from workbench.api import board, data, images, tools
+from workbench.api import board, data, images, notebook, tools
 from workbench.api.data import HISTORY_DIR, NotFound
 
 
@@ -106,6 +106,10 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
                   "log2_ratio": tools.log2_ratio(tools.json_number(r["energy"]), tools.json_number(s["energy"]))}
                  for r, s in zip(real, synthetic)]
         return {"bands": bands, "type": row["wavelet_verdict"]}
+
+    @app.get("/api/agent/notebook")
+    def agent_notebook():
+        return notebook.read_caderno(notebook.LAB_DIR)
 
     app.include_router(board.router(history_dir))
 

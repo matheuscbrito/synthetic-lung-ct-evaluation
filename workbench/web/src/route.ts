@@ -10,12 +10,13 @@ export type Route = {
   cases?: string[];
   verdict?: Verdict;
   sort?: string;
+  exp?: string;
 };
 
 const VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions", "agent"];
 const DEFAULT: Route = { view: "dataset", verdict: "texture" };
 
-// Hash: #/view?version=…&case=…&cases=…&verdict=…&sort=…; ids com espaço e ponto passam por URLSearchParams.
+// Hash: #/view?version=…&case=…&cases=…&verdict=…&sort=…&exp=…; ids com espaço e ponto passam por URLSearchParams.
 export function parseHash(hash: string): Route {
   const text = hash.startsWith("#") ? hash.slice(1) : hash;
   const [path, search = ""] = text.split("?", 2);
@@ -27,11 +28,13 @@ export function parseHash(hash: string): Route {
   const cases = params.getAll("cases");
   const verdict = params.get("verdict");
   const sort = params.get("sort");
+  const exp = params.get("exp");
   if (version !== null) route.version = version;
   if (caseId !== null) route.caseId = caseId;
   if (cases.length > 0) route.cases = cases;
   if (verdict === "brightness" || verdict === "texture") route.verdict = verdict;
   if (sort !== null) route.sort = sort;
+  if (exp !== null) route.exp = exp;
   return route;
 }
 
@@ -42,6 +45,7 @@ export function toHash(r: Route): string {
   for (const id of r.cases ?? []) params.append("cases", id);
   if (r.verdict !== undefined) params.set("verdict", r.verdict);
   if (r.sort !== undefined) params.set("sort", r.sort);
+  if (r.exp !== undefined) params.set("exp", r.exp);
   const search = params.toString();
   return `#/${r.view}${search ? `?${search}` : ""}`;
 }
