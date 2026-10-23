@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import * as Observable from "@observablehq/plot";
 import type { Board, Generator, Slice, VsBaseline } from "../api";
 import { RESULT_COLOR, sortGenerators, type GeneratorSortKey } from "../board";
-import { DEFINITIONS, type Term } from "../definitions";
+import { DEFINITIONS, METRIC_LABEL, type Term } from "../definitions";
 import { num } from "../format";
 import { COLOR } from "../status";
 import type { Route } from "../route";
@@ -30,9 +30,14 @@ export function metricKeys(generators: Generator[]): string[] {
   return keys;
 }
 
-// Colunas de indicador vêm da primeira versão não-referência.
-function indicatorsOf(generators: Generator[]): VsBaseline[] {
-  return generators.find(g => g.vs_baseline !== null)?.vs_baseline ?? [];
+// Colunas de indicador vêm da primeira versão não-referência, agrupadas em brilho e textura.
+export function indicatorsOf(generators: Generator[]): VsBaseline[] {
+  const all = generators.find(g => g.vs_baseline !== null)?.vs_baseline ?? [];
+  return [...all.filter(i => i.group === "brightness"), ...all.filter(i => i.group === "texture")];
+}
+
+function metricLabel(key: string): string {
+  return METRIC_LABEL[key] ?? key;
 }
 
 type Counts = Record<"approved" | "review" | "rejected", number>;
@@ -75,6 +80,8 @@ export function GeneratorBoard({ board, onRoute }: Props) {
   const metrics = useMemo(() => metricKeys(board.generators), [board.generators]);
   const indicators = useMemo(() => indicatorsOf(board.generators), [board.generators]);
   const span = Math.max(1, indicators.length);
+  const brightnessCount = indicators.filter(i => i.group === "brightness").length;
+  const textureCount = indicators.length - brightnessCount;
 
   return (
     <section className="generator-board">
@@ -85,22 +92,27 @@ export function GeneratorBoard({ board, onRoute }: Props) {
           <option value="brightness">Brightness rejected</option>
           <option value="texture">Texture rejected</option>
           {metrics.map(key => (
-            <option key={key} value={key}>{`median |z| · ${key}`}</option>
+            <option key={key} value={key}>{`median |z| · ${metricLabel(key)}`}</option>
           ))}
         </select>
       </div>
       <table className="board">
         <thead>
           <tr>
-            <th scope="col">Generator</th>
-            <th scope="col">Brightness</th>
-            <th scope="col">Texture</th>
+            <th scope="col" rowSpan={2}>Generator</th>
+            <th scope="col" rowSpan={2}>Brightness</th>
+            <th scope="col" rowSpan={2}>Texture</th>
             {metrics.map(key => (
-              <th key={key} scope="col">
-                {key}
+              <th key={key} scope="col" rowSpan={2}>
+                {metricLabel(key)}
                 {isTerm(key) && <Info term={key} />}
               </th>
             ))}
+            {brightnessCount > 0 && <th scope="colgroup" colSpan={brightnessCount}>Brightness</th>}
+            {textureCount > 0 && <th scope="colgroup" colSpan={textureCount}>Texture</th>}
+            {indicators.length === 0 && <th scope="col" rowSpan={2} />}
+          </tr>
+          <tr>
             {indicators.map(ind => (
               <th key={ind.indicator} scope="col">{ind.label}</th>
             ))}
@@ -211,7 +223,7 @@ export function MetricDistribution({ generators, slicesByVersion }: Distribution
       <div className="controls">
         <select aria-label="Metric" value={metric} onChange={e => setChosen(e.target.value)}>
           {keys.map(key => (
-            <option key={key} value={key}>{key}</option>
+            <option key={key} value={key}>{metricLabel(key)}</option>
           ))}
         </select>
       </div>

@@ -1,5 +1,5 @@
 import type { Metric, Slice, Status, Verdict } from "../api";
-import { DEFINITIONS, type Term } from "../definitions";
+import { DEFINITIONS, waveletType, type Term } from "../definitions";
 import { COLOR } from "../status";
 import { num } from "../format";
 import { Info } from "./Info";
@@ -70,7 +70,7 @@ export function VerdictPanel({ slice }: Props) {
       <Block slice={slice} verdict="texture" title="Texture" />
       <footer>
         <div>{`Density: ${slice.density.status} (${num(slice.density.median_shift_iqr)} IQR)`}</div>
-        <div>{`Wavelet type: ${slice.wavelet_type}`}</div>
+        <div>{`Wavelet type: ${waveletType(slice.wavelet_type)}`}</div>
       </footer>
     </aside>
   );

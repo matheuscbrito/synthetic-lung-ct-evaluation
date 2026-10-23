@@ -15,3 +15,30 @@ export const DEFINITIONS = {
 };
 
 export type Term = keyof typeof DEFINITIONS;
+
+// Rótulos das métricas (mesmos de Slice.metrics[].label), para colunas onde só se tem a chave.
+export const METRIC_LABEL: Record<string, string> = {
+  delta_mu: "GLCM Δμ",
+  sat31: "GLCM Sat31",
+  ll: "Wavelet LL",
+  glcm_contrast: "GLCM contrast",
+  glcm_energy: "GLCM energy",
+  wavelet_fine: "Wavelet 2 px",
+  wavelet_coarse: "Wavelet 4 px",
+  wavelet_entropy: "Wavelet entropy",
+  nex: "NEx",
+};
+
+// Tipo de perda do wavelet: o framework devolve em português; a interface mostra em inglês.
+export const WAVELET_TYPE: Record<string, string> = {
+  "textura preservada": "texture preserved",
+  borrou: "blurred",
+  "ruído": "noise",
+  estourou: "blown out",
+  "perdeu contraste": "lost contrast",
+  "ganhou contraste": "gained contrast",
+};
+
+export function waveletType(value: string): string {
+  return WAVELET_TYPE[value] ?? value;
+}

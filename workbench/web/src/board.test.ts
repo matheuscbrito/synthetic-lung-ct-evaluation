@@ -60,3 +60,14 @@ describe("sortGenerators", () => {
     expect(board.map(g => g.name)).toEqual(before);
   });
 });
+
+describe("indicatorsOf", () => {
+  test("groups brightness before texture", async () => {
+    const { indicatorsOf } = await import("./components/GeneratorBoard");
+    const mk = (indicator: string, group: "brightness" | "texture") => ({
+      indicator, label: indicator, group, gain: 0, ci: [0, 0] as [number, number], result: "n/a" as const,
+    });
+    const vs = [mk("a", "texture"), mk("b", "brightness"), mk("c", "texture")];
+    expect(indicatorsOf([gen("X", { vs_baseline: vs })]).map(i => i.indicator)).toEqual(["b", "a", "c"]);
+  });
+});
