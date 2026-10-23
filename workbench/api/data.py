@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from frameworks.texture_evaluator import decision, placar
+from frameworks.texture_evaluator import decision, placar, regional
 
 ROOT = Path(__file__).resolve().parents[2]
 HISTORY_DIR = ROOT / "outputs" / "placar"
@@ -132,6 +132,7 @@ def slice_json(row: dict, calibration: dict) -> dict:
         "label": slice_label(row["case_id"]),
         "patient": patient(row["case_id"]),
         "pair_mode": row["pair_mode"],
+        "mask_only": row["pair_mode"] == regional.MASK_ONLY,
         "brightness": {
             "verdict": _api(decision.brightness_verdict(row)),
             "techniques": {name: _api(status) for name, status in decision.brightness_statuses(row).items()},

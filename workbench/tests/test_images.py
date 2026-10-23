@@ -42,3 +42,21 @@ def test_unknown_version_404(client):
 def test_image_is_cacheable(client):
     r = client.get(f"/api/image/Dsr/{quote(CID)}/diff.png")
     assert r.status_code == 200 and r.headers["cache-control"] == "max-age=3600"
+
+
+def test_reference_window_is_shared_between_versions():
+    from types import SimpleNamespace
+    from workbench.api import images
+    rng = np.random.default_rng(0)
+    original = rng.normal(size=(32, 32))
+    mask = np.ones((32, 32), dtype=bool)
+    a = SimpleNamespace(original=original, synthetic=original + 5.0, lung_mask=mask)
+    b = SimpleNamespace(original=original, synthetic=original * 3.0, lung_mask=mask)
+    assert images.window(a, reference=True) == images.window(b, reference=True)
+    assert images.window(a) != images.window(b)  # sem a opção, a janela depende da sintética
+
+
+def test_reference_window_query(client):
+    r = client.get(f"/api/image/Dsr/{quote(CID)}/synthetic.png", params={"window": "reference"})
+    assert r.status_code == 200
+    assert client.get(f"/api/image/Dsr/{quote(CID)}/synthetic.png", params={"window": "bogus"}).status_code == 422

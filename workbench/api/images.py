@@ -20,7 +20,7 @@ KINDS = ("real", "synthetic", "diff", "contour")
 CONTOUR_RGB = (0x00, 0xC9, 0x80)  # #00c980
 
 
-@functools.lru_cache(maxsize=256)
+@functools.lru_cache(maxsize=64)
 def _case(mtime: float, history_dir: str, version: str, case_id: str) -> placar.ValidCase:
     # mtime entra na chave: ao recalcular o histórico, o cache de casos deixa de valer
     entry = next(item for item in placar.load_history(Path(history_dir))["versions"] if item["name"] == version)
@@ -36,8 +36,12 @@ def case(wb: Workbench, version: str, case_id: str) -> placar.ValidCase:
     return _case(mtime, str(wb.history_dir), version, case_id)
 
 
-def window(case: placar.ValidCase) -> tuple[float, float]:
-    values = np.concatenate((case.original[case.lung_mask], case.synthetic[case.lung_mask]))
+def window(case: placar.ValidCase, reference: bool = False) -> tuple[float, float]:
+    """P1–P99 dos pixels pulmonares; com `reference`, só os da real (a mesma janela em toda versão do corte)."""
+    if reference:
+        values = case.original[case.lung_mask]
+    else:
+        values = np.concatenate((case.original[case.lung_mask], case.synthetic[case.lung_mask]))
     low, high = np.percentile(values, (1, 99))
     return float(low), float(high)
 
@@ -57,10 +61,10 @@ def _contour(mask: np.ndarray) -> np.ndarray:
     return rgba
 
 
-def render(case: placar.ValidCase, kind: str, size: int | None) -> bytes:
+def render(case: placar.ValidCase, kind: str, size: int | None, reference: bool = False) -> bytes:
     if kind not in KINDS:
         raise NotFound(f"tipo de imagem desconhecido: {kind}")
-    low, high = window(case)
+    low, high = window(case, reference)
     if kind == "real":
         image = Image.fromarray(_gray(case.original, low, high))
     elif kind == "synthetic":

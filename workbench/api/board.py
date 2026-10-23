@@ -8,6 +8,8 @@ para o inglês da interface.
 from __future__ import annotations
 
 import io
+import re
+import threading
 from pathlib import Path
 
 import matplotlib
@@ -30,6 +32,24 @@ DPI = 120
 STATUSES = ("approved", "review", "rejected")
 RESULT = {"melhorou": "improved", "piorou": "worse", "mudança pequena": "small change",
           "sem diferença clara": "no clear difference", "n/a": "n/a"}
+# indicadores do placar que o workbench mostra, com rótulo em inglês; "final", "brilho" e "textura"
+# (contagens) misturam brilho e textura ou não batem com os vereditos do workbench e ficam de fora
+INDICATOR_LABEL = {
+    "abs_delta_mu": "Brightness Δμ",
+    "abs_delta_ll": "Wavelet LL",
+    "nex": "NEx",
+    "map_area_brilho_local_pct": "Map: brightness area",
+    "wavelet_fine_pct": "Wavelet 2 px",
+    "wavelet_coarse_pct": "Wavelet 4 px",
+    "wavelet_ratio": "Wavelet 2 px ÷ 4 px",
+    "glcm_contrast_pct": "GLCM contrast",
+    "glcm_energy_pct": "GLCM energy",
+    "map_area_textura_alterada_pct": "Map: texture area",
+    "map_corr_textura": "Map: spatial correlation",
+}
+GROUP = {"brilho": "brightness", "textura": "texture"}
+NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+_ADMIN_LOCK = threading.Lock()  # uma escrita no histórico por vez
 
 
 class VersionIn(BaseModel):
@@ -59,8 +79,10 @@ def _vs_baseline(baseline_rows: list[dict], rows: list[dict]) -> list[dict]:
     gains = placar.compare(baseline_rows, rows, np.random.default_rng(0))
     out = []
     for indicator in placar.INDICATORS:
+        if indicator.key not in INDICATOR_LABEL:
+            continue
         gain, low, high = gains[indicator.key]
-        out.append({"indicator": indicator.key, "label": indicator.label,
+        out.append({"indicator": indicator.key, "label": INDICATOR_LABEL[indicator.key], "group": GROUP[indicator.group],
                     "gain": placar.json_value(gain), "ci": [placar.json_value(low), placar.json_value(high)],
                     "result": RESULT[placar.change_label(gain, low, high, indicator)]})
     return out
@@ -126,20 +148,29 @@ def router(history_dir: Path) -> APIRouter:
             raise NotFound(f"camada desconhecida: {layer}")
         if layer == "veredito" and not compared:
             raise HTTPException(400, "a camada de veredito só existe comparada com a original")
-        data.load(history_dir)  # histórico ausente: 404
+        wb = data.load(history_dir)  # histórico ausente: 404
+        _case_rows(wb, case_id)  # corte desconhecido: 404
         fig = map_figure(history_dir, case_id, layer, compared)
         return _response(fig)
 
     @api.post("/api/versions")
     def add_version(body: VersionIn):
+        name = body.name.strip()
+        if not NAME_PATTERN.match(name):
+            raise HTTPException(400, "nome inválido: use só letras, números, ponto, hífen e sublinhado")
         folder = Path(body.folder)
         if not folder.is_dir():
             raise HTTPException(400, f"pasta de versão não encontrada: {folder}")
-        try:
-            message = placar.add_version(history_dir, body.name, folder, MASK_DIR)
-            placar.write_outputs(history_dir, placar.build_board(history_dir))
-        except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
-            raise HTTPException(400, str(exc)) from exc
+        with _ADMIN_LOCK:
+            history = placar.load_history(history_dir)
+            target = placar.rows_path(history_dir, name)
+            if history and any(placar.rows_path(history_dir, item["name"]) == target for item in history["versions"]):
+                raise HTTPException(400, f"o nome {name!r} usaria o mesmo arquivo de outra versão")
+            try:
+                message = placar.add_version(history_dir, name, folder, MASK_DIR)
+                placar.write_outputs(history_dir, placar.build_board(history_dir))
+            except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
+                raise HTTPException(400, str(exc)) from exc
         return {"message": message}
 
     @api.delete("/api/versions/{name}")
@@ -148,17 +179,22 @@ def router(history_dir: Path) -> APIRouter:
         wb.entry(name)  # desconhecida: 404
         if name == wb.baseline:
             raise HTTPException(400, "a versão de referência não pode ser removida")
-        try:
-            placar.remove_version(history_dir, name)
-            placar.write_outputs(history_dir, placar.build_board(history_dir))
-        except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
-            raise HTTPException(400, str(exc)) from exc
+        with _ADMIN_LOCK:
+            try:
+                placar.remove_version(history_dir, name)
+                placar.write_outputs(history_dir, placar.build_board(history_dir))
+            except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
+                raise HTTPException(400, str(exc)) from exc
         return {"message": f"versão removida: {name}"}
 
     @api.post("/api/refresh")
     def refresh():
-        message = placar.refresh_history(history_dir)
-        placar.write_outputs(history_dir, placar.build_board(history_dir))
+        with _ADMIN_LOCK:
+            try:
+                message = placar.refresh_history(history_dir)
+                placar.write_outputs(history_dir, placar.build_board(history_dir))
+            except (placar.PlacarError, FileNotFoundError, NotADirectoryError, StopIteration, ValueError) as exc:
+                raise HTTPException(400, str(exc) or type(exc).__name__) from exc
         return {"message": message}
 
     return api
