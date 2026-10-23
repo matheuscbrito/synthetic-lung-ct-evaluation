@@ -162,7 +162,7 @@ export default function App() {
           </>
         ) : (
           <>
-            {route.view !== "dataset" && route.view !== "slice" && (
+            {route.view !== "dataset" && route.view !== "slice" && route.view !== "generators" && (
             <PageHeader
               eyebrow={VIEW_LABEL[route.view]}
               title={version || VIEW_LABEL[route.view]}
