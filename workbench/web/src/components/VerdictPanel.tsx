@@ -24,6 +24,24 @@ function metricValue(metric: Metric): string {
   return num(metric.value);
 }
 
+// Linhas de métrica de um grupo; reaproveitada pela comparação de cortes.
+export function MetricList({ metrics }: { metrics: Metric[] }) {
+  return (
+    <ul className="metrics">
+      {metrics.map(metric => (
+        <li key={metric.key}>
+          {metric.label}
+          {isTerm(metric.key) && <Info term={metric.key} />}
+          {" · "}
+          {metricValue(metric)}
+          {" · "}
+          <Dot status={metric.status} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Block({ slice, verdict, title }: { slice: Slice; verdict: Verdict; title: string }) {
   const block = slice[verdict];
   const metrics = slice.metrics.filter(m => m.group === verdict);
@@ -40,18 +58,7 @@ function Block({ slice, verdict, title }: { slice: Slice; verdict: Verdict; titl
           </li>
         ))}
       </ul>
-      <ul className="metrics">
-        {metrics.map(metric => (
-          <li key={metric.key}>
-            {metric.label}
-            {isTerm(metric.key) && <Info term={metric.key} />}
-            {" · "}
-            {metricValue(metric)}
-            {" · "}
-            <Dot status={metric.status} />
-          </li>
-        ))}
-      </ul>
+      <MetricList metrics={metrics} />
     </section>
   );
 }
