@@ -124,14 +124,16 @@ describe("AgentView experiments", () => {
     expect(host.querySelector("pre.caderno-raw")).toBeNull();
   });
 
-  test("experiment rows without numbers show the notebook text in the row title", async () => {
+  test("experiment rows without numbers show n/d on the chip and the notebook text in the title", async () => {
     await renderWith({
       source: { path: "/lab/CADERNO.md", exists: true },
       parsed: { ...PARSED!, rows: [row({ id: "M1", change: "steps 50", gain_text: "n/d (7 casos)", verdict: "insuficiente" })] },
       raw: null,
     });
     const item = host.querySelector<HTMLButtonElement>("button.xi")!;
-    expect(item.querySelector(".xg")?.textContent).toBe("n/d (7 casos)");
+    expect(item.querySelector(".xv")?.textContent).toBe("n/d");
+    expect(item.querySelector(".xg")).toBeNull();
+    expect(item.textContent).not.toContain("insuficiente");
     expect(item.title).toBe("n/d (7 casos)");
   });
 });

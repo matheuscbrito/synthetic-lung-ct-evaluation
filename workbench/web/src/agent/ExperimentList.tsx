@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { NotebookRow } from "../api";
-import { gainLabel, verdictTint } from "./experiments";
+import { gainLabel, gainTitle, verdictTint } from "./experiments";
 
 interface Props {
   rows: NotebookRow[];
@@ -55,14 +55,13 @@ export function ExperimentList({ rows, searches, selected, onSelect }: Props) {
                   type="button"
                   className={on ? "xi on" : "xi"}
                   aria-pressed={on}
-                  title={r.gain_text || undefined}
+                  title={gainTitle(r) || undefined}
                   onClick={() => onSelect(r.id)}
                 >
                   <span className="xid mono">{r.id}</span>
                   <span className="xch">{r.change}</span>
-                  <span className="xg mono">{gainLabel(r)}</span>
-                  <span className="xv" style={{ background: bg, color: fg }}>
-                    {r.verdict}
+                  <span className="xv mono" style={{ background: bg, color: fg }}>
+                    {gainLabel(r)}
                   </span>
                   {r.best && <i className="xbest" aria-label="Current best">★</i>}
                 </button>
