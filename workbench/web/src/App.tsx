@@ -3,6 +3,7 @@ import { ApiError, get, post, type ServerStatus, type SlicesResponse, type Slice
 import { TopBar } from "./components/TopBar";
 import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
+import { GeneratorsView } from "./views/GeneratorsView";
 import { useRoute } from "./route";
 
 function message(error: unknown): string {
@@ -89,7 +90,9 @@ export default function App() {
       />
       {error && <div className="error">{error}</div>}
       <main>
-        {route.view === "dataset" && slices ? (
+        {route.view === "generators" ? (
+          <GeneratorsView route={route} onRoute={setRoute} />
+        ) : route.view === "dataset" && slices ? (
           <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
         ) : route.view === "slice" && slices ? (
           <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />

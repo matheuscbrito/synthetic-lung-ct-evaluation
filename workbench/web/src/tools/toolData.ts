@@ -17,7 +17,8 @@ function keyOf(version: string, caseId: string, tool: ToolName): string {
   return JSON.stringify([version, caseId, tool]);
 }
 
-function load<T>(version: string, caseId: string, tool: ToolName): Promise<T> {
+// Mesmo cache das abas: quem pede o mesmo (versão, corte, ferramenta) compartilha a requisição.
+export function loadTool<T>(version: string, caseId: string, tool: ToolName): Promise<T> {
   const key = keyOf(version, caseId, tool);
   const hit = pending.get(key);
   if (hit) return hit as Promise<T>;
@@ -47,7 +48,7 @@ export function useToolData<T>(tool: ToolName, version: string, caseId: string):
   useEffect(() => {
     if (settled.has(key)) return;
     let alive = true;
-    load<T>(version, caseId, tool).then(
+    loadTool<T>(version, caseId, tool).then(
       data => {
         if (alive) setResult({ key, data, error: null });
       },
