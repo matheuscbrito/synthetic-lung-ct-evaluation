@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, get, post, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
+import { ApiError, get, post, setImageToken, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
 import { TopBar } from "./components/TopBar";
 import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
@@ -21,10 +21,12 @@ export default function App() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [slices, setSlices] = useState<Slice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
 
   const reload = useCallback(async () => {
     try {
       const next = await get<ServerStatus>("/api/status");
+      setImageToken(next.token);
       setStatus(next);
       if (!next.stale && next.has_history) setVersions(await get<Version[]>("/api/versions"));
       setError(null);
@@ -37,11 +39,10 @@ export default function App() {
     void reload();
   }, [reload]);
 
-  // versão da rota; na comparação, sem rota explícita, a mais recente; senão a de referência ou a primeira
-  const preferred = route.view === "compare" ? versions[versions.length - 1]?.name : status?.baseline;
+  // versão da rota; sem rota explícita, a de referência ou a primeira
   const version =
     versions.find(v => v.name === route.version)?.name ??
-    preferred ??
+    status?.baseline ??
     versions[0]?.name ??
     "";
 
@@ -83,9 +84,15 @@ export default function App() {
       <main className="stale">
         <button
           type="button"
-          onClick={() => void recalculate().catch(e => setError(message(e)))}
+          disabled={recalculating}
+          onClick={() => {
+            setRecalculating(true);
+            recalculate()
+              .catch(e => setError(message(e)))
+              .finally(() => setRecalculating(false));
+          }}
         >
-          Recalculate
+          {recalculating ? "Recalculating…" : "Recalculate"}
         </button>
         {error && <div className="error">{error}</div>}
       </main>

@@ -8,7 +8,6 @@ interface Props {
   slice: Slice;
 }
 
-const MASK_ONLY = "só máscara";
 const WHEEL_FACTOR = 1.2;
 
 interface PaneProps {
@@ -89,7 +88,7 @@ function Pane({ src, contourSrc, caption, view, setView }: PaneProps) {
 export function ImageRow({ version, slice }: Props) {
   const [view, setView] = useState<View>(IDENTITY);
   const [roi, setRoi] = useState(true);
-  const showDiff = slice.pair_mode !== MASK_ONLY;
+  const showDiff = !slice.mask_only;
   const contour = roi ? imageUrl(version, slice.case_id, "contour") : null;
 
   return (

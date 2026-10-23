@@ -168,14 +168,14 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
         <div className="gen-images">
           <figure className="gen-figure">
             <figcaption>Real</figcaption>
-            <img src={imageUrl(active[0].name, caseId, "real")} alt="Real" draggable={false} />
+            <img src={imageUrl(active[0].name, caseId, "real", undefined, true)} alt="Real" draggable={false} />
           </figure>
           {active.map(gen => {
             const slice = verdictOf(gen.name);
             return (
               <figure key={gen.name} className="gen-figure">
                 <figcaption>{gen.name}</figcaption>
-                <img src={imageUrl(gen.name, caseId, "synthetic")} alt={`Synthetic ${gen.name}`} draggable={false} />
+                <img src={imageUrl(gen.name, caseId, "synthetic", undefined, true)} alt={`Synthetic ${gen.name}`} draggable={false} />
                 {slice && (
                   <div className="gen-verdicts">
                     <span className="pill" style={{ borderColor: COLOR[slice.brightness.verdict] }}>

@@ -8,6 +8,7 @@ function mk(caseId: string, texture: Status, z = 0): Slice {
     label: caseId,
     patient: "?",
     pair_mode: "x",
+    mask_only: false,
     brightness: { verdict: "approved", techniques: {} },
     texture: { verdict: texture, techniques: {} },
     metrics: [

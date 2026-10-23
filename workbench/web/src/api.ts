@@ -8,6 +8,7 @@ export interface ServerStatus {
   stale: boolean;
   has_history: boolean;
   baseline: string | null;
+  token: number | null;
 }
 
 export interface Version {
@@ -42,6 +43,7 @@ export interface Slice {
   label: string;
   patient: string;
   pair_mode: string;
+  mask_only: boolean;
   brightness: VerdictBlock;
   texture: VerdictBlock;
   metrics: Metric[];
@@ -60,6 +62,7 @@ type Counts = Record<"approved" | "review" | "rejected", number>;
 export interface VsBaseline {
   indicator: string;
   label: string;
+  group: Verdict;
   gain: number | null;
   ci: [number | null, number | null];
   result: ResultLabel;
@@ -178,13 +181,24 @@ export function del<T>(path: string): Promise<T> {
 
 const enc = encodeURIComponent;
 
+// Token do histórico (mtime de historico.json): muda quando o histórico muda e invalida o cache do navegador.
+let imageToken: number | null = null;
+
+export function setImageToken(token: number | null): void {
+  imageToken = token;
+}
+
+// reference: janela de intensidade da real do corte, igual em todas as versões (comparações lado a lado).
 export function imageUrl(
   version: string,
   caseId: string,
   kind: "real" | "synthetic" | "diff" | "contour",
   size?: number,
+  reference = false,
 ): string {
-  return `/api/image/${enc(version)}/${enc(caseId)}/${kind}.png${query(size ? { size } : undefined)}`;
+  const params: Params = { size: size || undefined, window: reference ? "reference" : undefined };
+  if (imageToken !== null) params.v = imageToken;
+  return `/api/image/${enc(version)}/${enc(caseId)}/${kind}.png${query(params)}`;
 }
 
 export function toolPath(version: string, caseId: string, tool: "spectrum" | "glcm" | "nex" | "wavelet"): string {
