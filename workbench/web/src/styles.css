@@ -117,3 +117,103 @@ main {
 .placeholder {
   color: var(--muted);
 }
+
+.dataset {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.dataset h3 {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.controls select,
+.controls button {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.patient-group + .patient-group {
+  margin-top: 12px;
+}
+
+.patient {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 96px;
+  border: 1px solid var(--line);
+  border-bottom-width: 4px;
+  border-radius: 4px;
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+  color: var(--fg);
+}
+
+.tile img {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+}
+
+.tile-label {
+  max-width: 96px;
+  padding: 2px 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile.hovered {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tile.selected {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.heatmap,
+.zstrip {
+  overflow-x: auto;
+}
+
+@media (max-width: 800px) {
+  .dataset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
