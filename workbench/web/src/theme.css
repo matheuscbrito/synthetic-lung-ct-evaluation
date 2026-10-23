@@ -155,9 +155,16 @@ body {
   stroke-width: 1.4;
 }
 
-/* Slice selecionado: corpo escuro fora dos círculos, contorno branco */
+/* Slice selecionado: corpo escuro fora dos círculos; só o contorno dos círculos fica branco */
 .nav.on .icon-slice {
   fill-opacity: 1;
+}
+
+.icon-slice .ring {
+  fill: none;
+}
+
+.nav.on .icon-slice .ring {
   stroke: #fff;
 }
 
