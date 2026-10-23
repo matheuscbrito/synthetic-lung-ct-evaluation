@@ -694,6 +694,14 @@ main {
   gap: 8px;
 }
 
+.gen-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .gen-view .tag {
   border: 1px solid #f0d9a8;
   background: #fdf6e7;

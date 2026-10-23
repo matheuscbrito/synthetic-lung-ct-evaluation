@@ -8,13 +8,15 @@ import { COLOR } from "../status";
 import type { Route } from "../route";
 import { Info } from "./Info";
 import { Plot, type PlotOptions } from "./Plot";
-import { approvedIndicator, formulaFor, gainText, textureMetricKey } from "./boardRows";
+import { approvedLine, gainText, textureMetricKey } from "./boardRows";
 
 const STATUSES: (keyof Counts)[] = ["approved", "review", "rejected"];
 const GREEN = "#e3f4ea"; // |z| ≤ 1
 const YELLOW = "#fbf1d2"; // 1 < |z| ≤ 2
 const RED = "#f6dcd8"; // |z| > 2
 const CHIP_INK = "#0b0b0b";
+// Limite do atraso de entrada das linhas: depois de 8 linhas todas sobem juntas.
+const MAX_RISE_STEP = 8;
 
 function isTerm(key: string): key is Term {
   return key in DEFINITIONS;
@@ -48,7 +50,7 @@ function CountChips({ counts }: { counts: Counts }) {
   return (
     <>
       {STATUSES.map(status => (
-        <span key={status} className={`cnt cnt--${status}`} title={status}>
+        <span key={status} className={`cnt cnt--${status}`} title={status} aria-label={`${status} ${counts[status]}`}>
           {counts[status]}
         </span>
       ))}
@@ -134,7 +136,7 @@ export function GeneratorBoard({ board, onRoute }: Props) {
               <Fragment key={gen.name}>
                 <tr
                   className={`gen-row${gen.is_baseline ? " baseline" : ""}${open ? " expanded" : ""}`}
-                  style={{ "--i": index } as CSSProperties}
+                  style={{ "--i": Math.min(index, MAX_RISE_STEP) } as CSSProperties}
                   aria-expanded={open}
                   tabIndex={0}
                   onClick={() => toggle(gen.name)}
@@ -199,27 +201,24 @@ interface FormulaProps {
   n: number;
 }
 
-// Fórmula por indicador: com indicador de aprovação de textura, a contagem antes → depois; os demais mostram ganho e IC.
+// Contagem de aprovados de textura (antes → depois) seguida do ganho e IC de cada indicador.
 function Formula({ gen, baseline, indicators, n }: FormulaProps) {
   if (gen.is_baseline) {
     return <div className="xrow"><div className="formula mono"><span>Reference</span><span>nothing to compare</span></div></div>;
   }
-  const approved = approvedIndicator(indicators);
   const before = baseline?.counts.texture.approved ?? 0;
   const after = gen.counts.texture.approved;
   return (
     <div className="xrow">
+      <div className="formula mono">
+        <span>{approvedLine(before, after)}</span>
+      </div>
       {indicators.map(ind => {
         const result = gen.vs_baseline?.find(v => v.indicator === ind.indicator);
-        const text = !result
-          ? "–"
-          : approved && ind.indicator === approved.indicator
-            ? formulaFor(result, before, after)
-            : gainText(result);
         return (
           <div className="formula mono" key={ind.indicator}>
             <span>{ind.label}</span>
-            <span>{text}</span>
+            <span>{result ? gainText(result) : "–"}</span>
           </div>
         );
       })}

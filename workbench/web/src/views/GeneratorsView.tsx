@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError, get, type Board, type Slice } from "../api";
+import { ApiError, get, type Board, type Slice, type Verdict } from "../api";
 import type { Route } from "../route";
 import { GeneratorBoard, MetricDistribution } from "../components/GeneratorBoard";
 import { ManyGenerators } from "../components/ManyGenerators";
@@ -8,6 +8,12 @@ import { slicesOf } from "../slices";
 import { PageHeader } from "../ui/PageHeader";
 import { Kpi } from "../ui/Kpi";
 import { Card } from "../ui/Card";
+import { Seg } from "../ui/Seg";
+
+const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
+  { value: "texture", label: "Texture" },
+  { value: "brightness", label: "Brightness" },
+];
 
 interface Props {
   route: Route;
@@ -99,7 +105,16 @@ export function GeneratorsView({ route, onRoute }: Props) {
             <MetricDistribution generators={board.generators} slicesByVersion={slicesByVersion} />
           </Card>
           <Card>
-            <div className="eyebrow">Many generators</div>
+            <div className="gen-card-head">
+              <div className="eyebrow">Many generators</div>
+              <Seg<Verdict>
+                label="Verdict"
+                options={VERDICT_OPTIONS}
+                value={route.verdict ?? "texture"}
+                onChange={v => onRoute({ verdict: v })}
+                small
+              />
+            </div>
             <ManyGenerators
               generators={board.generators}
               slicesByVersion={slicesByVersion}

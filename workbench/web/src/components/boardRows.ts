@@ -19,21 +19,15 @@ function signed(x: number | null): string {
   return rounded > 0 ? `+${rounded}` : `${rounded}`;
 }
 
-// Fórmula da contagem de aprovados contra a referência: "8 → 14 = +6 · CI [+3, +9]".
-export function formulaFor(vs: VsBaseline, before: number, after: number): string {
-  const [lo, hi] = vs.ci;
-  return `${before} → ${after} = ${signed(after - before)} · CI [${signed(lo)}, ${signed(hi)}]`;
+// Linha da contagem de aprovados de textura contra a referência: "Texture approved 8 → 14 = +6".
+export function approvedLine(before: number, after: number): string {
+  return `Texture approved ${before} → ${after} = ${signed(after - before)}`;
 }
 
 // Ganho e intervalo de um indicador: "+6 [+3, +9]".
 export function gainText(vs: VsBaseline): string {
   const [lo, hi] = vs.ci;
   return `${signed(vs.gain)} [${signed(lo)}, ${signed(hi)}]`;
-}
-
-// Indicador de aprovação de textura, quando o placar o oferece (hoje ele não vem no board).
-export function approvedIndicator(indicators: VsBaseline[]): VsBaseline | undefined {
-  return indicators.find(i => i.indicator === "approved" && i.group === "texture");
 }
 
 // Mediana mostrada na coluna "Median |Δ|": a métrica escolhida na ordenação se for métrica;
