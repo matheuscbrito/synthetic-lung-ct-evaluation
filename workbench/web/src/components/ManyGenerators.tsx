@@ -3,18 +3,12 @@ import { imageUrl, type Generator, type Slice, type Spectrum, type Verdict } fro
 import { COLOR, sortSlices } from "../status";
 import { spectrumSeries } from "../tools/series";
 import { loadTool } from "../tools/toolData";
-import { REFERENCE_INK, seriesColor } from "../palette";
+import { foldSeries, REFERENCE_INK, seriesColor } from "../palette";
 import { Info } from "./Info";
 import { Plot, type PlotOptions } from "./Plot";
 import { spectrumMarks } from "./spectrumMarks";
 
 const WIDTH = 640;
-
-interface Line {
-  f: number;
-  power: number;
-  which: string;
-}
 
 interface Props {
   generators: Generator[];
@@ -102,12 +96,16 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
     // a banda e a linha real vêm da primeira versão carregada; cada sintético leva o nome da sua versão
     const firstSeries = spectrumSeries(spectra[ready[0]]);
     const band = firstSeries.band;
-    const lines: Line[] = firstSeries.lines
+    // Até 8 versões com cor própria; as demais viram uma entrada "Other (+N)" em cinza.
+    const fold = foldSeries(ready, order);
+    const labelOf = (key: string) => (key === "real" ? "Real" : fold.label(key));
+    const lines: { f: number; power: number; key: string; z: string }[] = firstSeries.lines
       .filter(p => p.which === "real")
-      .map(p => ({ f: p.f, power: p.power, which: "real" }));
+      .map(p => ({ f: p.f, power: p.power, key: "real", z: "real" }));
     for (const name of ready) {
       for (const p of spectrumSeries(spectra[name]).lines) {
-        if (p.which === "synthetic") lines.push({ f: p.f, power: p.power, which: name });
+        // z é o nome da versão (uma linha por versão); a cor vem do grupo (cinza no excedente).
+        if (p.which === "synthetic") lines.push({ f: p.f, power: p.power, key: fold.keyOf(name), z: name });
       }
     }
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
@@ -120,18 +118,19 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
       x: { domain: [0, nyquist], label: null },
       y: { type: "log", label: null },
       color: {
-        domain: ["real", ...ready],
-        range: [REFERENCE_INK, ...ready.map(name => seriesColor(name, order))],
+        domain: ["real", ...fold.domain],
+        range: [REFERENCE_INK, ...fold.range],
+        tickFormat: labelOf,
         legend: true,
       },
       marks: spectrumMarks({
         band,
         nyquist,
         top,
-        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which })),
+        lines,
         // Rótulo direto na ponta só até 4 séries (real incluído).
         direct: ready.length + 1 <= 4,
-        labelOf: key => (key === "real" ? "Real" : key),
+        labelOf,
       }),
     };
   }, [activeNames, spectra, order]);
