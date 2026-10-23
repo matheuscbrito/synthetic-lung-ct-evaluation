@@ -217,3 +217,175 @@ main {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Visão do corte */
+.slice {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filmstrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.filmstrip .back {
+  flex: none;
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.strip-tile {
+  flex: none;
+  width: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-bottom-width: 4px;
+  border-radius: 3px;
+  background: var(--panel);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.strip-tile img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.strip-tile.current {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.slice-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+  align-items: start;
+}
+
+.roi-toggle {
+  margin-bottom: 6px;
+}
+
+.image-row {
+  display: grid;
+  gap: 8px;
+}
+
+.pane {
+  margin: 0;
+  min-width: 0;
+}
+
+.pane figcaption {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #000;
+  border-radius: 4px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.canvas img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.canvas img.contour {
+  pointer-events: none;
+}
+
+.verdict-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.verdict-panel h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.verdict-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 2px solid;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.verdict-panel ul {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.verdict-panel li {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.8;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.verdict-panel footer {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 800px) {
+  .slice-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

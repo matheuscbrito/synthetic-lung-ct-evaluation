@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, get, post, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
 import { TopBar } from "./components/TopBar";
 import { DatasetView } from "./views/DatasetView";
+import { SliceView } from "./views/SliceView";
 import { useRoute } from "./route";
 
 function message(error: unknown): string {
@@ -90,6 +91,8 @@ export default function App() {
       <main>
         {route.view === "dataset" && slices ? (
           <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
+        ) : route.view === "slice" && slices ? (
+          <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
         ) : (
           <p className="placeholder">{route.view}</p>
         )}
