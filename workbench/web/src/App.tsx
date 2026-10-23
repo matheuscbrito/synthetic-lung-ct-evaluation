@@ -5,6 +5,8 @@ import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
 import { GeneratorsView } from "./views/GeneratorsView";
 import { useRoute } from "./route";
+import { clearSlicesCache } from "./slices";
+import { clearToolCache } from "./tools/toolData";
 
 function message(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -60,6 +62,9 @@ export default function App() {
   const recalculate = async () => {
     try {
       await post("/api/refresh");
+      // histórico recalculado: caches de cortes e de ferramentas não podem reaproveitar vereditos antigos
+      clearSlicesCache();
+      clearToolCache();
       await reload();
     } catch (e) {
       setError(message(e));

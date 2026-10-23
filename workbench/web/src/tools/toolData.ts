@@ -36,6 +36,12 @@ export function loadTool<T>(version: string, caseId: string, tool: ToolName): Pr
   return request;
 }
 
+// Descarta todo o cache (após recalcular o histórico): a próxima leitura vai ao servidor.
+export function clearToolCache(): void {
+  pending.clear();
+  settled.clear();
+}
+
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
