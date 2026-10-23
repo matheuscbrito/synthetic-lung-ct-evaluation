@@ -39,13 +39,15 @@ function pct(x: number | null): string {
   return x === null || !Number.isFinite(x) ? "–" : `${num(x, 1)}%`;
 }
 
-function heatmap(title: string, cells: Cell[], levels: number, color: PlotOptions["color"]): PlotOptions {
+// Domínios são listas de índices: com [0, levels] a escala de banda do Plot trata como duas categorias.
+export function heatmap(title: string, cells: Cell[], levels: number, color: PlotOptions["color"]): PlotOptions {
+  const indices = Array.from({ length: levels }, (_, i) => i);
   return {
     width: SIZE,
     height: SIZE,
     title,
-    x: { domain: [0, levels], axis: null, padding: 0 },
-    y: { domain: [0, levels], axis: null, reverse: true, padding: 0 },
+    x: { domain: indices, axis: null, padding: 0 },
+    y: { domain: indices, axis: null, reverse: true, padding: 0 },
     color,
     marks: [Observable.cell(cells, { x: "x", y: "y", fill: "v" })],
   };
