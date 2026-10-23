@@ -3,6 +3,7 @@ import * as Observable from "@observablehq/plot";
 import type { Glcm } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
+import { DIVERGING, SEQUENTIAL } from "../palette";
 import { num } from "../format";
 import { useToolData } from "./toolData";
 import { glcmDiff } from "./series";
@@ -40,8 +41,10 @@ function pct(x: number | null): string {
 }
 
 // Domínios são listas de índices: com [0, levels] a escala de banda do Plot trata como duas categorias.
+// O tooltip mostra o valor primeiro, depois a posição (tom de linha e coluna).
 export function heatmap(title: string, cells: Cell[], levels: number, color: PlotOptions["color"]): PlotOptions {
   const indices = Array.from({ length: levels }, (_, i) => i);
+  const rows = cells.map(c => ({ ...c, t: `${num(c.v, 4)} · row ${c.y}, col ${c.x}` }));
   return {
     width: SIZE,
     height: SIZE,
@@ -49,7 +52,7 @@ export function heatmap(title: string, cells: Cell[], levels: number, color: Plo
     x: { domain: indices, axis: null, padding: 0 },
     y: { domain: indices, axis: null, reverse: true, padding: 0 },
     color,
-    marks: [Observable.cell(cells, { x: "x", y: "y", fill: "v" })],
+    marks: [Observable.cell(rows, { x: "x", y: "y", fill: "v", title: "t", tip: true })],
   };
 }
 
@@ -63,12 +66,21 @@ export function GlcmTool({ version, caseId }: Props) {
     const diff = cellsOf(glcmDiff(data));
     const top = Math.max(1e-12, ...real.map(c => c.v), ...synthetic.map(c => c.v));
     const range = maxAbs(diff);
-    const shared = { scheme: "viridis", domain: [0, top], legend: false } as const;
+    // Matrizes de coocorrência são sequenciais e não negativas: um tom só, do claro ao escuro.
+    const shared = {
+      type: "linear",
+      domain: [0, top],
+      range: [SEQUENTIAL[0], SEQUENTIAL[6]],
+      legend: false,
+    } as const;
     return {
       real: heatmap("Real", real, data.levels, shared),
       synthetic: heatmap("Synthetic", synthetic, data.levels, shared),
+      // Diferença tem sinal: divergente com meio neutro no zero e domínio simétrico.
       diff: heatmap("Synthetic − real", diff, data.levels, {
-        scheme: "RdBu",
+        type: "diverging",
+        pivot: 0,
+        range: [DIVERGING.neg, DIVERGING.mid, DIVERGING.pos],
         domain: [-range, range],
         legend: false,
       }),

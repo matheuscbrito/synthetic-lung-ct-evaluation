@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import * as Observable from "@observablehq/plot";
 import { imageUrl, type Generator, type Slice, type Spectrum, type Verdict } from "../api";
 import { COLOR, sortSlices } from "../status";
 import { spectrumSeries } from "../tools/series";
 import { loadTool } from "../tools/toolData";
+import { REFERENCE_INK, seriesColor } from "../palette";
 import { Info } from "./Info";
 import { Plot, type PlotOptions } from "./Plot";
+import { spectrumMarks } from "./spectrumMarks";
 
-const REAL = "#333";
-const PALETTE = ["#4c78a8", "#e45756", "#72b7b2", "#f58518", "#54a24b", "#b279a2", "#ff9da6", "#9d755d"];
 const WIDTH = 640;
 
 interface Line {
@@ -23,11 +22,6 @@ interface Props {
   verdict: Verdict;
 }
 
-// Cor fixa por versão, pela posição no histórico (não muda ao desmarcar outras).
-function colorOf(generators: Generator[], name: string): string {
-  const index = generators.findIndex(g => g.name === name);
-  return PALETTE[Math.max(0, index) % PALETTE.length];
-}
 
 // Espectros de cada versão marcada para o corte; o cache de ferramentas evita refazer requisições.
 // Versões com erro ficam em `failed` (o rótulo avisa e a legenda as deixa de fora).
@@ -86,6 +80,10 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
   );
   const caseId = ordered.find(s => s.case_id === chosen)?.case_id ?? ordered[0]?.case_id ?? null;
 
+  // Ordem estável = histórico do board: a cor de cada versão não muda ao desmarcar outras.
+  const order = useMemo(() => generators.map(g => g.name), [generators]);
+  const colorOf = (name: string) => seriesColor(name, order);
+
   const active = generators.filter(g => checked.has(g.name));
   const activeNames = active.map(g => g.name);
   const { spectra, failed } = useSpectra(activeNames, caseId);
@@ -113,32 +111,30 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
       }
     }
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
+    const nyquist = spectra[ready[0]].nyquist;
     return {
       width: WIDTH,
       height: 320,
       marginLeft: 56,
-      x: { domain: [0, spectra[ready[0]].nyquist], label: null },
+      marginRight: 96,
+      x: { domain: [0, nyquist], label: null },
       y: { type: "log", label: null },
       color: {
         domain: ["real", ...ready],
-        range: [REAL, ...ready.map(name => colorOf(generators, name))],
+        range: [REFERENCE_INK, ...ready.map(name => seriesColor(name, order))],
         legend: true,
       },
-      marks: [
-        Observable.areaY(band, { x: "f", y1: "lo", y2: "hi", fill: "#9aa3a0", fillOpacity: 0.35 }),
-        Observable.ruleX([spectra[ready[0]].nyquist], { stroke: "#999", strokeDasharray: "4 3" }),
-        Observable.text([{ f: spectra[ready[0]].nyquist, p: top, label: "Nyquist" }], {
-          x: "f",
-          y: "p",
-          text: "label",
-          textAnchor: "end",
-          dx: -4,
-          dy: 10,
-        }),
-        Observable.line(lines, { x: "f", y: "power", stroke: "which", z: "which", strokeWidth: 1.5 }),
-      ],
+      marks: spectrumMarks({
+        band,
+        nyquist,
+        top,
+        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which })),
+        // Rótulo direto na ponta só até 4 séries (real incluído).
+        direct: ready.length + 1 <= 4,
+        labelOf: key => (key === "real" ? "Real" : key),
+      }),
     };
-  }, [activeNames, spectra, generators]);
+  }, [activeNames, spectra, order]);
 
   const sliceLabel = (slice: Slice) => slice.label || slice.case_id;
   const verdictOf = (name: string) => {
@@ -162,7 +158,7 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
         {generators.map(gen => (
           <label key={gen.name} className="version-check">
             <input type="checkbox" checked={checked.has(gen.name)} onChange={() => toggle(gen.name)} />
-            <span className="swatch" style={{ background: colorOf(generators, gen.name) }} />
+            <span className="swatch" style={{ background: colorOf(gen.name) }} />
             {gen.name}
             {checked.has(gen.name) && failed.has(gen.name) && " (spectrum unavailable)"}
           </label>

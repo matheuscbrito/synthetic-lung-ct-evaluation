@@ -3,6 +3,8 @@ import * as Observable from "@observablehq/plot";
 import type { WaveletBands } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
+import { num } from "../format";
+import { GRID, REFERENCE_INK, SERIES } from "../palette";
 import { useToolData } from "./toolData";
 
 const WIDTH = 640;
@@ -26,21 +28,27 @@ export function WaveletTool({ version, caseId }: Props) {
   const options = useMemo<PlotOptions | null>(() => {
     if (!data) return null;
     // log2_ratio nulo não entra no gráfico.
-    const bars = data.bands.filter(b => typeof b.log2_ratio === "number" && Number.isFinite(b.log2_ratio));
+    const bars = data.bands
+      .filter(b => typeof b.log2_ratio === "number" && Number.isFinite(b.log2_ratio))
+      .map(b => ({ ...b, t: `${num(b.log2_ratio, 3)} · ${b.band}` }));
     return {
       width: WIDTH,
       height: 300,
       marginLeft: 56,
       fx: { label: null },
       x: { label: null },
-      y: { label: null, grid: true },
+      // Uma única série: uma cor só para todas as barras.
+      y: { label: null },
       marks: [
-        Observable.ruleY([0], { stroke: "#333" }),
+        Observable.gridY({ stroke: GRID }),
+        Observable.ruleY([0], { stroke: REFERENCE_INK }),
         Observable.barY(bars, {
           fx: "level",
           x: "band",
           y: "log2_ratio",
-          fill: "#7a8a84",
+          fill: SERIES[0],
+          title: "t",
+          tip: true,
         }),
       ],
     };

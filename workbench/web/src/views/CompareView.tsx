@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import * as Observable from "@observablehq/plot";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, imageUrl, type Slice, type Spectrum, type Verdict } from "../api";
 import type { Route } from "../route";
 import { COLOR } from "../status";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
+import { spectrumMarks } from "../components/spectrumMarks";
 import { MetricList } from "../components/VerdictPanel";
 import { loadTool } from "../tools/toolData";
 import { spectrumSeries } from "../tools/series";
+import { seriesColor } from "../palette";
 
 type Kind = "real" | "synthetic";
 
@@ -15,9 +16,6 @@ const KINDS: { value: Kind; label: string }[] = [
   { value: "real", label: "Real" },
   { value: "synthetic", label: "Synthetic" },
 ];
-// Cores por posição na seleção; a paleta validada vem em tarefa posterior.
-const LINE_COLORS = ["#4c78a8", "#e45756", "#72b7b2", "#f58518"];
-const BAND = "#9aa3a0";
 const WIDTH = 640;
 const SEP = "\u0000";
 
@@ -95,6 +93,7 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
   const slots = useSpectra(version, ids);
 
   const byId = useMemo(() => new Map(slices.map(s => [s.case_id, s])), [slices]);
+  const labelOf = useCallback((id: string) => byId.get(id)?.label || id, [byId]);
 
   const options = useMemo<PlotOptions | null>(() => {
     const loaded = ids.flatMap(id => {
@@ -115,29 +114,27 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
       width: WIDTH,
       height: 320,
       marginLeft: 56,
+      marginRight: 96,
       x: { domain: [0, first.nyquist], label: null },
       y: { type: "log", label: null },
+      // Cor pela posição na seleção (ordem dos cortes na rota), com o rótulo do corte na legenda.
       color: {
         domain: ids,
-        range: ids.map((_, i) => LINE_COLORS[i % LINE_COLORS.length]),
+        range: ids.map(id => seriesColor(id, ids)),
+        tickFormat: id => labelOf(id),
         legend: true,
       },
-      marks: [
-        Observable.areaY(band, { x: "f", y1: "lo", y2: "hi", fill: BAND, fillOpacity: 0.35 }),
-        Observable.ruleX([first.nyquist], { stroke: "#999", strokeDasharray: "4 3" }),
-        Observable.text([{ f: first.nyquist, p: top, label: "Nyquist" }], {
-          x: "f",
-          y: "p",
-          text: "label",
-          textAnchor: "end",
-          dx: -4,
-          dy: 10,
-        }),
-        Observable.line(lines, { x: "f", y: "power", stroke: "id", z: "id", strokeWidth: 1.5 }),
-      ],
+      marks: spectrumMarks({
+        band,
+        nyquist: first.nyquist,
+        top,
+        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.id })),
+        direct: ids.length <= 4,
+        labelOf,
+      }),
     };
     // slots e ids mudam juntos com key/version/kind
-  }, [idsKey, version, slots, kind]);
+  }, [idsKey, version, slots, kind, ids, labelOf]);
 
   if (ids.length < 2) {
     return (

@@ -1,14 +1,14 @@
 import { useMemo } from "react";
-import * as Observable from "@observablehq/plot";
 import type { Spectrum } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
+import { spectrumMarks } from "../components/spectrumMarks";
+import { REFERENCE_INK, SERIES } from "../palette";
 import { useToolData } from "./toolData";
 import { spectrumSeries } from "./series";
 
-const REAL = "#333";
-const SYNTHETIC = "#e45756";
 const WIDTH = 640;
+const LABELS: Record<string, string> = { real: "Real", synthetic: "Synthetic" };
 
 interface Props {
   version: string;
@@ -26,22 +26,23 @@ export function SpectrumTool({ version, caseId }: Props) {
       width: WIDTH,
       height: 320,
       marginLeft: 56,
+      marginRight: 84,
       x: { domain: [0, data.nyquist], label: null },
       y: { type: "log", label: null },
-      color: { domain: ["real", "synthetic"], range: [REAL, SYNTHETIC], legend: true },
-      marks: [
-        Observable.areaY(band, { x: "f", y1: "lo", y2: "hi", fill: "#9aa3a0", fillOpacity: 0.35 }),
-        Observable.ruleX([data.nyquist], { stroke: "#999", strokeDasharray: "4 3" }),
-        Observable.text([{ f: data.nyquist, p: top, label: "Nyquist" }], {
-          x: "f",
-          y: "p",
-          text: "label",
-          textAnchor: "end",
-          dx: -4,
-          dy: 10,
-        }),
-        Observable.line(lines, { x: "f", y: "power", stroke: "which", z: "which", strokeWidth: 1.5 }),
-      ],
+      // Real em neutro de referência; sintético na primeira cor da série.
+      color: {
+        domain: ["real", "synthetic"],
+        range: [REFERENCE_INK, SERIES[0]],
+        legend: true,
+      },
+      marks: spectrumMarks({
+        band,
+        nyquist: data.nyquist,
+        top,
+        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which })),
+        direct: true,
+        labelOf: key => LABELS[key] ?? key,
+      }),
     };
   }, [data]);
 
