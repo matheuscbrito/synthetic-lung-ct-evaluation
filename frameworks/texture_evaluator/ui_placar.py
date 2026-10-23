@@ -1021,11 +1021,9 @@ comparison_version = None
 if len(names) > 1:
     st.markdown("#### O que mudou entre as versões")
     comparison_options = [name for name in names if name != version]
-    if dataset == "Dsr" and EXPERIMENT_BASELINE in comparison_options:
-        baseline = EXPERIMENT_BASELINE
-        st.markdown(f"**Referência fixa:** {version_label(baseline)}")
-    else:
-        baseline = st.selectbox("Comparar a versão aberta com", comparison_options, index=0, format_func=version_label, key=f"baseline_{dataset}_{version}")
+    # O padrão no Dsr continua sendo o baseline dos experimentos, mas qualquer versão pode ser a referência.
+    default_index = comparison_options.index(EXPERIMENT_BASELINE) if dataset == "Dsr" and EXPERIMENT_BASELINE in comparison_options else 0
+    baseline = st.selectbox("Comparar a versão aberta com", comparison_options, index=default_index, format_func=version_label, key=f"baseline_{dataset}_{version}")
     comparison_version = baseline
     transitions = transition_rows(board, baseline, version, mode)
     improved = sum(row["mudança"] == "melhorou" for row in transitions)
