@@ -4,10 +4,11 @@ import type { Nex } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
 import { num } from "../format";
+import { BAND_FILL, REFERENCE_INK, SEQUENTIAL, SERIES } from "../palette";
 import { useToolData } from "./toolData";
 
-const REAL = "#333";
-const SYNTHETIC = "#e45756";
+const REAL = REFERENCE_INK;
+const SYNTHETIC = SERIES[0];
 const WIDTH = 640;
 const WINDOW_WIDTH = 300;
 
@@ -22,6 +23,7 @@ interface Rect {
   y1: number;
   y2: number;
   v: number;
+  t: string;
 }
 
 function finite(x: number | null | undefined): x is number {
@@ -29,10 +31,20 @@ function finite(x: number | null | undefined): x is number {
 }
 
 // Janelas com valor: cada janela é um retângulo de lado `tile` em (col, row).
+// O tooltip traz o valor primeiro, depois a posição da janela.
 function rectsOf(windows: Nex["real"], tile: number): Rect[] {
   const out: Rect[] = [];
   for (const w of windows) {
-    if (finite(w.value)) out.push({ x1: w.col, x2: w.col + tile, y1: w.row, y2: w.row + tile, v: w.value });
+    if (finite(w.value)) {
+      out.push({
+        x1: w.col,
+        x2: w.col + tile,
+        y1: w.row,
+        y2: w.row + tile,
+        v: w.value,
+        t: `${num(w.value, 3)} · col ${w.col}, row ${w.row}`,
+      });
+    }
   }
   return out;
 }
@@ -44,8 +56,15 @@ function windowMap(title: string, rects: Rect[], extent: [number, number], width
     title,
     x: { domain: [0, width], axis: null, padding: 0 },
     y: { domain: [0, height], axis: null, reverse: true, padding: 0 },
-    color: { scheme: "viridis", domain: extent, legend: false },
-    marks: [Observable.rect(rects, { x1: "x1", x2: "x2", y1: "y1", y2: "y2", fill: "v" })],
+    color: {
+      type: "linear",
+      domain: extent,
+      range: [SEQUENTIAL[0], SEQUENTIAL[6]],
+      legend: true,
+    },
+    marks: [
+      Observable.rect(rects, { x1: "x1", x2: "x2", y1: "y1", y2: "y2", fill: "v", title: "t", tip: true }),
+    ],
   };
 }
 
@@ -80,8 +99,18 @@ export function NexTool({ version, caseId }: Props) {
       y: { domain: ["real", "synthetic"], label: null },
       color: { domain: ["real", "synthetic"], range: [REAL, SYNTHETIC] },
       marks: [
-        Observable.rectX(band, { x1: "x1", x2: "x2", fill: "#9aa3a0", fillOpacity: 0.35 }),
-        Observable.dot(points, { x: "v", y: "which", fill: "which", r: 6 }),
+        Observable.rectX(band, { x1: "x1", x2: "x2", fill: BAND_FILL, tip: true }),
+        // Anel da cor de superfície separa o ponto da faixa e de outro ponto próximo.
+        Observable.dot(points, {
+          x: "v",
+          y: "which",
+          fill: "which",
+          r: 6,
+          stroke: "#fcfcfb",
+          strokeWidth: 2,
+          title: "which",
+          tip: true,
+        }),
       ],
     };
 

@@ -68,6 +68,7 @@ export function Heatmap({ slices, verdict, onHover, onOpen, onToggleSelect }: Pr
           fill: "fill",
           title: "title",
           ariaLabel: "id",
+          tip: true,
         }),
       ],
     };

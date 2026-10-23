@@ -29,7 +29,7 @@ export function ZStrip({ slices, verdict, hovered }: Props) {
           z: metric.z,
           id: slice.case_id,
           color: COLOR[metric.status],
-          r: hovered === slice.case_id ? 6 : 3,
+          r: hovered === slice.case_id ? 7 : 4,
           title: `${slice.label} · z ${num(metric.z)}`,
         });
       }
@@ -62,7 +62,16 @@ export function ZStrip({ slices, verdict, hovered }: Props) {
       marks: [
         Observable.rectX(bandRows, { x1: "x1", x2: "x2", y: "row", fill: "fill" }),
         Observable.ruleX([0], { stroke: "#8a938f" }),
-        Observable.dot(points, { x: "z", y: "row", fill: "color", r: "r", title: "title" }),
+        Observable.dot(points, {
+          x: "z",
+          y: "row",
+          fill: "color",
+          r: "r",
+          stroke: "#fcfcfb",
+          strokeWidth: 2,
+          title: "title",
+          tip: true,
+        }),
       ],
     };
   }, [slices, verdict, hovered]);

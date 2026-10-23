@@ -13,6 +13,7 @@ const STATUSES: (keyof Counts)[] = ["approved", "review", "rejected"];
 const GREEN = "#e3f4ea"; // |z| ≤ 1
 const YELLOW = "#fbf1d2"; // 1 < |z| ≤ 2
 const RED = "#f6dcd8"; // |z| > 2
+const CHIP_INK = "#0b0b0b";
 
 function isTerm(key: string): key is Term {
   return key in DEFINITIONS;
@@ -50,12 +51,12 @@ function Pills({ counts }: { counts: Counts }) {
 
 function Chip({ result }: { result: VsBaseline }) {
   const title = `${num(result.gain)} [${num(result.ci[0])}, ${num(result.ci[1])}]`;
-  const light = result.result === "improved" || result.result === "worse";
   return (
     <span
       className="chip"
       title={title}
-      style={{ background: RESULT_COLOR[result.result], color: light ? "#fff" : "#1d2421" }}
+      // Texto escuro sobre o fundo do chip; só "worse" (vermelho escuro) recebe branco (5,4:1).
+      style={{ background: RESULT_COLOR[result.result], color: result.result === "worse" ? "#fff" : CHIP_INK }}
     >
       {result.result}
     </span>
@@ -189,7 +190,16 @@ export function MetricDistribution({ generators, slicesByVersion }: Distribution
       marks: [
         Observable.rectX(bandRows, { x1: "x1", x2: "x2", y: "row", fill: "fill" }),
         Observable.ruleX([0], { stroke: "#8a938f" }),
-        Observable.dot(points, { x: "z", y: "row", fill: "color", title: "title" }),
+        Observable.dot(points, {
+          x: "z",
+          y: "row",
+          fill: "color",
+          r: 4,
+          stroke: "#fcfcfb",
+          strokeWidth: 2,
+          title: "title",
+          tip: true,
+        }),
       ],
     };
   }, [generators, slicesByVersion, metric]);
