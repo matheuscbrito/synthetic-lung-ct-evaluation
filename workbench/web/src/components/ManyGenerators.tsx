@@ -6,7 +6,7 @@ import { loadTool } from "../tools/toolData";
 import { foldSeries, REFERENCE_INK, seriesColor } from "../palette";
 import { Info } from "./Info";
 import { Plot, type PlotOptions } from "./Plot";
-import { spectrumMarks } from "./spectrumMarks";
+import { SPECTRUM_MARGINS, spectrumMarks, spectrumYDomain } from "./spectrumMarks";
 
 const WIDTH = 640;
 
@@ -110,13 +110,15 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
     }
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
     const nyquist = spectra[ready[0]].nyquist;
+    const yDomain = spectrumYDomain(band, lines, top);
     return {
       width: WIDTH,
       height: 320,
+      ...SPECTRUM_MARGINS,
       marginLeft: 56,
       marginRight: 96,
       x: { domain: [0, nyquist], label: null },
-      y: { type: "log", label: null },
+      y: { type: "log", domain: yDomain, label: null },
       color: {
         domain: ["real", ...fold.domain],
         range: [REFERENCE_INK, ...fold.range],
@@ -131,6 +133,8 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
         // Rótulo direto na ponta só até 4 séries (real incluído).
         direct: ready.length + 1 <= 4,
         labelOf,
+        yDomain,
+        height: 320,
       }),
     };
   }, [activeNames, spectra, order]);

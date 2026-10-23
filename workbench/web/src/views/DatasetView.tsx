@@ -23,7 +23,10 @@ interface Props {
   slices: Slice[];
 }
 
-// Rótulos fixos do projeto: juiz congelado e régua de calibração da versão de referência.
+// Rótulos fixos do projeto, mostrados como cabeçalho do dataset:
+// JUDGE é a tag git congelada juiz-v1 (o juiz de textura usado pela API);
+// RULER é a régua de calibração da versão de referência, em frameworks/texture_evaluator/calibracao/dsr-v1.json.
+// Se a tag ou a régua mudarem, atualizar estas constantes junto.
 const JUDGE = "juiz-v1";
 const RULER = "dsr-v1";
 // Barra de pior |z| cheia em 2.2 IQR (como no deck).
