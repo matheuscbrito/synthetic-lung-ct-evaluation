@@ -99,6 +99,7 @@ export function AgentView({ model, onModel }: Props) {
         {active === "experiments" && notebook && !notebook.source.exists && (
           <p className="agent-empty">No notebook found at {notebook.source.path}</p>
         )}
+        {active === "experiments" && notebook?.error && <p className="agent-empty">{notebook.error}</p>}
         {active === "experiments" && notebook?.source.exists && notebook.raw !== null && (
           <>
             <p className="agent-empty">The attempts table could not be read. Raw notebook:</p>

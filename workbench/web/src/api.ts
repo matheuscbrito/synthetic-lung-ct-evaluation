@@ -155,6 +155,8 @@ export interface Notebook {
   source: { path: string; exists: boolean };
   parsed: NotebookParsed | null;
   raw: string | null;
+  // arquivo existe mas não pôde ser lido (permissão, codificação)
+  error?: string;
 }
 
 export class ApiError extends Error {

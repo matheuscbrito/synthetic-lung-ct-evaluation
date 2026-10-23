@@ -112,4 +112,26 @@ describe("AgentView experiments", () => {
     await renderWith({ source: { path: "/lab/CADERNO.md", exists: true }, parsed: null, raw: "# bruto\n\ntexto" });
     expect(host.querySelector("pre.caderno-raw")?.textContent).toBe("# bruto\n\ntexto");
   });
+
+  test("unreadable notebook shows the error line in the Experiments state", async () => {
+    await renderWith({
+      source: { path: "/lab/CADERNO.md", exists: true },
+      parsed: null,
+      raw: null,
+      error: "sem permissão de leitura",
+    });
+    expect(host.textContent).toContain("sem permissão de leitura");
+    expect(host.querySelector("pre.caderno-raw")).toBeNull();
+  });
+
+  test("experiment rows without numbers show the notebook text in the row title", async () => {
+    await renderWith({
+      source: { path: "/lab/CADERNO.md", exists: true },
+      parsed: { ...PARSED!, rows: [row({ id: "M1", change: "steps 50", gain_text: "n/d (7 casos)", verdict: "insuficiente" })] },
+      raw: null,
+    });
+    const item = host.querySelector<HTMLButtonElement>("button.xi")!;
+    expect(item.querySelector(".xg")?.textContent).toBe("n/d (7 casos)");
+    expect(item.title).toBe("n/d (7 casos)");
+  });
 });

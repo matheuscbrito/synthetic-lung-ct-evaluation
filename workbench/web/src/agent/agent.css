@@ -79,6 +79,12 @@
   margin: auto 0 0;
 }
 
+/* campos sem contorno próprio: o foco aparece na borda do contêiner, como em .ui-chip */
+.input:focus-within,
+.agent-search:focus-within {
+  border-color: var(--ink3);
+}
+
 .input textarea {
   display: block;
   width: 100%;
