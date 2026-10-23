@@ -57,6 +57,19 @@ export function verdictTint(verdict: string): [string, string] {
   return TINTS[verdict] ?? NEUTRAL;
 }
 
+const GAIN_MAX = 28;
+
+// Ganho da linha na lista: último número com o escopo como sufixo ("+4.4% · 10").
+// Sem números, o texto do caderno (truncado), para a linha não ficar só com "n/d".
+export function gainLabel(row: NotebookRow): string {
+  if (row.vals.length === 0) {
+    const text = row.gain_text || "n/d";
+    return text.length > GAIN_MAX ? `${text.slice(0, GAIN_MAX - 1).trimEnd()}…` : text;
+  }
+  const value = signedPercent(row.vals[row.vals.length - 1]);
+  return row.scope ? `${value} · ${row.scope}` : value;
+}
+
 // Percentual com um decimal e sinal, como "+23.1%".
 export function signedPercent(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;

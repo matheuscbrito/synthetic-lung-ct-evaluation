@@ -112,3 +112,51 @@ def test_endpoint_missing_file_is_200_not_404(tmp_path, monkeypatch):
     response = TestClient(create_app()).get("/api/agent/notebook")
     assert response.status_code == 200
     assert response.json()["source"]["exists"] is False
+
+
+def parse_metrics(text):
+    return notebook.parse_caderno(text)["metrics"]
+
+
+def test_metrics_table_at_end_of_file():
+    # a tabela de métricas é o último bloco do arquivo: não há linha em branco depois dela
+    text = (
+        "## Melhor atual\n\n"
+        "Melhora média por métrica (37 casos, contra o baseline):\n\n"
+        "| métrica | melhor atual (eta 0,4) | Lucas (eta 0,35) |\n"
+        "|---|---:|---:|\n"
+        "| GLCM contraste | +19,81% | +11,94% |\n"
+        "| **média** | **+23,05%** | **+15,96%** |"
+    )
+    assert parse_metrics(text) == [
+        {"name": "GLCM contraste", "best": "+19,81%", "other": "+11,94%"},
+        {"name": "média", "best": "+23,05%", "other": "+15,96%"},
+    ]
+
+
+def test_unreadable_notebook_returns_error_line(tmp_path, monkeypatch):
+    (tmp_path / "CADERNO.md").write_bytes(b"\xff\xfe\x00bytes que nao sao utf-8 \x80\x81")
+    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
+    response = TestClient(create_app()).get("/api/agent/notebook")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == {"path": str(tmp_path / "CADERNO.md"), "exists": True}
+    assert body["parsed"] is None and body["raw"] is None
+    assert isinstance(body["error"], str) and body["error"]
+
+
+def test_unreadable_file_os_error_returns_error_line(tmp_path, monkeypatch):
+    (tmp_path / "CADERNO.md").write_text(FIXTURE, encoding="utf-8")
+    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
+
+    def denied(self, *args, **kwargs):
+        raise PermissionError("sem permissão de leitura")
+
+    monkeypatch.setattr(notebook.Path, "read_text", denied)
+    out = notebook.read_caderno(tmp_path)
+    assert out == {
+        "source": {"path": str(tmp_path / "CADERNO.md"), "exists": True},
+        "parsed": None,
+        "raw": None,
+        "error": "sem permissão de leitura",
+    }

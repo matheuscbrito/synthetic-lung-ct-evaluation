@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { NotebookRow } from "../api";
-import { signedPercent, verdictTint } from "./experiments";
+import { gainLabel, verdictTint } from "./experiments";
 
 interface Props {
   rows: NotebookRow[];
@@ -55,11 +55,12 @@ export function ExperimentList({ rows, searches, selected, onSelect }: Props) {
                   type="button"
                   className={on ? "xi on" : "xi"}
                   aria-pressed={on}
+                  title={r.gain_text || undefined}
                   onClick={() => onSelect(r.id)}
                 >
                   <span className="xid mono">{r.id}</span>
                   <span className="xch">{r.change}</span>
-                  <span className="xg mono">{r.vals.length ? signedPercent(r.vals[r.vals.length - 1]) : "n/d"}</span>
+                  <span className="xg mono">{gainLabel(r)}</span>
                   <span className="xv" style={{ background: bg, color: fg }}>
                     {r.verdict}
                   </span>

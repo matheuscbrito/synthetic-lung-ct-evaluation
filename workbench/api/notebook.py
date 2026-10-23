@@ -71,7 +71,7 @@ def parse_caderno(text: str) -> dict:
             rows.append(_row(cells, searches))
 
     metrics = []
-    m = re.search(r"Melhora média por métrica.*?\n\n(\|.*?)\n\n", text, re.S)
+    m = re.search(r"Melhora média por métrica.*?\n\n(\|.*?)(?:\n\n|\Z)", text, re.S)
     if m:
         for line in m.group(1).splitlines():
             cells = [_plain(c) for c in line.strip().strip("|").split("|")]
@@ -90,12 +90,16 @@ def parse_caderno(text: str) -> dict:
 
 
 def read_caderno(lab_dir: Path) -> dict:
-    """Resposta de `/api/agent/notebook`: o caderno interpretado, ou o texto bruto quando não há tentativas."""
+    """Resposta de `/api/agent/notebook`: o caderno interpretado, o texto bruto sem tentativas, ou um erro de leitura."""
     path = Path(lab_dir) / CADERNO
     source = {"path": str(path), "exists": path.is_file()}
     if not source["exists"]:
         return {"source": source, "parsed": None, "raw": None}
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        # arquivo existe mas não pode ser lido: a tela mostra a mensagem, sem 500
+        return {"source": source, "parsed": None, "raw": None, "error": str(error)}
     parsed = parse_caderno(text)
     if not parsed["rows"]:
         return {"source": source, "parsed": None, "raw": text}
