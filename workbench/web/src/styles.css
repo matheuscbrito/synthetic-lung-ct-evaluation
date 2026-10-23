@@ -1171,6 +1171,17 @@ main {
   padding-top: 12px;
 }
 
+.eyebrow.ink {
+  color: var(--ink);
+}
+
+.versions-view .muted-line {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink3);
+  word-break: break-all;
+}
+
 .versions-view .field {
   display: block;
   margin: 12px 0;

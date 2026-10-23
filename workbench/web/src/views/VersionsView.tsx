@@ -102,6 +102,7 @@ export function VersionsView({ versions, onChanged, onRecalculate }: Props) {
                 <div>
                   <b>{v.name}</b>
                   <div className="sub">{`${v.mode} · ${v.n_cases} slices`}</div>
+                  <div className="mono muted-line">{v.folder}</div>
                 </div>
                 <span className="mono sub">{shortDate(v.added)}</span>
                 {v.is_baseline ? (
@@ -140,8 +141,7 @@ export function VersionsView({ versions, onChanged, onRecalculate }: Props) {
           )}
 
           <div className="cfoot sub">
-            {`${versions.length} evaluated`}
-            {pending !== null && " · 1 evaluating"}
+            {pending !== null ? `1 evaluating · ${versions.length} evaluated` : `${versions.length} evaluated`}
           </div>
         </Card>
 

@@ -17,8 +17,12 @@ import { seriesColor } from "../palette";
 type Kind = "real" | "synthetic";
 
 const KINDS: { value: Kind; label: string }[] = [
-  { value: "real", label: "Real" },
   { value: "synthetic", label: "Synthetic" },
+  { value: "real", label: "Real" },
+];
+const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
+  { value: "texture", label: "Texture" },
+  { value: "brightness", label: "Brightness" },
 ];
 const WIDTH = 640;
 const SEP = "\u0000";
@@ -201,6 +205,13 @@ export function CompareView({ route, onRoute, version, versions, slices }: Props
         right={
           <>
             {versionChip}
+            <Seg<Verdict>
+              label="Verdict"
+              options={VERDICT_OPTIONS}
+              value={verdict}
+              onChange={v => onRoute({ verdict: v })}
+              small
+            />
             <Seg<Kind> label="Image kind" options={KINDS} value={kind} onChange={setKind} small />
           </>
         }
