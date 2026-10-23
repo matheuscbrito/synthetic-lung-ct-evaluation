@@ -2,10 +2,10 @@
 from pathlib import Path
 
 from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from frameworks.texture_evaluator.placar import PlacarError
-from workbench.api import data
+from workbench.api import data, images
 from workbench.api.data import HISTORY_DIR, NotFound
 
 
@@ -39,6 +39,12 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
         calibration = wb.history["calibration"]
         return {"version": version, "n_cases": len(rows),
                 "slices": [data.slice_json(row, calibration) for row in rows]}
+
+    @app.get("/api/image/{version}/{case_id}/{kind}.png")
+    def image(version: str, case_id: str, kind: str, size: int | None = Query(None, ge=1, le=2048)):
+        case = images.case(data.load(history_dir), version, case_id)
+        return Response(images.render(case, kind, size), media_type="image/png",
+                        headers={"Cache-Control": "max-age=3600"})
 
     return app
 
