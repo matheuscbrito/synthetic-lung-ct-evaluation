@@ -39,7 +39,7 @@ export function SpectrumTool({ version, caseId }: Props) {
         band,
         nyquist: data.nyquist,
         top,
-        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which })),
+        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.which, z: p.which })),
         direct: true,
         labelOf: key => LABELS[key] ?? key,
       }),

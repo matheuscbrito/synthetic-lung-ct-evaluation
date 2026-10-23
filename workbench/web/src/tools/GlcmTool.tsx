@@ -3,7 +3,7 @@ import * as Observable from "@observablehq/plot";
 import type { Glcm } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
-import { DIVERGING, SEQUENTIAL } from "../palette";
+import { divergingScale, sequentialScale } from "../palette";
 import { num } from "../format";
 import { useToolData } from "./toolData";
 import { glcmDiff } from "./series";
@@ -67,23 +67,13 @@ export function GlcmTool({ version, caseId }: Props) {
     const top = Math.max(1e-12, ...real.map(c => c.v), ...synthetic.map(c => c.v));
     const range = maxAbs(diff);
     // Matrizes de coocorrência são sequenciais e não negativas: um tom só, do claro ao escuro.
-    const shared = {
-      type: "linear",
-      domain: [0, top],
-      range: [SEQUENTIAL[0], SEQUENTIAL[6]],
-      legend: false,
-    } as const;
+    // Real e sintético dividem o mesmo domínio; a legenda sequencial aparece uma vez (no real).
+    const shared = sequentialScale(0, top);
     return {
-      real: heatmap("Real", real, data.levels, shared),
-      synthetic: heatmap("Synthetic", synthetic, data.levels, shared),
+      real: heatmap("Real", real, data.levels, { ...shared, legend: true }),
+      synthetic: heatmap("Synthetic", synthetic, data.levels, { ...shared, legend: false }),
       // Diferença tem sinal: divergente com meio neutro no zero e domínio simétrico.
-      diff: heatmap("Synthetic − real", diff, data.levels, {
-        type: "diverging",
-        pivot: 0,
-        range: [DIVERGING.neg, DIVERGING.mid, DIVERGING.pos],
-        domain: [-range, range],
-        legend: false,
-      }),
+      diff: heatmap("Synthetic − real", diff, data.levels, { ...divergingScale(range), legend: true }),
     };
   }, [data]);
 

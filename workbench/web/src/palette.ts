@@ -32,3 +32,48 @@ export function seriesColor(entity: string, order: string[]): string {
   if (index < 0 || index >= SERIES.length) return OTHER;
   return SERIES[index];
 }
+
+// Chave interna da entrada agrupada: não colide com nomes de versão.
+export const OTHER_KEY = "\u0000other";
+
+export interface FoldedSeries {
+  // Chave de cada entidade plotada: o próprio nome, ou OTHER_KEY no excedente.
+  keyOf: (name: string) => string;
+  domain: string[];
+  range: string[];
+  label: (key: string) => string;
+}
+
+// Até 8 entidades com cor própria, na ordem estável (índice em `order`); as demais viram uma única
+// entrada "Other (+N)" em cinza. Quem tem índice < 8 mantém a cor, qualquer que seja o resto marcado.
+export function foldSeries(names: string[], order: string[]): FoldedSeries {
+  const kept = order.filter(n => names.includes(n) && order.indexOf(n) < SERIES.length);
+  const rest = names.filter(n => !kept.includes(n));
+  const domain = [...kept, ...(rest.length > 0 ? [OTHER_KEY] : [])];
+  return {
+    keyOf: n => (kept.includes(n) ? n : OTHER_KEY),
+    domain,
+    range: domain.map(k => (k === OTHER_KEY ? OTHER : seriesColor(k, order))),
+    label: key => (key === OTHER_KEY ? `Other (+${rest.length})` : key),
+  };
+}
+
+// Escala sequencial com as 7 paradas: domínio de 7 pontos casa com o range (o d3 interpola por parada).
+export function sequentialScale(lo: number, hi: number) {
+  const n = SEQUENTIAL.length;
+  return {
+    type: "linear" as const,
+    domain: Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / (n - 1)),
+    range: [...SEQUENTIAL],
+  };
+}
+
+// Escala divergente simétrica em torno de zero (diferença, z, log2 ratio).
+export function divergingScale(bound: number) {
+  return {
+    type: "diverging" as const,
+    pivot: 0,
+    domain: [-bound, bound],
+    range: [DIVERGING.neg, DIVERGING.mid, DIVERGING.pos],
+  };
+}

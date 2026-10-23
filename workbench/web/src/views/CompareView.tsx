@@ -104,10 +104,11 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
     // a faixa de referência e o Nyquist vêm do primeiro corte selecionado carregado
     const first = loaded[0].data;
     const band = spectrumSeries(first).band;
+    // A série leva o rótulo do corte (nunca o case_id); z é o id, uma linha por corte.
     const lines = loaded.flatMap(({ id, data }) =>
       spectrumSeries(data).lines
         .filter(p => p.which === kind)
-        .map(p => ({ f: p.f, power: p.power, id })),
+        .map(p => ({ f: p.f, power: p.power, key: labelOf(id), z: id })),
     );
     const top = Math.max(0, ...lines.map(p => p.power), ...band.map(p => p.hi));
     return {
@@ -119,18 +120,17 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
       y: { type: "log", label: null },
       // Cor pela posição na seleção (ordem dos cortes na rota), com o rótulo do corte na legenda.
       color: {
-        domain: ids,
+        domain: ids.map(labelOf),
         range: ids.map(id => seriesColor(id, ids)),
-        tickFormat: id => labelOf(id),
         legend: true,
       },
       marks: spectrumMarks({
         band,
         nyquist: first.nyquist,
         top,
-        lines: lines.map(p => ({ f: p.f, power: p.power, key: p.id })),
+        lines,
         direct: ids.length <= 4,
-        labelOf,
+        labelOf: key => key,
       }),
     };
     // slots e ids mudam juntos com key/version/kind

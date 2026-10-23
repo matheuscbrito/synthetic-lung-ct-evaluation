@@ -4,7 +4,7 @@ import type { Nex } from "../api";
 import { Info } from "../components/Info";
 import { Plot, type PlotOptions } from "../components/Plot";
 import { num } from "../format";
-import { BAND_FILL, REFERENCE_INK, SEQUENTIAL, SERIES } from "../palette";
+import { BAND_FILL, REFERENCE_INK, SERIES, sequentialScale } from "../palette";
 import { useToolData } from "./toolData";
 
 const REAL = REFERENCE_INK;
@@ -49,19 +49,22 @@ function rectsOf(windows: Nex["real"], tile: number): Rect[] {
   return out;
 }
 
-function windowMap(title: string, rects: Rect[], extent: [number, number], width: number, height: number): PlotOptions {
+// Real e sintético dividem a escala; só o mapa real mostra a legenda (uma vez).
+function windowMap(
+  title: string,
+  rects: Rect[],
+  extent: [number, number],
+  width: number,
+  height: number,
+  legend: boolean,
+): PlotOptions {
   return {
     width: WINDOW_WIDTH,
     height: Math.round((WINDOW_WIDTH * height) / Math.max(width, 1)),
     title,
     x: { domain: [0, width], axis: null, padding: 0 },
     y: { domain: [0, height], axis: null, reverse: true, padding: 0 },
-    color: {
-      type: "linear",
-      domain: extent,
-      range: [SEQUENTIAL[0], SEQUENTIAL[6]],
-      legend: true,
-    },
+    color: { ...sequentialScale(extent[0], extent[1]), legend },
     marks: [
       Observable.rect(rects, { x1: "x1", x2: "x2", y1: "y1", y2: "y2", fill: "v", title: "t", tip: true }),
     ],
@@ -86,9 +89,12 @@ export function NexTool({ version, caseId }: Props) {
     const height = Math.max(data.tile, ...ends.map(w => w.row + data.tile));
 
     const points = [
-      ...(finite(data.value_real) ? [{ v: data.value_real, which: "real" }] : []),
-      ...(finite(data.value_synthetic) ? [{ v: data.value_synthetic, which: "synthetic" }] : []),
+      ...(finite(data.value_real) ? [{ v: data.value_real, which: "real", t: `${num(data.value_real, 3)} · Real` }] : []),
+      ...(finite(data.value_synthetic)
+        ? [{ v: data.value_synthetic, which: "synthetic", t: `${num(data.value_synthetic, 3)} · Synthetic` }]
+        : []),
     ];
+    // Faixa P5–P95 é anotação de referência: sem tooltip.
     const band = finite(data.p5) && finite(data.p95) ? [{ x1: data.p5, x2: data.p95 }] : [];
 
     const axis: PlotOptions = {
@@ -99,7 +105,7 @@ export function NexTool({ version, caseId }: Props) {
       y: { domain: ["real", "synthetic"], label: null },
       color: { domain: ["real", "synthetic"], range: [REAL, SYNTHETIC] },
       marks: [
-        Observable.rectX(band, { x1: "x1", x2: "x2", fill: BAND_FILL, tip: true }),
+        Observable.rectX(band, { x1: "x1", x2: "x2", fill: BAND_FILL }),
         // Anel da cor de superfície separa o ponto da faixa e de outro ponto próximo.
         Observable.dot(points, {
           x: "v",
@@ -108,7 +114,7 @@ export function NexTool({ version, caseId }: Props) {
           r: 6,
           stroke: "#fcfcfb",
           strokeWidth: 2,
-          title: "which",
+          title: "t",
           tip: true,
         }),
       ],
@@ -116,8 +122,8 @@ export function NexTool({ version, caseId }: Props) {
 
     return {
       axis,
-      real: windowMap("Real", real, extent, width, height),
-      synthetic: windowMap("Synthetic", synthetic, extent, width, height),
+      real: windowMap("Real", real, extent, width, height, true),
+      synthetic: windowMap("Synthetic", synthetic, extent, width, height, false),
     };
   }, [data]);
 
