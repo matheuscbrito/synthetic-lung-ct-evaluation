@@ -30,3 +30,8 @@ glcm_baseline_*.csv
 
 # saídas da bancada de textura (regeneráveis)
 outputs/
+
+# mockups do brainstorming (visual companion)
+.superpowers/
+# frontend (Vite)
+workbench/web/dist/
