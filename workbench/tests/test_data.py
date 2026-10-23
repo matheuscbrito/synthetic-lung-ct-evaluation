@@ -54,8 +54,22 @@ def test_unknown_version_404(client):
 def test_versions_and_status(client):
     v = client.get("/api/versions").json()
     assert v[0]["name"] == "Dsr" and v[0]["is_baseline"] is True
-    assert client.get("/api/status").json() == {"stale": False, "has_history": True, "baseline": "Dsr"}
+    status = client.get("/api/status").json()
+    assert status["stale"] is False and status["has_history"] is True and status["baseline"] == "Dsr"
+    assert isinstance(status["token"], float)
 
 
 def test_stale_history(stale_dir):
     assert TestClient(create_app(stale_dir)).get("/api/status").json()["stale"] is True
+
+
+def test_very_stale_history_does_not_500(very_stale_dir):
+    r = TestClient(create_app(very_stale_dir)).get("/api/status")
+    assert r.status_code == 200
+    assert r.json()["stale"] is True and r.json()["has_history"] is True and r.json()["baseline"] == "Dsr"
+
+
+def test_slice_mask_only_flag(client):
+    slices = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"]
+    assert all(isinstance(s["mask_only"], bool) for s in slices)
+    assert all(s["mask_only"] == (s["pair_mode"] == "só máscara") for s in slices)

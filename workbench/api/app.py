@@ -1,9 +1,11 @@
 """API FastAPI do QC workbench, sobre o histórico do placar do avaliador de textura."""
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse, Response
 
+from frameworks.texture_evaluator import placar
 from frameworks.texture_evaluator.placar import PlacarError
 from frameworks.texture_evaluator.run_mvp import context_from_dict
 from workbench.api import board, data, images, tools
@@ -23,11 +25,19 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
 
     @app.get("/api/status")
     def status():
-        try:
-            wb = data.load(history_dir)
-        except NotFound:
-            return {"stale": False, "has_history": False, "baseline": None}
-        return {"stale": data.is_stale(wb.history), "has_history": True, "baseline": wb.baseline}
+        path = Path(history_dir) / placar.HISTORY_FILE
+        if not path.exists():
+            return {"stale": False, "has_history": False, "baseline": None, "token": None}
+        # histórico desatualizado: responde antes de montar o placar, que quebraria sem as réguas novas
+        history = placar.load_history(Path(history_dir))
+        if not history or not history.get("versions"):
+            return {"stale": False, "has_history": False, "baseline": None, "token": None}
+        token = path.stat().st_mtime
+        baseline = history["versions"][0]["name"]
+        if data.is_stale(history):
+            return {"stale": True, "has_history": True, "baseline": baseline, "token": token}
+        data.load(history_dir)
+        return {"stale": False, "has_history": True, "baseline": baseline, "token": token}
 
     @app.get("/api/versions")
     def versions():
@@ -42,9 +52,10 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
                 "slices": [data.slice_json(row, calibration) for row in rows]}
 
     @app.get("/api/image/{version}/{case_id}/{kind}.png")
-    def image(version: str, case_id: str, kind: str, size: int | None = Query(None, ge=1, le=2048)):
+    def image(version: str, case_id: str, kind: str, size: int | None = Query(None, ge=1, le=2048),
+              window: Literal["pair", "reference"] = "pair"):
         case = images.case(data.load(history_dir), version, case_id)
-        return Response(images.render(case, kind, size), media_type="image/png",
+        return Response(images.render(case, kind, size, window == "reference"), media_type="image/png",
                         headers={"Cache-Control": "max-age=3600"})
 
     def _tool_case(version: str, case_id: str):

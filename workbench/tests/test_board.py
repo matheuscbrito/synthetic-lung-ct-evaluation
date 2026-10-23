@@ -41,7 +41,7 @@ def test_board_results_are_english(tmp_history):
     b = TestClient(create_app(tmp_history)).get("/api/board").json()
     rows = b["generators"][1]["vs_baseline"]
     assert {r["result"] for r in rows} <= RESULTS
-    assert all(set(r) == {"indicator", "label", "gain", "ci", "result"} for r in rows)
+    assert all(set(r) == {"indicator", "label", "group", "gain", "ci", "result"} for r in rows)
 
 
 def test_figures(client):
@@ -93,3 +93,45 @@ def test_refresh_route(tmp_history):
     c = TestClient(create_app(tmp_history))
     r = c.post("/api/refresh")
     assert r.status_code == 200 and "recalculada" in r.json()["message"]
+
+
+def test_board_has_no_merged_verdict_indicators(tmp_history):
+    b = TestClient(create_app(tmp_history)).get("/api/board").json()
+    keys = {r["indicator"] for r in b["generators"][1]["vs_baseline"]}
+    assert not keys & {"aprovada", "brilho", "textura"}
+    for r in b["generators"][1]["vs_baseline"]:
+        assert r["group"] in {"brightness", "texture"}
+        assert not any(w in r["label"].lower() for w in ("filtro", "veredito", "mapa:"))
+
+
+def test_add_version_rejects_bad_names(tmp_history):
+    c = TestClient(create_app(tmp_history))
+    folder = str(ROOT / "dados" / "Dsr")
+    assert c.post("/api/versions", json={"name": "a b/c", "folder": folder}).status_code == 400
+    assert c.post("/api/versions", json={"name": "../x", "folder": folder}).status_code == 400
+    r = c.post("/api/versions", json={"name": "Dsr-copy ", "folder": folder})
+    assert r.status_code == 400
+
+
+def test_add_version_rejects_csv_collision(tmp_history):
+    from workbench.api import board
+    from frameworks.texture_evaluator import placar
+    # nome válido cujo CSV colide com o de uma versão existente
+    history = placar.load_history(tmp_history)
+    history["versions"][1]["name"] = "weird name"  # versão existente com espaço: CSV vira weird_name.csv
+    (tmp_history / "versoes" / "weird_name.csv").write_text("x\n", encoding="utf-8")
+    (tmp_history / "historico.json").write_text(json.dumps(history), encoding="utf-8")
+    c = TestClient(create_app(tmp_history))
+    r = c.post("/api/versions", json={"name": "weird_name", "folder": str(ROOT / "dados" / "Dsr")})
+    assert r.status_code == 400 and "detail" in r.json()
+
+
+def test_refresh_errors_are_400(tmp_path):
+    c = TestClient(create_app(tmp_path / "vazio"))
+    r = c.post("/api/refresh")
+    assert r.status_code == 400 and "detail" in r.json()
+
+
+def test_map_unknown_case_404(client):
+    assert client.get("/api/figure/nope/map/veredito.png", params={"compared": 1}).status_code == 404
+    assert client.get("/api/figure/nope/map/brilho.png", params={"compared": 0}).status_code == 404
