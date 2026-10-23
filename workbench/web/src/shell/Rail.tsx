@@ -20,10 +20,12 @@ const ICON = {
     </svg>
   ),
   slice: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <circle cx="9" cy="12" r="3" />
-      <circle cx="15" cy="12" r="3" />
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="icon-slice">
+      {/* um só path com evenodd: selecionado, só a área fora dos dois círculos escurece */}
+      <path
+        fillRule="evenodd"
+        d="M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zM6 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0zM12 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0z"
+      />
     </svg>
   ),
   generators: (
