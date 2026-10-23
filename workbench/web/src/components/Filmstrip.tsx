@@ -9,11 +9,10 @@ interface Props {
   verdict: Verdict;
   currentId: string;
   onSelect: (caseId: string) => void;
-  onDataset: () => void;
 }
 
-// Tiras de 40 px na ordem recebida; ←/→ andam pela lista sem sair da página.
-export function Filmstrip({ version, slices, verdict, currentId, onSelect, onDataset }: Props) {
+// Miniaturas de 38 px na ordem recebida, com a cor do status embaixo; ←/→ andam pela lista sem sair da página.
+export function Filmstrip({ version, slices, verdict, currentId, onSelect }: Props) {
   const ids = useMemo(() => slices.map(s => s.case_id), [slices]);
   const currentRef = useRef<HTMLButtonElement>(null);
 
@@ -35,27 +34,24 @@ export function Filmstrip({ version, slices, verdict, currentId, onSelect, onDat
 
   return (
     <div className="filmstrip">
-      <button type="button" className="back" onClick={onDataset}>Dataset</button>
-      <div className="strip">
-        {slices.map(slice => {
-          const status = slice[verdict].verdict;
-          const current = slice.case_id === currentId;
-          return (
-            <button
-              key={slice.case_id}
-              ref={current ? currentRef : undefined}
-              type="button"
-              className={current ? "strip-tile current" : "strip-tile"}
-              title={`${slice.label} · ${status}`}
-              aria-current={current ? "true" : undefined}
-              style={{ borderBottom: `4px solid ${COLOR[status]}` }}
-              onClick={() => onSelect(slice.case_id)}
-            >
-              <img src={imageUrl(version, slice.case_id, "synthetic", 80)} alt="" width={40} height={40} loading="lazy" />
-            </button>
-          );
-        })}
-      </div>
+      {slices.map(slice => {
+        const status = slice[verdict].verdict;
+        const current = slice.case_id === currentId;
+        return (
+          <button
+            key={slice.case_id}
+            ref={current ? currentRef : undefined}
+            type="button"
+            className={current ? "fs cur" : "fs"}
+            title={`${slice.label} · ${status}`}
+            aria-current={current ? "true" : undefined}
+            style={{ borderBottomColor: COLOR[status] }}
+            onClick={() => onSelect(slice.case_id)}
+          >
+            <img src={imageUrl(version, slice.case_id, "synthetic", 80)} alt="" width={38} height={38} loading="lazy" />
+          </button>
+        );
+      })}
     </div>
   );
 }
