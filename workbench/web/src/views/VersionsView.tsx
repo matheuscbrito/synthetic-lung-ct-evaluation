@@ -41,6 +41,7 @@ export function VersionsView({ versions, onChanged, onRecalculate }: Props) {
   };
 
   const remove = async (version: string) => {
+    if (!window.confirm(`Remove version ${version}?`)) return;
     setRemoving(version);
     setRowError(null);
     try {

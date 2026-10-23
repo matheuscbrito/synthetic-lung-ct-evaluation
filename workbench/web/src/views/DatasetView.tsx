@@ -102,7 +102,7 @@ export function DatasetView({ route, onRoute, version, slices }: Props) {
           {selected.size >= 2 && (
             <button
               type="button"
-              onClick={() => onRoute({ view: "compare", cases: [...selected] })}
+              onClick={() => onRoute({ view: "compare", cases: [...selected], version })}
             >
               {`Compare (${selected.size})`}
             </button>

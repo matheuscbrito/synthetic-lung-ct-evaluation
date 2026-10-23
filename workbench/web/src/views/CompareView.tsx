@@ -170,7 +170,7 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
           const label = slice?.label || id;
           return (
             <figure key={id} className="compare-col">
-              <img src={imageUrl(version, id, kind)} alt={`${label} ${kind}`} draggable={false} />
+              <img src={imageUrl(version, id, kind, undefined, true)} alt={`${label} ${kind}`} draggable={false} />
               <figcaption>{label}</figcaption>
               {slice ? (
                 <Column slice={slice} verdict={verdict} />

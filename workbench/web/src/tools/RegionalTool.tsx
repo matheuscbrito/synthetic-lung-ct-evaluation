@@ -8,18 +8,15 @@ const LAYERS = [
   { id: "veredito", label: "Texture verdict" },
 ] as const;
 
-const MASK_ONLY = "só máscara";
-
 interface Props {
   caseId: string;
-  pairMode: string;
+  maskOnly: boolean;
 }
 
 // Mapas por camada. O veredito só existe comparado com a original (o backend responde 400 sem isso).
-export function RegionalTool({ caseId, pairMode }: Props) {
+export function RegionalTool({ caseId, maskOnly }: Props) {
   const [layer, setLayer] = useState<string>("brilho");
   const [compared, setCompared] = useState(false);
-  const maskOnly = pairMode === MASK_ONLY;
   const comparedOn = compared && !maskOnly;
   const shown = layer === "veredito" && !comparedOn ? "brilho" : layer;
 

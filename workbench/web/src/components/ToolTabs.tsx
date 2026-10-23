@@ -18,11 +18,11 @@ const TABS: { id: TabId; label: string }[] = [
 interface Props {
   version: string;
   caseId: string;
-  pairMode: string;
+  maskOnly: boolean;
 }
 
 // Abas das ferramentas; a aba fica só no estado local (não entra na rota).
-export function ToolTabs({ version, caseId, pairMode }: Props) {
+export function ToolTabs({ version, caseId, maskOnly }: Props) {
   const [tab, setTab] = useState<TabId>("spectrum");
 
   return (
@@ -39,7 +39,7 @@ export function ToolTabs({ version, caseId, pairMode }: Props) {
         {tab === "glcm" && <GlcmTool version={version} caseId={caseId} />}
         {tab === "nex" && <NexTool version={version} caseId={caseId} />}
         {tab === "wavelet" && <WaveletTool version={version} caseId={caseId} />}
-        {tab === "regional" && <RegionalTool caseId={caseId} pairMode={pairMode} />}
+        {tab === "regional" && <RegionalTool caseId={caseId} maskOnly={maskOnly} />}
       </div>
     </section>
   );
