@@ -1070,7 +1070,7 @@ if len(names) > 1:
             column_order=["corte", "antes", "agora", "mudança"],
             on_select="rerun",
             selection_mode="single-row",
-            key=f"transitions_{dataset}_{baseline}_{version}_{mode}_{transition_filter}",
+            key=f"transitions_{dataset}_{baseline}_{version}_{mode}_{transition_filter}__{case_id}",
         )
         selected = event.selection.rows
         if selected:
