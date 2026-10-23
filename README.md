@@ -76,7 +76,17 @@ python3 -m venv .venv
 
 Os dados ficam em `dados/` (não versionado), com um par por corte: `X.tiff` (real), `X_generate.tiff` (sintética) e `X_mask.tiff` (máscara pulmonar). Hoje há `dados/Dsr` e `dados/Dgen`; as máscaras ficam em `dados/Dgen`.
 
-### Painel (o jeito principal de usar)
+### Painel
+
+O painel principal é o **QC workbench**: uma API FastAPI (`workbench/api/`) e um front Vite/React (`workbench/web/`). Para subir os dois:
+
+```bash
+bash workbench/dev.sh
+```
+
+Abra http://localhost:5173. Instalação, testes e regras do workbench estão em [`workbench/README.md`](workbench/README.md). Ele mostra o histórico do Dsr (`outputs/placar`); o Dgen só aparece no painel legado abaixo.
+
+**Legado (Streamlit):** o painel antigo continua disponível até o pesquisador aceitar a paridade com o workbench.
 
 ```bash
 .venv/bin/streamlit run frameworks/texture_evaluator/ui_placar.py --server.port 8515 --theme.base light --theme.font monospace
