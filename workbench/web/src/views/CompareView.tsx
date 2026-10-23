@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ApiError, imageUrl, type Slice, type Spectrum, type Verdict } from "../api";
+import { ApiError, imageUrl, type Slice, type Spectrum, type Verdict, type Version } from "../api";
 import type { Route } from "../route";
 import { Info } from "../components/Info";
 import { Pill } from "../ui/Pill";
+import { PageHeader } from "../ui/PageHeader";
+import { Seg } from "../ui/Seg";
+import { ChipSelect } from "../ui/ChipSelect";
+import { Card } from "../ui/Card";
 import { Plot, type PlotOptions } from "../components/Plot";
 import { spectrumMarks } from "../components/spectrumMarks";
 import { MetricList } from "../components/VerdictPanel";
@@ -23,6 +27,7 @@ interface Props {
   route: Route;
   onRoute: (patch: Partial<Route>) => void;
   version: string;
+  versions: Version[];
   slices: Slice[];
 }
 
@@ -64,26 +69,47 @@ function useSpectra(version: string, ids: string[]): Record<string, SpectrumSlot
   return slots;
 }
 
-// Coluna de um corte: os dois vereditos e as métricas do veredito ativo.
-function Column({ slice, verdict }: { slice: Slice; verdict: Verdict }) {
-  const groups: Verdict[] = ["brightness", "texture"];
+// Pílula de um veredito com o grupo no rótulo ("Texture · Approved").
+function VerdictPill({ slice, group }: { slice: Slice; group: Verdict }) {
+  const name = group === "texture" ? "Texture" : "Brightness";
+  const status = slice[group].verdict;
+  return <Pill status={status} label={`${name} · ${status.charAt(0).toUpperCase()}${status.slice(1)}`} />;
+}
+
+// Coluna de um corte: foto, os dois vereditos (separados) e as métricas do veredito ativo.
+function Column({ id, color, slice, label, version, kind, verdict }: {
+  id: string;
+  color: string;
+  slice: Slice | undefined;
+  label: string;
+  version: string;
+  kind: Kind;
+  verdict: Verdict;
+}) {
   return (
-    <>
-      <div>
-        {groups.map(group => (
-          <Pill
-            key={group}
-            status={slice[group].verdict}
-            label={`${group} ${slice[group].verdict}`}
-          />
-        ))}
+    <div className="ccol">
+      <div className="chead">
+        <i className="cmp-key" style={{ background: color }} aria-hidden="true" />
+        <b>{label}</b>
+        {slice?.patient && <span className="sub mono">{slice.patient}</span>}
       </div>
-      <MetricList metrics={slice.metrics.filter(m => m.group === verdict)} />
-    </>
+      <img src={imageUrl(version, id, kind, undefined, true)} alt={`${label} ${kind}`} draggable={false} />
+      {slice ? (
+        <>
+          <div className="vp">
+            <VerdictPill slice={slice} group="texture" />
+            <VerdictPill slice={slice} group="brightness" />
+          </div>
+          <MetricList metrics={slice.metrics.filter(m => m.group === verdict)} />
+        </>
+      ) : (
+        <p className="tool-error">Slice not in this version.</p>
+      )}
+    </div>
   );
 }
 
-export function CompareView({ route, onRoute, version, slices }: Props) {
+export function CompareView({ route, onRoute, version, versions, slices }: Props) {
   const [kind, setKind] = useState<Kind>("synthetic");
   const verdict: Verdict = route.verdict ?? "texture";
   const idsKey = (route.cases ?? []).join(SEP);
@@ -134,11 +160,23 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
     // slots e ids mudam juntos com key/version/kind
   }, [idsKey, version, slots, kind, ids, labelOf]);
 
+  const versionChip = versions.length > 0 && (
+    <ChipSelect
+      label="Version"
+      value={version}
+      options={versions.map(v => ({ value: v.name, label: v.name }))}
+      onChange={name => onRoute({ version: name })}
+    />
+  );
+
   if (ids.length < 2) {
     return (
-      <div className="compare">
+      <div className="compare-view">
+        <PageHeader eyebrow={`Compare · ${version}`} title="Compare" right={versionChip} />
         <p className="placeholder">Select 2–4 slices in the dataset view.</p>
-        <button type="button" onClick={() => onRoute({ view: "dataset" })}>Dataset</button>
+        <button type="button" className="dark" onClick={() => onRoute({ view: "dataset" })}>
+          Dataset
+        </button>
       </div>
     );
   }
@@ -146,49 +184,52 @@ export function CompareView({ route, onRoute, version, slices }: Props) {
   const failed = ids.filter(id => slots[slotOf(version, id)]?.error);
 
   return (
-    <div className="compare">
-      <div className="controls">
-        <div className="segmented" role="group" aria-label="Image kind">
-          {KINDS.map(item => (
-            <button
-              key={item.value}
-              type="button"
-              aria-pressed={kind === item.value}
-              onClick={() => setKind(item.value)}
-            >
-              {item.label}
-            </button>
-          ))}
+    <div className="compare-view">
+      <PageHeader
+        eyebrow={`Compare · ${version}`}
+        title={
+          <span className="cmp-ids">
+            {ids.map(id => (
+              <span key={id} className="cmp-id">
+                <i className="cmp-key" style={{ background: seriesColor(id, ids) }} aria-hidden="true" />
+                {labelOf(id)}
+              </span>
+            ))}
+          </span>
+        }
+        sub="Shared intensity window per case"
+        right={
+          <>
+            {versionChip}
+            <Seg<Kind> label="Image kind" options={KINDS} value={kind} onChange={setKind} small />
+          </>
+        }
+      />
+
+      <div className="ccols" style={{ "--cols": ids.length } as CSSProperties}>
+        {ids.map(id => (
+          <Column
+            key={id}
+            id={id}
+            color={seriesColor(id, ids)}
+            slice={byId.get(id)}
+            label={labelOf(id)}
+            version={version}
+            kind={kind}
+            verdict={verdict}
+          />
+        ))}
+      </div>
+
+      <Card className="toolcard">
+        <div className="eyebrow cmp-spec-eyebrow">
+          Radial spectrum · {kind === "real" ? "real" : "synthetic"} <Info term="spectrum" />
         </div>
-      </div>
-
-      <div className="compare-columns" style={{ "--cols": ids.length } as CSSProperties}>
-        {ids.map(id => {
-          const slice = byId.get(id);
-          const label = slice?.label || id;
-          return (
-            <figure key={id} className="compare-col">
-              <img src={imageUrl(version, id, kind, undefined, true)} alt={`${label} ${kind}`} draggable={false} />
-              <figcaption>{label}</figcaption>
-              {slice ? (
-                <Column slice={slice} verdict={verdict} />
-              ) : (
-                <p className="tool-error">Slice not in this version.</p>
-              )}
-            </figure>
-          );
-        })}
-      </div>
-
-      <section className="spectrum-overlay">
-        <h3 className="tool-title">
-          Spectrum <Info term="spectrum" />
-        </h3>
         {failed.map(id => (
           <p key={id} className="tool-error">{`${id}: ${slots[slotOf(version, id)].error}`}</p>
         ))}
         {options && <Plot options={options} />}
-      </section>
+      </Card>
     </div>
   );
 }

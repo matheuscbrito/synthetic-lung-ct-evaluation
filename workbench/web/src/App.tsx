@@ -26,6 +26,9 @@ const VIEW_LABEL: Record<View, string> = {
   agent: "Agent",
 };
 
+// telas com cabeçalho próprio: o cabeçalho geral do App fica oculto
+const REDESIGNED_VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions"];
+
 const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
   { value: "texture", label: "Texture" },
   { value: "brightness", label: "Brightness" },
@@ -162,7 +165,7 @@ export default function App() {
           </>
         ) : (
           <>
-            {route.view !== "dataset" && route.view !== "slice" && route.view !== "generators" && (
+            {!REDESIGNED_VIEWS.includes(route.view) && (
             <PageHeader
               eyebrow={VIEW_LABEL[route.view]}
               title={version || VIEW_LABEL[route.view]}
@@ -198,7 +201,7 @@ export default function App() {
             ) : route.view === "slice" && slices ? (
               <SliceView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
             ) : route.view === "compare" && slices ? (
-              <CompareView route={route} onRoute={setRoute} version={version} slices={slices} />
+              <CompareView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
             ) : route.view === "versions" ? (
               <VersionsView versions={versions} onChanged={invalidate} onRecalculate={recalculate} />
             ) : (
