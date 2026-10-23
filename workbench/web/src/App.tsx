@@ -4,6 +4,8 @@ import { TopBar } from "./components/TopBar";
 import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
 import { GeneratorsView } from "./views/GeneratorsView";
+import { CompareView } from "./views/CompareView";
+import { VersionsView } from "./views/VersionsView";
 import { useRoute } from "./route";
 import { clearSlicesCache } from "./slices";
 import { clearToolCache } from "./tools/toolData";
@@ -35,10 +37,11 @@ export default function App() {
     void reload();
   }, [reload]);
 
-  // versão da rota, ou a de referência, ou a primeira disponível
+  // versão da rota; na comparação, sem rota explícita, a mais recente; senão a de referência ou a primeira
+  const preferred = route.view === "compare" ? versions[versions.length - 1]?.name : status?.baseline;
   const version =
     versions.find(v => v.name === route.version)?.name ??
-    status?.baseline ??
+    preferred ??
     versions[0]?.name ??
     "";
 
@@ -57,26 +60,33 @@ export default function App() {
     return () => {
       live = false;
     };
+    // cada reload cria um novo status, então o efeito também refaz a busca dos cortes após mudanças
   }, [status, version]);
 
-  const recalculate = async () => {
-    try {
-      await post("/api/refresh");
-      // histórico recalculado: caches de cortes e de ferramentas não podem reaproveitar vereditos antigos
-      clearSlicesCache();
-      clearToolCache();
-      await reload();
-    } catch (e) {
-      setError(message(e));
-    }
-  };
+  // histórico mudou: caches de cortes e de ferramentas não podem reaproveitar vereditos antigos
+  const invalidate = useCallback(async () => {
+    clearSlicesCache();
+    clearToolCache();
+    await reload();
+  }, [reload]);
+
+  // erro sobe para quem chamou (tela obsoleta ou página de versões)
+  const recalculate = useCallback(async () => {
+    await post("/api/refresh");
+    await invalidate();
+  }, [invalidate]);
 
   if (!status) return error ? <div className="error">{error}</div> : null;
 
   if (status.stale) {
     return (
       <main className="stale">
-        <button type="button" onClick={recalculate}>Recalculate</button>
+        <button
+          type="button"
+          onClick={() => void recalculate().catch(e => setError(message(e)))}
+        >
+          Recalculate
+        </button>
         {error && <div className="error">{error}</div>}
       </main>
     );
@@ -101,6 +111,10 @@ export default function App() {
           <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
         ) : route.view === "slice" && slices ? (
           <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
+        ) : route.view === "compare" && slices ? (
+          <CompareView route={route} onRoute={setRoute} version={version} slices={slices} />
+        ) : route.view === "versions" ? (
+          <VersionsView versions={versions} onChanged={invalidate} onRecalculate={recalculate} />
         ) : (
           <p className="placeholder">{route.view}</p>
         )}
