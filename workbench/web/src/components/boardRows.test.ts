@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Generator, VsBaseline } from "../api";
-import { bestTexture, formulaFor, textureMetricKey } from "./boardRows";
+import { approvedLine, bestTexture, gainText, textureMetricKey } from "./boardRows";
 
 function gen(name: string, approved: number | null, patch: Partial<Generator> = {}): Generator {
   return {
@@ -46,18 +46,21 @@ describe("bestTexture", () => {
   });
 });
 
-describe("formulaFor", () => {
-  test("before → after = signed difference · CI [lo, hi]", () => {
-    expect(formulaFor(vs, 8, 14)).toBe("8 → 14 = +6 · CI [+3, +9]");
+describe("approvedLine", () => {
+  test("Texture approved before → after = signed difference", () => {
+    expect(approvedLine(8, 14)).toBe("Texture approved 8 → 14 = +6");
   });
 
-  test("negative difference and CI without sign on zero bounds", () => {
-    const worse: VsBaseline = { ...vs, ci: [-4, 0] };
-    expect(formulaFor(worse, 14, 8)).toBe("14 → 8 = -6 · CI [-4, 0]");
+  test("negative and zero differences", () => {
+    expect(approvedLine(14, 8)).toBe("Texture approved 14 → 8 = -6");
+    expect(approvedLine(8, 8)).toBe("Texture approved 8 → 8 = 0");
   });
+});
 
-  test("missing CI bound shows an en dash", () => {
-    expect(formulaFor({ ...vs, ci: [null, 9] }, 8, 14)).toBe("8 → 14 = +6 · CI [–, +9]");
+describe("gainText", () => {
+  test("gain and CI with signs; missing bound shows an en dash", () => {
+    expect(gainText(vs)).toBe("+6 [+3, +9]");
+    expect(gainText({ ...vs, ci: [null, 9] })).toBe("+6 [–, +9]");
   });
 });
 
