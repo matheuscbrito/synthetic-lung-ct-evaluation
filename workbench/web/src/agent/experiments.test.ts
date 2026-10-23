@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { NotebookRow } from "../api";
-import { gainLabel, lineage, signedPercent, trajectory, verdictTint } from "./experiments";
+import { gainLabel, gainTitle, lineage, signedPercent, trajectory, verdictTint } from "./experiments";
 
 function row(id: string, base: string, vals: number[], search: string, best = false): NotebookRow {
   return {
@@ -90,25 +90,19 @@ describe("verdict tint and number", () => {
   });
 });
 
-describe("gainLabel", () => {
-  test("shows the last number with its sign", () => {
+describe("gainLabel and gainTitle", () => {
+  test("the chip shows the last number with sign and one decimal", () => {
     expect(gainLabel({ ...row("A", "baseline", [7.3, 5.3, 4.8], "M"), scope: null })).toBe("+4.8%");
+    expect(gainLabel({ ...row("A", "baseline", [4.4], "M"), scope: "10" })).toBe("+4.4%");
   });
 
-  test("single-scope values show the scope as a suffix", () => {
-    expect(gainLabel({ ...row("A", "baseline", [4.4], "M"), scope: "10" })).toBe("+4.4% · 10");
+  test("rows without numbers show n/d, never the notebook text", () => {
+    expect(gainLabel({ ...row("A", "baseline", [], "M"), gain_text: "n/d (7 casos)" })).toBe("n/d");
   });
 
-  test("rows without numbers show the notebook text, truncated", () => {
-    expect(gainLabel({ ...row("A", "baseline", [], "M"), gain_text: "n/d (7 casos)" })).toBe("n/d (7 casos)");
-    const long = "nenhum número nesta linha, só uma explicação comprida do caderno";
-    const label = gainLabel({ ...row("A", "baseline", [], "M"), gain_text: long });
-    expect(label.endsWith("…")).toBe(true);
-    expect(label.length).toBeLessThanOrEqual(28);
-    expect(long.startsWith(label.slice(0, -1))).toBe(true);
-  });
-
-  test("never returns the bare n/d placeholder when the notebook has text", () => {
-    expect(gainLabel({ ...row("A", "baseline", [], "M"), gain_text: "insuficiente: 2 cortes" })).not.toBe("n/d");
+  test("the title carries the notebook text and the scope", () => {
+    expect(gainTitle({ ...row("A", "baseline", [4.4], "M"), gain_text: "+4,40% (10)", scope: "10" })).toBe("+4,40% (10) · 10 slices");
+    expect(gainTitle({ ...row("A", "baseline", [], "M"), gain_text: "n/d (7 casos)", scope: "7" })).toBe("n/d (7 casos) · 7 slices");
+    expect(gainTitle({ ...row("A", "baseline", [7.3, 5.3, 4.8], "M"), gain_text: "+7,3 / +5,3 / +4,8%" })).toBe("+7,3 / +5,3 / +4,8%");
   });
 });

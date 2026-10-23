@@ -30,6 +30,13 @@ export function Seg<T extends string>({ options, value, onChange, label, small }
       if (el) setBox({ left: el.offsetLeft, width: el.offsetWidth });
     };
     measure();
+    // o grupo muda de tamanho com a fonte ou com o conteúdo, não só com a janela
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(measure);
+      if (groupRef.current) observer.observe(groupRef.current);
+      buttons.current.forEach(el => observer.observe(el));
+      return () => observer.disconnect();
+    }
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [value, options]);

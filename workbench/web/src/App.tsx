@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ApiError, get, post, setImageToken, type ServerStatus, type SlicesResponse, type Slice, type Version, type Verdict } from "./api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ApiError, get, post, setImageToken, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
 import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
 import { GeneratorsView } from "./views/GeneratorsView";
@@ -13,26 +13,6 @@ import { Rail } from "./shell/Rail";
 import { useAgentPrefs } from "./shell/agentState";
 import { AgentSidebar } from "./agent/AgentSidebar";
 import { AgentView } from "./agent/AgentView";
-import { PageHeader } from "./ui/PageHeader";
-import { Seg } from "./ui/Seg";
-import { ChipSelect } from "./ui/ChipSelect";
-
-const VIEW_LABEL: Record<View, string> = {
-  dataset: "Dataset",
-  slice: "Slice",
-  generators: "Generators",
-  compare: "Compare",
-  versions: "Versions",
-  agent: "Agent",
-};
-
-// telas com cabeçalho próprio: o cabeçalho geral do App fica oculto
-const REDESIGNED_VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions"];
-
-const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
-  { value: "texture", label: "Texture" },
-  { value: "brightness", label: "Brightness" },
-];
 
 function message(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -47,6 +27,7 @@ export default function App() {
   const [slices, setSlices] = useState<Slice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const railToggle = useRef<HTMLButtonElement>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -126,7 +107,6 @@ export default function App() {
 
   if (!status.has_history) return <main className="empty">No history</main>;
 
-  const verdict: Verdict = route.verdict ?? "texture";
   const agentScreen = route.view === "agent";
 
   return (
@@ -135,6 +115,7 @@ export default function App() {
       agentOpen={agent.open && !agentScreen}
       rail={
         <Rail
+          ref={railToggle}
           active={route.view}
           agentOpen={agent.open}
           onNavigate={view => setRoute({ view })}
@@ -154,7 +135,11 @@ export default function App() {
           model={agent.model}
           onModel={agent.setModel}
           onExpand={() => setRoute({ view: "agent" })}
-          onCollapse={() => agent.setOpen(false)}
+          onCollapse={() => {
+            agent.setOpen(false);
+            // o botão de recolher some com a coluna (inert): o foco volta ao item Agent da barra
+            railToggle.current?.focus();
+          }}
         />
       }
       main={
@@ -165,48 +150,30 @@ export default function App() {
           </>
         ) : (
           <>
-            {!REDESIGNED_VIEWS.includes(route.view) && (
-            <PageHeader
-              eyebrow={VIEW_LABEL[route.view]}
-              title={version || VIEW_LABEL[route.view]}
-              right={
-                <>
-                  {versions.length > 0 && (
-                    <ChipSelect
-                      label="Version"
-                      value={version}
-                      options={versions.map(v => ({ value: v.name, label: v.name }))}
-                      onChange={name => setRoute({ version: name })}
-                    />
-                  )}
-                  <Seg<Verdict> label="Verdict" options={VERDICT_OPTIONS} value={verdict} onChange={v => setRoute({ verdict: v })} small />
-                </>
-              }
-            />
-            )}
             {error && <div className="error">{error}</div>}
             {route.view === "generators" ? (
               <GeneratorsView route={route} onRoute={setRoute} />
-            ) : route.view === "dataset" ? (
-              slices && (
-                <DatasetView
-                  route={route}
-                  onRoute={setRoute}
-                  version={version}
-                  versions={versions}
-                  isBaseline={version === status.baseline}
-                  slices={slices}
-                />
-              )
-            ) : route.view === "slice" && slices ? (
-              <SliceView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
-            ) : route.view === "compare" && slices ? (
-              <CompareView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
             ) : route.view === "versions" ? (
               <VersionsView versions={versions} onChanged={invalidate} onRecalculate={recalculate} />
-            ) : (
-              <p className="placeholder">{route.view}</p>
-            )}
+            ) : slices === null ? (
+              // sem erro, a espera pelos cortes é mostrada; com erro, a linha acima já diz o que houve
+              !error && <p className="placeholder">Loading…</p>
+            ) : slices.length === 0 ? (
+              <p className="placeholder">No slices</p>
+            ) : route.view === "dataset" ? (
+              <DatasetView
+                route={route}
+                onRoute={setRoute}
+                version={version}
+                versions={versions}
+                isBaseline={version === status.baseline}
+                slices={slices}
+              />
+            ) : route.view === "slice" ? (
+              <SliceView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
+            ) : route.view === "compare" ? (
+              <CompareView route={route} onRoute={setRoute} version={version} versions={versions} slices={slices} />
+            ) : null}
           </>
         )
       }

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 import type { View } from "../route";
 import { Logo } from "./Logo";
 
@@ -62,7 +62,8 @@ const ITEMS: { view: View; label: string; icon: ReactNode }[] = [
   { view: "versions", label: "Versions", icon: ICON.versions },
 ];
 
-export function Rail({ active, agentOpen, onNavigate, onToggleAgent }: Props) {
+// ref no item Agent: quem recolhe a coluna devolve o foco para cá
+export const Rail = forwardRef<HTMLButtonElement, Props>(function Rail({ active, agentOpen, onNavigate, onToggleAgent }, toggleRef) {
   const agentSelected = agentOpen || active === "agent";
   return (
     <nav className="rail" aria-label="Main">
@@ -85,6 +86,7 @@ export function Rail({ active, agentOpen, onNavigate, onToggleAgent }: Props) {
       <div className="sp" />
       <button
         type="button"
+        ref={toggleRef}
         className={agentSelected ? "nav agent-toggle on" : "nav agent-toggle"}
         aria-pressed={agentSelected}
         onClick={onToggleAgent}
@@ -94,4 +96,4 @@ export function Rail({ active, agentOpen, onNavigate, onToggleAgent }: Props) {
       </button>
     </nav>
   );
-}
+});
