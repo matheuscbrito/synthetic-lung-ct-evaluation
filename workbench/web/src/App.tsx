@@ -162,6 +162,7 @@ export default function App() {
           </>
         ) : (
           <>
+            {route.view !== "dataset" && (
             <PageHeader
               eyebrow={VIEW_LABEL[route.view]}
               title={version || VIEW_LABEL[route.view]}
@@ -179,11 +180,21 @@ export default function App() {
                 </>
               }
             />
+            )}
             {error && <div className="error">{error}</div>}
             {route.view === "generators" ? (
               <GeneratorsView route={route} onRoute={setRoute} />
-            ) : route.view === "dataset" && slices ? (
-              <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
+            ) : route.view === "dataset" ? (
+              slices && (
+                <DatasetView
+                  route={route}
+                  onRoute={setRoute}
+                  version={version}
+                  versions={versions}
+                  isBaseline={version === status.baseline}
+                  slices={slices}
+                />
+              )
             ) : route.view === "slice" && slices ? (
               <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
             ) : route.view === "compare" && slices ? (

@@ -18,8 +18,11 @@ function reducedMotion(): boolean {
 }
 
 // Sobe de 0 até o valor numérico; sem animação para texto ou com movimento reduzido.
-function useCountUp(target: number | string, enabled: boolean): number | string {
-  const [shown, setShown] = useState<number | string>(enabled && typeof target === "number" ? 0 : target);
+// Com movimento reduzido começa já no valor final, para não piscar 0.
+export function useCountUp(target: number | string, enabled: boolean): number | string {
+  const [shown, setShown] = useState<number | string>(
+    enabled && typeof target === "number" && !reducedMotion() ? 0 : target,
+  );
 
   useEffect(() => {
     if (!enabled || typeof target !== "number" || reducedMotion() || typeof requestAnimationFrame !== "function") {
@@ -39,6 +42,12 @@ function useCountUp(target: number | string, enabled: boolean): number | string 
   }, [target, enabled]);
 
   return shown;
+}
+
+// Número que sobe, para as linhas de contagem dentro de um cartão.
+export function CountUp({ value }: { value: number }) {
+  const shown = useCountUp(value, true);
+  return <b className="count">{shown}</b>;
 }
 
 export function Kpi({ label, value, suffix, countUp = false }: Props) {
