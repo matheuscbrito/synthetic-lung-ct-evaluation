@@ -1,14 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, get, post, setImageToken, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
-import { TopBar } from "./components/TopBar";
+import { ApiError, get, post, setImageToken, type ServerStatus, type SlicesResponse, type Slice, type Version, type Verdict } from "./api";
 import { DatasetView } from "./views/DatasetView";
 import { SliceView } from "./views/SliceView";
 import { GeneratorsView } from "./views/GeneratorsView";
 import { CompareView } from "./views/CompareView";
 import { VersionsView } from "./views/VersionsView";
-import { useRoute } from "./route";
+import { useRoute, type View } from "./route";
 import { clearSlicesCache } from "./slices";
 import { clearToolCache } from "./tools/toolData";
+import { Shell } from "./shell/Shell";
+import { Rail } from "./shell/Rail";
+import { useAgentPrefs } from "./shell/agentState";
+import { PageHeader } from "./ui/PageHeader";
+import { Seg } from "./ui/Seg";
+import { ChipSelect } from "./ui/ChipSelect";
+
+const VIEW_LABEL: Record<View, string> = {
+  dataset: "Dataset",
+  slice: "Slice",
+  generators: "Generators",
+  compare: "Compare",
+  versions: "Versions",
+  agent: "Agent",
+};
+
+const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
+  { value: "texture", label: "Texture" },
+  { value: "brightness", label: "Brightness" },
+];
 
 function message(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -17,6 +36,7 @@ function message(error: unknown): string {
 
 export default function App() {
   const [route, setRoute] = useRoute();
+  const agent = useAgentPrefs();
   const [status, setStatus] = useState<ServerStatus | null>(null);
   const [versions, setVersions] = useState<Version[]>([]);
   const [slices, setSlices] = useState<Slice[] | null>(null);
@@ -101,31 +121,65 @@ export default function App() {
 
   if (!status.has_history) return <main className="empty">No history</main>;
 
+  const verdict: Verdict = route.verdict ?? "texture";
+
   return (
-    <>
-      <TopBar
-        route={route}
-        version={version}
-        versions={versions}
-        slices={slices}
-        onRoute={setRoute}
-      />
-      {error && <div className="error">{error}</div>}
-      <main>
-        {route.view === "generators" ? (
-          <GeneratorsView route={route} onRoute={setRoute} />
-        ) : route.view === "dataset" && slices ? (
-          <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
-        ) : route.view === "slice" && slices ? (
-          <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
-        ) : route.view === "compare" && slices ? (
-          <CompareView route={route} onRoute={setRoute} version={version} slices={slices} />
-        ) : route.view === "versions" ? (
-          <VersionsView versions={versions} onChanged={invalidate} onRecalculate={recalculate} />
-        ) : (
-          <p className="placeholder">{route.view}</p>
-        )}
-      </main>
-    </>
+    <Shell
+      agentOpen={agent.open}
+      rail={
+        <Rail
+          active={route.view}
+          agentOpen={agent.open}
+          onNavigate={view => setRoute({ view })}
+          onToggleAgent={() => agent.setOpen(!agent.open)}
+        />
+      }
+      agent={
+        <>
+          <div className="ahead">
+            <span>Agent</span>
+            <span className="eyebrow">{agent.model}</span>
+          </div>
+          <p className="agent-empty">No messages</p>
+        </>
+      }
+      main={
+        <>
+          <PageHeader
+            eyebrow={VIEW_LABEL[route.view]}
+            title={version || VIEW_LABEL[route.view]}
+            right={
+              <>
+                {versions.length > 0 && (
+                  <ChipSelect
+                    label="Version"
+                    value={version}
+                    options={versions.map(v => ({ value: v.name, label: v.name }))}
+                    onChange={name => setRoute({ version: name })}
+                  />
+                )}
+                <Seg<Verdict> label="Verdict" options={VERDICT_OPTIONS} value={verdict} onChange={v => setRoute({ verdict: v })} small />
+              </>
+            }
+          />
+          {error && <div className="error">{error}</div>}
+          {route.view === "generators" ? (
+            <GeneratorsView route={route} onRoute={setRoute} />
+          ) : route.view === "dataset" && slices ? (
+            <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
+          ) : route.view === "slice" && slices ? (
+            <SliceView route={route} onRoute={setRoute} version={version} slices={slices} />
+          ) : route.view === "compare" && slices ? (
+            <CompareView route={route} onRoute={setRoute} version={version} slices={slices} />
+          ) : route.view === "versions" ? (
+            <VersionsView versions={versions} onChanged={invalidate} onRecalculate={recalculate} />
+          ) : route.view === "agent" ? (
+            <p className="placeholder">No conversation yet</p>
+          ) : (
+            <p className="placeholder">{route.view}</p>
+          )}
+        </>
+      }
+    />
   );
 }

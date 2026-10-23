@@ -11,6 +11,11 @@ describe("route hash", () => {
     expect(parseHash("")).toEqual({ view: "dataset", verdict: "texture" });
   });
 
+  test("agent view is routable", () => {
+    expect(parseHash("#/agent").view).toBe("agent");
+    expect(toHash({ view: "agent", verdict: "texture" })).toBe("#/agent?verdict=texture");
+  });
+
   test("unknown view falls back to dataset", () => {
     expect(parseHash("#/nope").view).toBe("dataset");
   });
