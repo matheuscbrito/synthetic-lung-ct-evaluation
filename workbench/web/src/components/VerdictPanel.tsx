@@ -50,11 +50,11 @@ export function MetricList({ metrics }: { metrics: Metric[] }) {
     <ul className="metrics">
       {metrics.map(metric => (
         <li key={metric.key}>
-          {metric.label}
-          {isTerm(metric.key) && <Info term={metric.key} />}
-          {" · "}
-          {metricValue(metric)}
-          {" · "}
+          <span className="m-name">
+            {metric.label}
+            {isTerm(metric.key) && <Info term={metric.key} />}
+          </span>
+          <span className="m-val">{metricValue(metric)}</span>
           <Dot status={metric.status} />
         </li>
       ))}

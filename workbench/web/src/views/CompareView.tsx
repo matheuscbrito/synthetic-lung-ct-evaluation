@@ -95,7 +95,7 @@ function Column({ id, color, slice, label, version, kind, verdict }: {
       <div className="chead">
         <i className="cmp-key" style={{ background: color }} aria-hidden="true" />
         <b>{label}</b>
-        {slice?.patient && <span className="sub mono">{slice.patient}</span>}
+        {slice?.patient && <span className="sub mono">P{slice.patient}</span>}
       </div>
       <img src={imageUrl(version, id, kind, undefined, true)} alt={`${label} ${kind}`} draggable={false} />
       {slice ? (
@@ -239,7 +239,7 @@ export function CompareView({ route, onRoute, version, versions, slices }: Props
         {failed.map(id => (
           <p key={id} className="tool-error">{`${id}: ${slots[slotOf(version, id)].error}`}</p>
         ))}
-        {options && <Plot options={options} />}
+        {options && <Plot options={options} fill />}
       </Card>
     </div>
   );

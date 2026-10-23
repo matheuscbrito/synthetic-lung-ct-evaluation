@@ -52,7 +52,7 @@ export function SpectrumTool({ version, caseId }: Props) {
         Spectrum <Info term="spectrum" />
       </h3>
       {error && <p className="tool-error">{error}</p>}
-      {options && <Plot options={options} />}
+      {options && <Plot options={options} fill />}
     </div>
   );
 }
