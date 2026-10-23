@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ApiError, get, type Board, type Slice, type SlicesResponse } from "../api";
+import { ApiError, get, type Board, type Slice } from "../api";
 import type { Route } from "../route";
 import { GeneratorBoard, MetricDistribution } from "../components/GeneratorBoard";
 import { ManyGenerators } from "../components/ManyGenerators";
+import { slicesOf } from "../slices";
 
 interface Props {
   route: Route;
@@ -12,23 +13,6 @@ interface Props {
 function message(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   return error instanceof Error ? error.message : String(error);
-}
-
-// Cache de módulo por versão: a lista de cortes de cada versão é buscada uma única vez.
-const pending = new Map<string, Promise<Slice[]>>();
-
-function slicesOf(version: string): Promise<Slice[]> {
-  const hit = pending.get(version);
-  if (hit) return hit;
-  const request = get<SlicesResponse>("/api/slices", { version }).then(
-    r => r.slices,
-    error => {
-      pending.delete(version);
-      throw error;
-    },
-  );
-  pending.set(version, request);
-  return request;
 }
 
 export function GeneratorsView({ route, onRoute }: Props) {
@@ -55,7 +39,7 @@ export function GeneratorsView({ route, onRoute }: Props) {
     for (const gen of board.generators) {
       slicesOf(gen.name)
         .then(slices => {
-          if (live) setSlicesByVersion(prev => (prev[gen.name] ? prev : { ...prev, [gen.name]: slices }));
+          if (live) setSlicesByVersion(prev => ({ ...prev, [gen.name]: slices }));
         })
         .catch(e => live && setError(message(e)));
     }

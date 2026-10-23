@@ -30,26 +30,40 @@ function colorOf(generators: Generator[], name: string): string {
 }
 
 // Espectros de cada versão marcada para o corte; o cache de ferramentas evita refazer requisições.
-function useSpectra(versions: string[], caseId: string | null): Record<string, Spectrum> {
+// Versões com erro ficam em `failed` (o rótulo avisa e a legenda as deixa de fora).
+function useSpectra(versions: string[], caseId: string | null): {
+  spectra: Record<string, Spectrum>;
+  failed: Set<string>;
+} {
   const [spectra, setSpectra] = useState<Record<string, Spectrum>>({});
+  const [failed, setFailed] = useState<Set<string>>(() => new Set());
   const key = versions.join("\u0000");
 
   // troca de corte descarta os espectros anteriores; desmarcar uma versão só a esconde no render
   useEffect(() => {
     setSpectra({});
+    setFailed(new Set());
   }, [caseId]);
 
   useEffect(() => {
     if (caseId === null) return;
     let live = true;
     for (const version of versions) {
-      loadTool<Spectrum>(version, caseId, "spectrum")
-        .then(data => {
-          if (live) setSpectra(prev => ({ ...prev, [version]: data }));
-        })
-        .catch(() => {
-          // falha de uma versão não derruba as demais; a linha simplesmente não aparece
-        });
+      loadTool<Spectrum>(version, caseId, "spectrum").then(
+        data => {
+          if (!live) return;
+          setSpectra(prev => ({ ...prev, [version]: data }));
+          setFailed(prev => {
+            const next = new Set(prev);
+            next.delete(version);
+            return next;
+          });
+        },
+        () => {
+          // falha de uma versão não derruba as demais: marca como indisponível
+          if (live) setFailed(prev => new Set(prev).add(version));
+        },
+      );
     }
     return () => {
       live = false;
@@ -57,7 +71,7 @@ function useSpectra(versions: string[], caseId: string | null): Record<string, S
     // versions é derivado de key; key e caseId são as dependências reais
   }, [key, caseId]);
 
-  return spectra;
+  return { spectra, failed };
 }
 
 export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) {
@@ -74,7 +88,7 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
 
   const active = generators.filter(g => checked.has(g.name));
   const activeNames = active.map(g => g.name);
-  const spectra = useSpectra(activeNames, caseId);
+  const { spectra, failed } = useSpectra(activeNames, caseId);
 
   const toggle = (name: string) =>
     setChecked(prev => {
@@ -150,6 +164,7 @@ export function ManyGenerators({ generators, slicesByVersion, verdict }: Props) 
             <input type="checkbox" checked={checked.has(gen.name)} onChange={() => toggle(gen.name)} />
             <span className="swatch" style={{ background: colorOf(generators, gen.name) }} />
             {gen.name}
+            {checked.has(gen.name) && failed.has(gen.name) && " (spectrum unavailable)"}
           </label>
         ))}
       </div>
