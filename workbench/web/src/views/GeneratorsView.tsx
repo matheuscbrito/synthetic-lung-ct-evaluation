@@ -3,7 +3,11 @@ import { ApiError, get, type Board, type Slice } from "../api";
 import type { Route } from "../route";
 import { GeneratorBoard, MetricDistribution } from "../components/GeneratorBoard";
 import { ManyGenerators } from "../components/ManyGenerators";
+import { bestTexture } from "../components/boardRows";
 import { slicesOf } from "../slices";
+import { PageHeader } from "../ui/PageHeader";
+import { Kpi } from "../ui/Kpi";
+import { Card } from "../ui/Card";
 
 interface Props {
   route: Route;
@@ -51,17 +55,57 @@ export function GeneratorsView({ route, onRoute }: Props) {
   if (error) return <div className="error">{error}</div>;
   if (!board) return null;
 
+  const candidates = board.generators.filter(g => !g.is_baseline).length;
+  const best = bestTexture(board.generators);
+  const baseline = board.generators.find(g => g.is_baseline);
+  const baselineApproved = baseline?.counts.texture.approved ?? 0;
+
   return (
-    <div className="generators">
+    <div className="gen-view">
+      <PageHeader
+        eyebrow="GENERATORS · VS BASELINE"
+        title="Benchmark"
+        sub={`Same ${board.n_cases} slices · same frozen ruler`}
+        right={
+          candidates > 0 && (
+            <span className="tag">{candidates === 1 ? "1 candidate" : `${candidates} candidates`}</span>
+          )
+        }
+      />
+
+      <div className="kcards">
+        {best ? (
+          <div className="kcard">
+            <Kpi label="Best texture approval" value={best.approved} suffix={best.name} countUp />
+          </div>
+        ) : (
+          <div className="kcard">
+            <Kpi label={`Baseline ${board.baseline}`} value={baselineApproved} suffix={`of ${board.n_cases}`} countUp />
+          </div>
+        )}
+        {best && (
+          <div className="kcard">
+            <Kpi label={`Baseline ${board.baseline}`} value={baselineApproved} suffix={`of ${board.n_cases}`} countUp />
+          </div>
+        )}
+      </div>
+
       <GeneratorBoard board={board} onRoute={onRoute} />
+
       {board.generators.length > 1 && (
         <>
-          <MetricDistribution generators={board.generators} slicesByVersion={slicesByVersion} />
-          <ManyGenerators
-            generators={board.generators}
-            slicesByVersion={slicesByVersion}
-            verdict={route.verdict ?? "texture"}
-          />
+          <Card>
+            <div className="eyebrow">Metric distribution</div>
+            <MetricDistribution generators={board.generators} slicesByVersion={slicesByVersion} />
+          </Card>
+          <Card>
+            <div className="eyebrow">Many generators</div>
+            <ManyGenerators
+              generators={board.generators}
+              slicesByVersion={slicesByVersion}
+              verdict={route.verdict ?? "texture"}
+            />
+          </Card>
         </>
       )}
     </div>

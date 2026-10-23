@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type CSSProperties } from "react";
 import * as Observable from "@observablehq/plot";
 import type { Board, Generator, Slice, VsBaseline } from "../api";
 import { RESULT_COLOR, sortGenerators, type GeneratorSortKey } from "../board";
@@ -8,6 +8,7 @@ import { COLOR } from "../status";
 import type { Route } from "../route";
 import { Info } from "./Info";
 import { Plot, type PlotOptions } from "./Plot";
+import { approvedIndicator, formulaFor, gainText, textureMetricKey } from "./boardRows";
 
 const STATUSES: (keyof Counts)[] = ["approved", "review", "rejected"];
 const GREEN = "#e3f4ea"; // |z| ≤ 1
@@ -42,12 +43,13 @@ function metricLabel(key: string): string {
 
 type Counts = Record<"approved" | "review" | "rejected", number>;
 
-function Pills({ counts }: { counts: Counts }) {
+// Contagens A · R · X em chips com as tintas de pílula do tema claro.
+function CountChips({ counts }: { counts: Counts }) {
   return (
     <>
       {STATUSES.map(status => (
-        <span key={status} className="pill" style={{ borderColor: COLOR[status] }}>
-          {status} {counts[status]}
+        <span key={status} className={`cnt cnt--${status}`} title={status}>
+          {counts[status]}
         </span>
       ))}
     </>
@@ -55,7 +57,7 @@ function Pills({ counts }: { counts: Counts }) {
 }
 
 function Chip({ result }: { result: VsBaseline }) {
-  const title = `${num(result.gain)} [${num(result.ci[0])}, ${num(result.ci[1])}]`;
+  const title = `${result.label}: ${gainText(result)}`;
   return (
     <span
       className="chip"
@@ -73,19 +75,27 @@ interface Props {
   onRoute: (patch: Partial<Route>) => void;
 }
 
-// Uma linha por versão; a referência fica fixa no topo. Clicar numa linha abre o dataset dessa versão.
+// Tabela do placar: uma linha por versão, a referência primeiro. Clicar numa linha abre a fórmula dela;
+// o botão escuro do rodapé abre o dataset da versão aberta.
 export function GeneratorBoard({ board, onRoute }: Props) {
   const [sort, setSort] = useState<GeneratorSortKey>("history");
+  const [openName, setOpenName] = useState<string | null>(null);
   const generators = useMemo(() => sortGenerators(board.generators, sort), [board.generators, sort]);
   const metrics = useMemo(() => metricKeys(board.generators), [board.generators]);
   const indicators = useMemo(() => indicatorsOf(board.generators), [board.generators]);
+  const brightness = indicators.filter(i => i.group === "brightness");
+  const texture = indicators.filter(i => i.group === "texture");
   const span = Math.max(1, indicators.length);
-  const brightnessCount = indicators.filter(i => i.group === "brightness").length;
-  const textureCount = indicators.length - brightnessCount;
+  const rowSpan = indicators.length > 0 ? 2 : 1;
+  const medianKey = textureMetricKey(metrics, sort);
+  const baseline = board.generators.find(g => g.is_baseline);
+  const openGen = board.generators.find(g => g.name === openName) ?? null;
+
+  const toggle = (name: string) => setOpenName(prev => (prev === name ? null : name));
 
   return (
-    <section className="generator-board">
-      <div className="controls">
+    <section className="gen-board">
+      <div className="gen-controls">
         <select aria-label="Sort generators" value={sort} onChange={e => setSort(e.target.value)}>
           <option value="history">History order</option>
           <option value="name">Name</option>
@@ -99,54 +109,122 @@ export function GeneratorBoard({ board, onRoute }: Props) {
       <table className="board">
         <thead>
           <tr>
-            <th scope="col" rowSpan={2}>Generator</th>
-            <th scope="col" rowSpan={2}>Brightness</th>
-            <th scope="col" rowSpan={2}>Texture</th>
-            {metrics.map(key => (
-              <th key={key} scope="col" rowSpan={2}>
-                {metricLabel(key)}
-                {isTerm(key) && <Info term={key} />}
-              </th>
-            ))}
-            {brightnessCount > 0 && <th scope="colgroup" colSpan={brightnessCount}>Brightness</th>}
-            {textureCount > 0 && <th scope="colgroup" colSpan={textureCount}>Texture</th>}
-            {indicators.length === 0 && <th scope="col" rowSpan={2} />}
+            <th scope="col" rowSpan={rowSpan}>Generator</th>
+            <th scope="col" rowSpan={rowSpan}>Texture A · R · X</th>
+            <th scope="col" rowSpan={rowSpan}>Brightness A · R · X</th>
+            <th scope="col" rowSpan={rowSpan}>
+              Median |Δ|
+              {medianKey !== null && <span className="sub">{metricLabel(medianKey)}</span>}
+              {medianKey !== null && isTerm(medianKey) && <Info term={medianKey} />}
+            </th>
+            <th scope="col" colSpan={span}>{`vs ${board.baseline}`}</th>
           </tr>
-          <tr>
-            {indicators.map(ind => (
-              <th key={ind.indicator} scope="col">{ind.label}</th>
-            ))}
-          </tr>
+          {indicators.length > 0 && (
+            <tr>
+              {brightness.length > 0 && <th scope="colgroup" colSpan={brightness.length}>Brightness</th>}
+              {texture.length > 0 && <th scope="colgroup" colSpan={texture.length}>Texture</th>}
+            </tr>
+          )}
         </thead>
         <tbody>
-          {generators.map(gen => (
-            <tr
-              key={gen.name}
-              className={gen.is_baseline ? "baseline" : undefined}
-              onClick={() => onRoute({ view: "dataset", version: gen.name })}
-            >
-              <td>
-                {gen.name}
-                {gen.is_baseline && <span className="tag">baseline</span>}
-              </td>
-              <td><Pills counts={gen.counts.brightness} /></td>
-              <td><Pills counts={gen.counts.texture} /></td>
-              {metrics.map(key => (
-                <td key={key} className="num">{num(gen.median_abs_z[key] ?? null)}</td>
-              ))}
-              {gen.is_baseline ? (
-                <td colSpan={span} className="muted">baseline</td>
-              ) : (
-                indicators.map(ind => {
-                  const result = gen.vs_baseline?.find(v => v.indicator === ind.indicator);
-                  return <td key={ind.indicator}>{result ? <Chip result={result} /> : "–"}</td>;
-                })
-              )}
-            </tr>
-          ))}
+          {generators.map((gen, index) => {
+            const open = gen.name === openName;
+            const median = medianKey === null ? null : (gen.median_abs_z[medianKey] ?? null);
+            return (
+              <Fragment key={gen.name}>
+                <tr
+                  className={`gen-row${gen.is_baseline ? " baseline" : ""}${open ? " expanded" : ""}`}
+                  style={{ "--i": index } as CSSProperties}
+                  aria-expanded={open}
+                  tabIndex={0}
+                  onClick={() => toggle(gen.name)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggle(gen.name);
+                    }
+                  }}
+                >
+                  <td>
+                    <b>{gen.name}</b>
+                    <div className="sub">{gen.is_baseline ? "baseline" : gen.mode}</div>
+                  </td>
+                  <td><CountChips counts={gen.counts.texture} /></td>
+                  <td><CountChips counts={gen.counts.brightness} /></td>
+                  <td className="mono num">{num(median)}</td>
+                  {gen.is_baseline ? (
+                    <td colSpan={span}><span className="gen-pill-base">baseline</span></td>
+                  ) : indicators.length === 0 ? (
+                    <td>–</td>
+                  ) : (
+                    indicators.map(ind => {
+                      const result = gen.vs_baseline?.find(v => v.indicator === ind.indicator);
+                      return <td key={ind.indicator}>{result ? <Chip result={result} /> : "–"}</td>;
+                    })
+                  )}
+                </tr>
+                {open && (
+                  <tr className="xrow-row">
+                    <td colSpan={4 + span}>
+                      <Formula gen={gen} baseline={baseline} indicators={indicators} n={board.n_cases} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
+      <div className="tfoot">
+        {openGen === null ? (
+          <span className="sub">Click a row to inspect</span>
+        ) : (
+          <button
+            type="button"
+            className="dark"
+            onClick={() => onRoute({ view: "dataset", version: openGen.name })}
+          >
+            {`Open ${openGen.name}`}
+          </button>
+        )}
+      </div>
     </section>
+  );
+}
+
+interface FormulaProps {
+  gen: Generator;
+  baseline: Generator | undefined;
+  indicators: VsBaseline[];
+  n: number;
+}
+
+// Fórmula por indicador: com indicador de aprovação de textura, a contagem antes → depois; os demais mostram ganho e IC.
+function Formula({ gen, baseline, indicators, n }: FormulaProps) {
+  if (gen.is_baseline) {
+    return <div className="xrow"><div className="formula mono"><span>Reference</span><span>nothing to compare</span></div></div>;
+  }
+  const approved = approvedIndicator(indicators);
+  const before = baseline?.counts.texture.approved ?? 0;
+  const after = gen.counts.texture.approved;
+  return (
+    <div className="xrow">
+      {indicators.map(ind => {
+        const result = gen.vs_baseline?.find(v => v.indicator === ind.indicator);
+        const text = !result
+          ? "–"
+          : approved && ind.indicator === approved.indicator
+            ? formulaFor(result, before, after)
+            : gainText(result);
+        return (
+          <div className="formula mono" key={ind.indicator}>
+            <span>{ind.label}</span>
+            <span>{text}</span>
+          </div>
+        );
+      })}
+      <div className="src2">{`SAME ${n} SLICES · VS ${baseline?.name ?? "baseline"}`}</div>
+    </div>
   );
 }
 
