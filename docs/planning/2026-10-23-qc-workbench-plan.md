@@ -450,3 +450,29 @@ test("null prints dash", () => expect(num(null)).toBe("–"));
 - [ ] **Step 2: Full test run** — `.venv/bin/pytest workbench/tests -q` and `npm --prefix workbench/web test -- --run` → all PASS; `git status --short frameworks wavelet/src` → empty (judge untouched).
 - [ ] **Step 3: Parity check** — run both panels; for 3 slices (one approved, one review, the brightness-review one) compare every number shown in `ui_placar.py` with the workbench. Record the result in the commit message.
 - [ ] **Step 4: Commit** — `git add README.md workbench/README.md && git commit -m "Documenta o QC workbench"`.
+
+---
+
+### Task 12: Chart polish (dataviz method) — runs after Task 10, before Task 11
+
+Added 2026-10-23 at the user's request (`/dataviz`). Validator results that motivate it: the status set `#2f9e57,#d9a21b,#c0392b` PASSES (worst adjacent CVD ΔE 8.6; `#d9a21b` is 2.24:1 → relief rule: always paired with a text label); the generator palette from Task 9 FAILS (lightness, chroma, protan ΔE 3.4).
+
+**Files:**
+- Create: `workbench/web/src/palette.ts`, `workbench/web/src/palette.test.ts`
+- Modify: every chart in `src/components/{Heatmap,ZStrip}.tsx`, `src/tools/*.tsx`, `src/components/{GeneratorBoard,ManyGenerators}.tsx`, `src/views/CompareView.tsx`
+
+**Interfaces:**
+- Produces (`palette.ts`):
+  - `SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]` (fixed order, never cycled; max 8 entities, more fold into "Other")
+  - `REFERENCE_INK = "#52514e"` (real/reference line — neutral, not a series hue)
+  - `BAND_FILL = "#f0efec"` (reference P5–P95 bands)
+  - `DIVERGING = {neg: "#2a78d6", mid: "#f0efec", pos: "#e34948"}` (GLCM diff, z, log2 ratio)
+  - `SEQUENTIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]` (GLCM matrices, NEx window maps)
+  - `seriesColor(entity: string, order: string[]): string` — colour by the entity's index in a **stable** order (the board's generator order, or the selected-slice order), never by its rank among currently checked items
+  - status colours stay in `status.ts` (`COLOR`), unchanged
+- Rules applied to every chart: Plot `tip: true` on every mark (hover tooltip, value first); lines 2 px; dots r ≥ 4; a legend for ≥ 2 series plus direct end-labels when ≤ 4 series; grid/axes recessive (`#d8d7d3`); one y-axis per chart; text never in series colour; real/synthetic in single-pair tools = `REFERENCE_INK` (real) and `SERIES[0]` (synthetic).
+
+- [ ] **Step 1: Failing tests** (`palette.test.ts`): `seriesColor("b", ["a","b","c"]) === SERIES[1]`; unchecking "a" does not change b's colour (call with the same stable order); a 9th entity throws or returns the "Other" gray `#8a8f8c`.
+- [ ] **Step 2: Run** `npm --prefix workbench/web test -- --run` → FAIL. **Step 3: Implement** `palette.ts` and apply it and the rules to every chart listed. **Step 4: Tests + build** → PASS.
+- [ ] **Step 5: Validate** — `node <dataviz>/scripts/validate_palette.js "<SERIES joined>" --mode light` → all hard checks PASS (contrast WARN accepted with labels/tooltips). Record output in the report.
+- [ ] **Step 6: Commit** — `git commit -m "Aplica o método de dataviz aos gráficos do workbench"`.
