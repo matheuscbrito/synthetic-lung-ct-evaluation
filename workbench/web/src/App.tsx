@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, get, post, type ServerStatus, type SlicesResponse, type Slice, type Version } from "./api";
 import { TopBar } from "./components/TopBar";
+import { DatasetView } from "./views/DatasetView";
 import { useRoute } from "./route";
 
 function message(error: unknown): string {
@@ -38,13 +39,16 @@ export default function App() {
     "";
 
   useEffect(() => {
-    if (!status || status.stale || !version) {
-      setSlices(null);
-      return;
-    }
+    // troca de versão: descarta os tiles anteriores antes de buscar os novos
+    setSlices(null);
+    if (!status || status.stale || !version) return;
     let live = true;
     get<SlicesResponse>("/api/slices", { version })
-      .then(r => live && setSlices(r.slices))
+      .then(r => {
+        if (!live) return;
+        setSlices(r.slices);
+        setError(null);
+      })
       .catch(e => live && setError(message(e)));
     return () => {
       live = false;
@@ -84,7 +88,11 @@ export default function App() {
       />
       {error && <div className="error">{error}</div>}
       <main>
-        <p className="placeholder">{route.view}</p>
+        {route.view === "dataset" && slices ? (
+          <DatasetView route={route} onRoute={setRoute} version={version} slices={slices} />
+        ) : (
+          <p className="placeholder">{route.view}</p>
+        )}
       </main>
     </>
   );
