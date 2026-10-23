@@ -2,20 +2,13 @@ import { useMemo } from "react";
 import * as Observable from "@observablehq/plot";
 import type { WaveletBands } from "../api";
 import { Info } from "../components/Info";
+import { waveletType } from "../definitions";
 import { Plot, type PlotOptions } from "../components/Plot";
 import { num } from "../format";
 import { GRID, REFERENCE_INK, SERIES } from "../palette";
 import { useToolData } from "./toolData";
 
 const WIDTH = 640;
-
-// Tipo do wavelet vem do backend em português; a interface mostra em inglês (valor cru se desconhecido).
-const TYPE_LABEL: Record<string, string> = {
-  borrou: "blurred",
-  "ruído": "noise",
-  "perdeu contraste": "lost contrast",
-  "textura preservada": "texture preserved",
-};
 
 interface Props {
   version: string;
@@ -62,7 +55,7 @@ export function WaveletTool({ version, caseId }: Props) {
       {error && <p className="tool-error">{error}</p>}
       {data && (
         <>
-          <p className="tool-label">Type: {TYPE_LABEL[data.type] ?? data.type}</p>
+          <p className="tool-label">Type: {waveletType(data.type)}</p>
           {options && <Plot options={options} />}
         </>
       )}
