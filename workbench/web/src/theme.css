@@ -164,8 +164,9 @@ body {
   fill: none;
 }
 
+/* mesma cor do fundo do botão selecionado (.nav.on .ib): os anéis parecem recortes */
 .nav.on .icon-slice .ring {
-  stroke: #fff;
+  stroke: #e6e2db;
 }
 
 .nav:active .ib {
