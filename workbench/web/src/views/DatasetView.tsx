@@ -1,22 +1,46 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Slice, Verdict } from "../api";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import type { Slice, Verdict, Version } from "../api";
 import type { Route } from "../route";
-import { sortSlices } from "../status";
+import { COLOR, sortSlices } from "../status";
 import { toggle } from "../selection";
 import { Info } from "../components/Info";
 import { ThumbGrid } from "../components/ThumbGrid";
 import { Heatmap } from "../components/Heatmap";
 import { ZStrip } from "../components/ZStrip";
+import { PageHeader } from "../ui/PageHeader";
+import { Seg } from "../ui/Seg";
+import { ChipSelect } from "../ui/ChipSelect";
+import { Card } from "../ui/Card";
+import { Kpi, CountUp } from "../ui/Kpi";
+import { datasetSummary, searchSlices } from "./datasetSummary";
 
 interface Props {
   route: Route;
   onRoute: (patch: Partial<Route>) => void;
   version: string;
+  versions: Version[];
+  isBaseline: boolean;
   slices: Slice[];
 }
 
+// Rótulos fixos do projeto: juiz congelado e régua de calibração da versão de referência.
+const JUDGE = "juiz-v1";
+const RULER = "dsr-v1";
+// Barra de pior |z| cheia em 2.2 IQR (como no deck).
+const BAR_FULL_Z = 2.2;
+
+const VERDICT_OPTIONS: { value: Verdict; label: string }[] = [
+  { value: "texture", label: "Texture" },
+  { value: "brightness", label: "Brightness" },
+];
+
+const MODE_OPTIONS: { value: "grid" | "matrix"; label: string }[] = [
+  { value: "grid", label: "Grid" },
+  { value: "matrix", label: "Matrix" },
+];
+
 const STATUS_FILTERS = [
-  { value: "all", label: "All" },
+  { value: "all", label: "All statuses" },
   { value: "approved", label: "Approved" },
   { value: "review", label: "Review" },
   { value: "rejected", label: "Rejected" },
@@ -39,41 +63,50 @@ function techniquesOf(slices: Slice[], verdict: Verdict): string[] {
   return [...names];
 }
 
-export function DatasetView({ route, onRoute, version, slices }: Props) {
+export function DatasetView({ route, onRoute, version, versions, isBaseline, slices }: Props) {
   const verdict: Verdict = route.verdict ?? "texture";
 
   const sortOptions = useMemo(
     () => [
-      { value: "worst", label: "Worst first" },
-      { value: "name", label: "Name" },
-      ...sortKeys(slices, verdict),
+      { value: "worst", label: "Sort: worst first" },
+      { value: "name", label: "Sort: name" },
+      ...sortKeys(slices, verdict).map(o => ({ value: o.value, label: `Sort: ${o.label}` })),
     ],
     [slices, verdict],
   );
   const sort = route.sort !== undefined && sortOptions.some(o => o.value === route.sort) ? route.sort : "worst";
 
-  const filterOptions = useMemo(
+  const techniques = useMemo(() => techniquesOf(slices, verdict), [slices, verdict]);
+  const techniqueOptions = useMemo(
     () => [
-      ...STATUS_FILTERS,
-      ...techniquesOf(slices, verdict).map(t => ({ value: `technique:${t}`, label: `${t} out of range` })),
+      { value: "any", label: "Any technique" },
+      ...techniques.map(t => ({ value: t, label: `${t} out of range` })),
     ],
-    [slices, verdict],
+    [techniques],
   );
-  const [filterValue, setFilterValue] = useState("all");
-  const filter = filterOptions.some(o => o.value === filterValue) ? filterValue : "all";
+
+  const [statusValue, setStatusValue] = useState("all");
+  const [techniqueValue, setTechniqueValue] = useState("any");
+  const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<"grid" | "matrix">("grid");
+  const status = STATUS_FILTERS.some(o => o.value === statusValue) ? statusValue : "all";
+  const technique = techniqueOptions.some(o => o.value === techniqueValue) ? techniqueValue : "any";
+
+  const summary = useMemo(() => datasetSummary(slices, verdict), [slices, verdict]);
+  const patients = useMemo(() => new Set(slices.map(s => s.patient)).size, [slices]);
 
   const visible = useMemo(() => {
     const keep = (slice: Slice): boolean => {
       const block = slice[verdict];
-      if (filter === "all") return true;
-      if (filter.startsWith("technique:")) {
-        const status = block.techniques[filter.slice("technique:".length)];
-        return status !== undefined && status !== "approved";
+      if (status !== "all" && block.verdict !== status) return false;
+      if (technique !== "any") {
+        const state = block.techniques[technique];
+        return state !== undefined && state !== "approved";
       }
-      return block.verdict === filter;
+      return true;
     };
-    return sortSlices(slices.filter(keep), verdict, sort);
-  }, [slices, verdict, filter, sort]);
+    return sortSlices(searchSlices(slices.filter(keep), query), verdict, sort);
+  }, [slices, verdict, status, technique, query, sort]);
 
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -84,30 +117,101 @@ export function DatasetView({ route, onRoute, version, slices }: Props) {
 
   const open = (caseId: string) => onRoute({ view: "slice", caseId });
   const toggleSelect = (caseId: string) => setSelected(prev => toggle(prev, caseId));
+  const verdictName = verdict === "texture" ? "Texture" : "Brightness";
 
   return (
-    <div className="dataset">
-      <section className="dataset-main">
-        <div className="controls">
-          <select aria-label="Sort" value={sort} onChange={e => onRoute({ sort: e.target.value })}>
-            {sortOptions.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <select aria-label="Filter" value={filter} onChange={e => setFilterValue(e.target.value)}>
-            {filterOptions.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          {selected.size >= 2 && (
-            <button
-              type="button"
-              onClick={() => onRoute({ view: "compare", cases: [...selected], version })}
-            >
-              {`Compare (${selected.size})`}
-            </button>
-          )}
+    <div className="dataset-view">
+      <PageHeader
+        eyebrow={isBaseline ? "Dataset · Baseline" : "Dataset"}
+        title={version}
+        sub={
+          <>
+            {`${slices.length} slices · ${patients} patients · ruler `}
+            <span className="mono">{RULER}</span>
+          </>
+        }
+        right={
+          <>
+            <span className="judge-tag">{`Judge ${JUDGE} · frozen`}</span>
+            {versions.length > 0 && (
+              <ChipSelect
+                label="Version"
+                value={version}
+                options={versions.map(v => ({ value: v.name, label: v.name }))}
+                onChange={name => onRoute({ version: name })}
+              />
+            )}
+          </>
+        }
+      />
+
+      <Seg<Verdict> label="Verdict" options={VERDICT_OPTIONS} value={verdict} onChange={v => onRoute({ verdict: v })} />
+
+      <div className="kpis">
+        <div>
+          <Kpi label={`${verdictName} verdict`} value={summary.counts.approved} suffix={`of ${slices.length} approved`} countUp />
+          <div className="row">
+            Review <CountUp value={summary.counts.review} />
+          </div>
+          <div className="row">
+            Rejected <CountUp value={summary.counts.rejected} />
+          </div>
         </div>
+        <div>
+          <div className="eyebrow">Worst |Δ| per slice · IQR</div>
+          <div className="bars">
+            {summary.bars.map((bar, i) => (
+              <i
+                key={bar.caseId}
+                title={`${bar.caseId} · ${bar.worst.toFixed(1)} · ${bar.status}`}
+                style={
+                  {
+                    "--h": `${Math.min(100, (bar.worst / BAR_FULL_Z) * 100)}%`,
+                    "--i": i,
+                    background: COLOR[bar.status],
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+          <div className="stats">
+            {techniques.map(t => (
+              <div key={t}>
+                {t}
+                <b>{`${summary.outOfRange[t] ?? 0} out of range`}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="filters">
+        <ChipSelect label="Status" value={status} options={STATUS_FILTERS} onChange={setStatusValue} />
+        <ChipSelect label="Technique" value={technique} options={techniqueOptions} onChange={setTechniqueValue} />
+        <ChipSelect label="Sort" value={sort} options={sortOptions} onChange={value => onRoute({ sort: value })} />
+        <label className="ui-chip ds-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            aria-label="Search slice"
+            placeholder="Search slice"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+        </label>
+        <Seg<"grid" | "matrix"> label="Layout" options={MODE_OPTIONS} value={mode} onChange={setMode} small />
+        {selected.size >= 2 && (
+          <button
+            type="button"
+            className="dark"
+            onClick={() => onRoute({ view: "compare", cases: [...selected], version })}
+          >
+            {`Compare (${selected.size})`}
+          </button>
+        )}
+      </div>
+
+      {mode === "grid" ? (
         <ThumbGrid
           version={version}
           slices={visible}
@@ -118,20 +222,22 @@ export function DatasetView({ route, onRoute, version, slices }: Props) {
           onOpen={open}
           onToggleSelect={toggleSelect}
         />
-      </section>
-
-      <aside className="dataset-side">
-        <h3>Heatmap <Info term={verdict} /></h3>
-        <Heatmap
-          slices={visible}
-          verdict={verdict}
-          onHover={setHovered}
-          onOpen={open}
-          onToggleSelect={toggleSelect}
-        />
-        <h3>Z</h3>
-        <ZStrip slices={visible} verdict={verdict} hovered={hovered} />
-      </aside>
+      ) : (
+        <Card className="matrix">
+          <div className="eyebrow ink">
+            Heatmap <Info term={verdict} />
+          </div>
+          <Heatmap
+            slices={visible}
+            verdict={verdict}
+            onHover={setHovered}
+            onOpen={open}
+            onToggleSelect={toggleSelect}
+          />
+          <div className="eyebrow ink">Z</div>
+          <ZStrip slices={visible} verdict={verdict} hovered={hovered} />
+        </Card>
+      )}
     </div>
   );
 }
