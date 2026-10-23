@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Verdict } from "./api";
 
-export type View = "dataset" | "slice" | "generators" | "compare" | "versions";
+export type View = "dataset" | "slice" | "generators" | "compare" | "versions" | "agent";
 
 export type Route = {
   view: View;
@@ -12,7 +12,7 @@ export type Route = {
   sort?: string;
 };
 
-const VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions"];
+const VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions", "agent"];
 const DEFAULT: Route = { view: "dataset", verdict: "texture" };
 
 // Hash: #/view?version=…&case=…&cases=…&verdict=…&sort=…; ids com espaço e ponto passam por URLSearchParams.
