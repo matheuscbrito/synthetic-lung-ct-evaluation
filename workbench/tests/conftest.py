@@ -31,3 +31,17 @@ def stale_dir(tmp_path):
     del history["calibration"]["nex_reference"]
     path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
     return tmp_path
+
+
+@pytest.fixture
+def tmp_history(tmp_path):
+    """Cópia do histórico para testes que escrevem: inclui `Dsr-copy`, uma duplicata de Dsr como segunda versão."""
+    shutil.copy(HISTORY_DIR / "historico.json", tmp_path / "historico.json")
+    shutil.copytree(HISTORY_DIR / "versoes", tmp_path / "versoes")
+    shutil.copy(tmp_path / "versoes" / "Dsr.csv", tmp_path / "versoes" / "Dsr-copy.csv")
+    path = tmp_path / "historico.json"
+    history = json.loads(path.read_text(encoding="utf-8"))
+    dsr = next(item for item in history["versions"] if item["name"] == "Dsr")
+    history["versions"].append({**dsr, "name": "Dsr-copy"})
+    path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    return tmp_path
