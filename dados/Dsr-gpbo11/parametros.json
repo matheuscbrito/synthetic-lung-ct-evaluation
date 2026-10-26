@@ -1,0 +1,13 @@
+{
+  "run": "runs/real/gpbo-11-full/report.json",
+  "candidate": {
+    "steps": 43,
+    "noise_level": 2,
+    "sampler": "ddim",
+    "scale_factor": 1.0,
+    "seed": 42,
+    "eta": 0.767,
+    "latent_noise_scale": 0.75,
+    "conditioning_noise_scale": 1.5
+  }
+}
