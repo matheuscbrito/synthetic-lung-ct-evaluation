@@ -37,23 +37,34 @@ O lab é somente leitura: o workbench nunca escreve nele.
 
 ## Endpoints
 
-Todos são `GET`, exceto onde indicado. Erros têm `detail` em inglês.
+Todos são `GET`, exceto onde indicado. Os erros da própria API têm `detail` em inglês; a mensagem de
+`PlacarError` do framework passa como veio, em português.
 
 - Datasets e histórico: `GET /api/datasets`, `POST /api/datasets/{nome}/init`, `GET /api/status`
   (`stale`, `has_history`, `baseline`, `reference`, `token`).
-- Versões: `GET /api/versions` (nome, modo, `n_cases`, `added`, `is_baseline`, `reference`,
+- Versões: `GET /api/versions` (nome, modo e `mode_code`, `n_cases`, `added`, `is_baseline`, `reference`,
   `suspicious_pairs`, `n_common`), `GET /api/versions/detected`, `POST /api/versions`,
-  `DELETE /api/versions/{nome}`, `POST /api/refresh`.
+  `DELETE /api/versions/{nome}`, `POST /api/refresh`. `POST /api/versions` vale para Dsr e Dgen: o
+  Streamlit oferecia a adição só para Dsr; aqui é intencional.
 - Cortes: `GET /api/slices?version=` traz, por corte, `brightness`, `texture` e `noise` (cada um com
   `verdict` e `techniques`), `why` (motivos por grupo, com `limit`, `limit_value`, `direction` e `note`),
   `metrics` (valor, `z`, IC 95% em `z_low`/`z_high`, `certain`), `noise_roi_count`, `noise_available`,
-  `wavelet_energy`, `density` e `wavelet_type`. Valores ausentes ou não finitos saem como `null`.
+  `wavelet_energy`, `density`, `wavelet_type` e `wavelet_type_code` (`preserved`, `blurred`, `noise`,
+  `lost_contrast`, `gained_contrast`, `saturated`). `pair_mode` vem com `mode_code` (`same_anatomy` ou
+  `mask_only`). `pct_of_original` é `null` para Sat31, Δμ e manchas do ar. Valores ausentes ou não
+  finitos saem como `null`.
 - Imagens: `GET /api/image/{versão}/{corte}/{real|synthetic|diff|contour}.png` (`size`, `window`).
 - Ferramentas por corte: `GET /api/tools/{versão}/{corte}/spectrum`, `/glcm`, `/nex`, `/wavelet`.
 - Placar: `GET /api/board?baseline=` (contagens, medianas de |z|, escores e comparação com a linha de base).
+  `indicators` traz rótulo, grupo, unidade (em inglês), `ideal` e `min_change` de cada indicador, e
+  `scores` tem só esses indicadores. A referência padrão é a `reference` do histórico (se existir e
+  estiver nas versões); sem ela, a primeira versão. Cada gerador traz `mode_code`.
+  Os IC de `vs_baseline` usam um `default_rng(0)` novo por par de versões: são determinísticos, mas podem
+  diferir um pouco da tabela de pares adjacentes do Streamlit.
 - Calibração: `GET /api/calibration` (réguas do histórico, Sat31 e limites de |z|, constantes do juiz).
 - Comparações: `GET /api/transitions?before=&after=&verdict=brightness|texture|noise` e
-  `GET /api/cohort?version=` (teste de Wilcoxon do NEx e tipos de wavelet).
+  `GET /api/cohort?version=` (teste de Wilcoxon do NEx e tipos de wavelet, em `wavelet_types` e
+  `wavelet_type_codes`). A mediana do NEx sai só com n ≥ 10; o sentido, só quando o teste é sistemático.
 - Figuras (PNG): `GET /api/figure/{corte}/technique/{técnica}.png`,
   `GET /api/figure/{corte}/map/{camada}.png?compared=`, e `GET /api/figure/{corte}/nps.png?versions=`.
   Para o NPS e o teste do ar (`nps.png`), passe sempre `versions=<referência>,<comparada>`: sem isso a
