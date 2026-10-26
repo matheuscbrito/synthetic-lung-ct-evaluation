@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import altair as alt
+from scipy.stats import wilcoxon
 from streamlit.errors import StreamlitAPIException
 
 from frameworks.texture_evaluator.placar import PlacarError, add_version, build_board, case_paths, load_case, load_history, refresh_history, remove_version, technique_table, write_outputs
@@ -27,6 +28,7 @@ from frameworks.texture_evaluator.glcm.src import quantize
 from frameworks.texture_evaluator.regional import MASK_ONLY, PAIR_MIN_CORRELATION
 from frameworks.texture_evaluator.run_mvp import context_from_dict
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES, map_figure, technique_figure
+from frameworks.noise_evaluator.integration import AIR_LABEL, AIR_LIMITS, NOISE_READINGS, NPS_METRICS, air_mask, measure_nps, natural_noise_sigma, noise_reason, noise_statuses, noise_verdict
 
 
 # Atalhos de navegação; cada dataset mantém histórico e calibração próprios.
@@ -41,7 +43,8 @@ OFFICIAL_REVIEW, OFFICIAL_REJECT, OFFICIAL_SATURATION = float("nan"), float("nan
 STATUS_TEXT = {"approved": "aprovada", "manual_review": "revisão manual", "hard_reject": "rejeição direta"}
 DENSITY_TEXT = {"ok": "normal", "brighter": "clareou", "darker": "escureceu", "too_bright": "claro demais", "too_dark": "escuro demais"}
 FINAL_TEXT = {"aprovada": "aprovada", "revisar": "revisão necessária", "rejeitar": "rejeição direta"}
-NEX_TEXT = {"ok": "dentro da faixa real", "alto": "acima da faixa real", "baixo": "abaixo da faixa real", "inconclusivo": "inconclusivo (poucas janelas)"}
+NEX_TEXT = {"ok": "perto da original", "alto": "acima da original", "baixo": "abaixo da original", "inconclusivo": "inconclusivo (poucas janelas)"}
+NOISE_LABEL = {"aprovada": "ruído próximo da original", "revisão": "revisão necessária", "reprovada": "ruído distante", "inconclusivo": "medição inconclusiva"}
 
 
 def resolve(text: str) -> Path:
@@ -127,6 +130,16 @@ def number(row: dict, column: str) -> float:
     return float(row[column])
 
 
+def number_or_nan(row: dict, column: str) -> float:
+    """Como number, mas célula vazia (leitura não disponível no CSV) vira NaN."""
+    value = row.get(column)
+    return float(value) if value not in {"", None} else float("nan")
+
+
+def air_available(row: dict) -> bool:
+    return str(row.get("nps_air_available", "False")).lower() in {"true", "1"}
+
+
 def br(value: float) -> str:
     """Número com vírgula decimal, como no resto do texto."""
     return f"{value:.3f}".replace(".", ",")
@@ -190,7 +203,9 @@ def final_status(row: dict) -> str:
 
 
 def nex_reading(row: dict) -> str:
-    return f"{NEX_TEXT[row['nex_status']]} (Δ {number(row, 'nex_delta'):+.3f})".replace(".", ",")
+    if not np.isfinite(number_or_nan(row, "nex_z")):
+        return NEX_TEXT[row["nex_status"]]
+    return f"{NEX_TEXT[row['nex_status']]} ({number(row, 'nex_z'):+.1f} IQR)".replace(".", ",")
 
 
 TEXTURE_LABEL = {"aprovada": "textura preservada", "revisão": "revisão necessária", "reprovada": "reprovada"}
@@ -210,7 +225,7 @@ def wavelet_metric_reading(row: dict, key: str) -> str:
 def technique_reason(row: dict, technique: str) -> str:
     """O que a técnica disse neste corte, só com as métricas fora da faixa."""
     if technique == "NEx":
-        return "" if row["nex_status"] == "ok" else f"{NEX_TEXT[row['nex_status']]} (Δ {number(row, 'nex_delta'):+.3f})".replace(".", ",")
+        return "" if row["nex_status"] == "ok" else nex_reading(row)
     prefix, metrics = TECHNIQUE_METRICS[technique]
     flagged = [f"{label.removeprefix(technique + ' ')} {metric_reading(row, prefix, key)}" for key, label in metrics.items() if row[f"{prefix}_{key}_status"] != "aprovada"]
     verdict = row.get("wavelet_verdict", "textura preservada")
@@ -224,8 +239,8 @@ def texture_decision(row: dict) -> tuple[str, str]:
 
     GLCM, Wavelet e NEx são classificadas cada uma por conta própria; a pior
     delas decide. GLCM e Wavelet usam a regra do filtro de brilho (diferença
-    em IQR das CTs reais: revisão > 1, reprovada > 2); NEx fora de P5–P95 das
-    CTs reais pede revisão.
+    em IQR das CTs reais: revisão > 1, reprovada > 2); NEx a mais de 1 IQR da
+    própria original pede revisão.
     """
     reasons = [f"{technique}: {reason}" for technique in TECHNIQUES if (reason := technique_reason(row, technique))]
     return TEXTURE_LABEL[texture_status(row)], " · ".join(reasons) if reasons else "GLCM, Wavelet e NEx dentro das faixas de referência"
@@ -234,15 +249,32 @@ def texture_decision(row: dict) -> tuple[str, str]:
 TRANSITION_LABEL = {
     "brilho": {"aprovada": "aprovada", "revisão": "revisão manual", "reprovada": "rejeição direta"},
     "textura": {"aprovada": "aprovada", "revisão": "revisão necessária", "reprovada": "reprovada"},
+    "ruido": {"aprovada": "próximo da original", "revisão": "revisão necessária", "reprovada": "distante da original", "inconclusivo": "inconclusivo"},
 }
-TRANSITION_SEVERITY = {"aprovada": 0, "revisão": 1, "reprovada": 2}
+TRANSITION_SEVERITY = {"aprovada": 0, "revisão": 1, "inconclusivo": 1, "reprovada": 2}
+
+
+def sortable_status_label(label: str) -> str:
+    """Prefixa o estado pela gravidade para a ordenação da tabela ser clínica, não alfabética."""
+    severity = {
+        "aprovada": 1,
+        "próximo da original": 1,
+        "textura preservada": 1,
+        "revisão manual": 2,
+        "revisão necessária": 2,
+        "inconclusivo": 2,
+        "rejeição direta": 3,
+        "reprovada": 3,
+        "distante da original": 3,
+    }
+    return f"{severity.get(label, 2)} · {label}"
 
 
 def transition_rows(board: dict, before: str, after: str, mode: str) -> list[dict]:
     """Mudança de classificação de cada corte entre duas versões."""
     old = {row["case_id"]: row for row in board["rows"][before]}
     new = {row["case_id"]: row for row in board["rows"][after]}
-    decision = brightness_verdict if mode == "brilho" else texture_status
+    decision = brightness_verdict if mode == "brilho" else noise_verdict if mode == "ruido" else texture_status
     result = []
     for case_id in sorted(old.keys() & new.keys()):
         previous, current = decision(old[case_id]), decision(new[case_id])
@@ -282,11 +314,15 @@ def technique_why(row: dict, technique: str, reference: dict) -> str:
     """Por que a técnica chegou à classificação deste corte, citando o limite que foi cruzado."""
     status = technique_statuses(row)[technique]
     if technique == "NEx":
-        value, band = number(row, "nex_synthetic"), f"{br(reference['p5'])} a {br(reference['p95'])}"
         if status == "inconclusivo":
             return "Poucas janelas de 32 px dentro do pulmão: leitura inconclusiva, não pesa no veredito."
-        side = {"ok": "dentro", "alto": "acima", "baixo": "abaixo"}[row["nex_status"]]
-        return f"NEx da sintética = {br(value)}, {side} da faixa das CTs reais ({band})."
+        z, low, high = number(row, "nex_z"), number(row, "nex_z_low"), number(row, "nex_z_high")
+        if row["nex_status"] == "ok":
+            where = "passa de 1 IQR, mas a margem de erro inclui zero: pode ser oscilação da medida, não pesa" if abs(z) > 1 else "dentro de ±1 IQR"
+        else:
+            where = "além de +1 IQR" if z > 0 else "além de −1 IQR"
+        return (f"NEx da sintética = {br(number(row, 'nex_synthetic'))} contra {br(number(row, 'nex_real'))} da original: "
+                f"diferença de {z:+.1f} IQR das CTs reais (margem de erro de {low:+.1f} a {high:+.1f}), {where}".replace(".", ",") + ".")
     prefix, metrics = TECHNIQUE_METRICS[technique]
     names = [label.removeprefix(technique + " ") for key, label in metrics.items() if row[f"{prefix}_{key}_status"] == status]
     if status == "aprovada":
@@ -314,7 +350,7 @@ def show_texture_limits(reference: dict):
     approved.success("**Aprovada**\n\nDentro da variação real.", icon=":material/check_circle:")
     review.warning("**Revisão**\n\nDiferença a conferir.", icon=":material/visibility:")
     rejected.error("**Reprovada**\n\nDiferença forte.", icon=":material/cancel:")
-    st.caption("GLCM e Wavelet comparam a sintética com a variação das CTs reais. NEx fora da faixa pede revisão, mas não reprova sozinho. A técnica mais severa define o resultado.")
+    st.caption("GLCM e Wavelet comparam a sintética com a variação das CTs reais. O NEx compara a sintética com a própria original: mais de 1 IQR de diferença pede revisão, mas não reprova sozinho. A técnica mais severa define o resultado.")
 
 
 @st.cache_data(show_spinner="Carregando a figura do corte...")
@@ -372,6 +408,83 @@ def version_triptych_png(history_dir: str, stamp: float, case_id: str, baseline:
     return png(fig, "#050607")
 
 
+@st.cache_data(show_spinner="Calculando a flutuação local e o NPS...")
+def nps_case_png(history_dir: str, stamp: float, case_id: str, baseline: str, version: str) -> bytes:
+    """ROIs e flutuação local do NPS (linhas 1 e 2) e ar fora do corpo (linha 3) nas três imagens."""
+    history = load_history(Path(history_dir))
+    entries = {item["name"]: item for item in history["versions"]}
+    before, after = load_case(entries[baseline], case_id), load_case(entries[version], case_id)
+    fallback_sigma = history["calibration"]["nps_reference"]["air_fallback_sigma"]
+    air = air_mask(before.original)
+    sigma = natural_noise_sigma(before.original, before.lung_mask)
+    if not np.isfinite(sigma):
+        sigma = fallback_sigma
+    rois = None
+    try:
+        rois, real = measure_nps(before.original, before.lung_mask)
+        _, old = measure_nps(before.synthetic, before.lung_mask, rois)
+        _, new = measure_nps(after.synthetic, after.lung_mask, rois)
+    except ValueError:
+        rois = None
+    if rois is None:
+        # sem NPS no pulmão, a figura mostra só o ar, em tamanho grande
+        fig = plt.figure(figsize=(15, 6.2), facecolor="white")
+        grid = fig.add_gridspec(1, 3, wspace=.08)
+        air_row = 0
+        fig.text(.5, .9, "Pulmão pequeno demais para o NPS (não cabem 4 regiões de 32 × 32 px sem sobreposição): só o teste do ar foi medido.",
+                 ha="center", fontsize=11, color="#4b5563")
+    else:
+        fig = plt.figure(figsize=(15, 11), facecolor="white")
+        grid = fig.add_gridspec(3, 4, height_ratios=[1, 1.05, .95], width_ratios=[1, 1, 1, 1.35], hspace=.3, wspace=.16)
+        air_row = 2
+        chosen = 0
+        patches = (real.residual_patches[chosen], old.residual_patches[chosen], new.residual_patches[chosen])
+        vmax = max(float(np.percentile(np.abs(patch), 99)) for patch in patches)
+        overview = fig.add_subplot(grid[0, 0])
+        overview.imshow(before.original, cmap="gray", interpolation="nearest")
+        for index, roi in enumerate(rois):
+            color, width = ("#f59e0b", 2.4) if index == chosen else ("#64b5a7", .7)
+            overview.add_patch(plt.Rectangle((roi.x, roi.y), roi.size, roi.size, fill=False, ec=color, lw=width, alpha=.95 if index == chosen else .45))
+        overview.set_title("Onde o NPS mede", fontweight="bold")
+        overview.axis("off")
+        for axis, patch, title in zip((fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[0, 2]), fig.add_subplot(grid[0, 3])), patches,
+                                      ("Flutuação · original", f"Flutuação · {baseline}", f"Flutuação · {version}")):
+            axis.imshow(patch, cmap="coolwarm", vmin=-vmax, vmax=vmax, interpolation="nearest")
+            axis.set_title(title, fontweight="bold")
+            axis.set_xticks([]); axis.set_yticks([])
+        curve = fig.add_subplot(grid[1, :])
+        for result, label, color in ((real, "original", "#242a35"), (old, baseline, "#c45a35"), (new, version, "#157a72")):
+            power = result.radial_power / max(float(result.radial_power.sum()), np.finfo(float).eps)
+            x = result.frequencies / result.features["nyquist_frequency"]
+            curve.plot(x, power, lw=2.4, label=label, color=color)
+        curve.axvspan(0, .25, color="#e2b55d", alpha=.14, label="padrões largos")
+        curve.axvspan(.60, 1, color="#5da6a0", alpha=.12, label="grão fino")
+        curve.set_xlabel("tamanho do padrão no ruído  ·  largo  ←  frequência  →  fino")
+        curve.set_ylabel("parcela da quantidade de ruído")
+        curve.set_xlim(0, 1); curve.grid(alpha=.16)
+        curve.legend(frameon=False, ncol=5, loc="upper center")
+        fig.text(.5, .015, "Vermelho = acima da tendência local · azul = abaixo · a cor não significa bom ou ruim", ha="center", fontsize=10, color="#4b5563")
+    # o ajuste vem antes da barra de cores; depois dele a barra ficaria por cima do último painel
+    fig.subplots_adjust(left=.055, right=.985, top=.86 if rois is None else .94, bottom=.07)
+    panels = (("original", before.original), (baseline, before.synthetic), (version, after.synthetic))
+    if air.mean() >= 0.02:
+        air_axes, images = [], []
+        for column, (label, image) in enumerate(panels):
+            axis = fig.add_subplot(grid[air_row, column])
+            deviation = np.where(air, np.abs(image - np.median(image[air])) / sigma, np.nan)
+            images.append(axis.imshow(deviation, cmap="magma", vmin=0, vmax=5, interpolation="nearest"))
+            axis.set_title(f"Ar fora do corpo · {label}", fontweight="bold")
+            axis.set_xticks([]); axis.set_yticks([])
+            air_axes.append(axis)
+        fig.colorbar(images[-1], ax=air_axes, fraction=.025, pad=.02, label="desvio em × ruído natural (acima de 3 = mancha)")
+    else:
+        notice = fig.add_subplot(grid[air_row, :])
+        notice.text(.5, .5, "ar livre insuficiente fora do corpo para medir manchas", ha="center", va="center", fontsize=12)
+        notice.axis("off")
+    fig.suptitle("O que o NPS e o teste do ar enxergaram neste corte", fontsize=16, fontweight="bold", y=.99)
+    return png(fig)
+
+
 def case_comparison_table(board: dict, case_id: str, baseline: str, version: str, mode: str) -> pd.DataFrame:
     """GLCM e Wavelet do mesmo corte nas duas gerações."""
     before = next(row for row in board["rows"][baseline] if row["case_id"] == case_id)
@@ -380,6 +493,11 @@ def case_comparison_table(board: dict, case_id: str, baseline: str, version: str
     def pct(row: dict, synthetic: str, real: str) -> float:
         return 100 * number(row, synthetic) / number(row, real)
 
+    if mode == "ruido":
+        specs = [(label, lambda row, key=key: number_or_nan(row, f"nps_{key}_synthetic"), f"nps_{key}_z") for key, label in NPS_METRICS.items()]
+        specs.append((AIR_LABEL, lambda row: number_or_nan(row, "nps_air_synthetic"), None))
+        return pd.DataFrame([{"leitura": label, baseline: noise_cell(before, label, value, z_key), version: noise_cell(after, label, value, z_key)}
+                             for label, value, z_key in specs])
     if mode == "textura":
         specs = [
             ("GLCM · contraste", lambda row: number(row, "glcm_contrast_pct"), "glcm_contrast_status", "% da original", "glcm_contrast_z"),
@@ -418,6 +536,18 @@ def case_comparison_table(board: dict, case_id: str, baseline: str, version: str
             )
         data.append(item)
     return pd.DataFrame(data)
+
+
+def noise_cell(row: dict, label: str, value, z_key: str | None) -> str:
+    """Classificação e distância de uma leitura do ruído, em texto curto para a tabela."""
+    status = noise_statuses(row)[label]
+    if z_key is None:
+        amount = value(row)
+        detail = f"{amount:.1f}% do ar" if np.isfinite(amount) else "sem medida"
+    else:
+        amount = number_or_nan(row, z_key)
+        detail = f"{amount:+.1f} IQR" if np.isfinite(amount) else "sem medida"
+    return f"{STATUS_MARK[status]} {status} · {detail}"
 
 
 @st.cache_data(show_spinner=False)
@@ -560,10 +690,14 @@ def selectable_chart(container, chart, key: str, mode: str = "textura") -> str |
 
 def metric_chart(rows: list[dict], prefix: str, key: str, domain_rows: list[dict] | None = None):
     """Como os gráficos do filtro de brilho: diferença em IQR por corte, com as faixas e a cor da classificação."""
+    # cortes sem a leitura (pulmão pequeno demais para o NPS) ficam fora do gráfico
+    measured = lambda row: np.isfinite(number_or_nan(row, f"{prefix}_{key}_z"))
+    positions = [index for index, row in enumerate(rows, 1) if measured(row)]
+    rows, domain_rows = [row for row in rows if measured(row)], [row for row in (domain_rows or []) if measured(row)] or None
     data = pd.DataFrame({
         "case_id": [row["case_id"] for row in rows],
         "corte": [case_name(row["case_id"]) for row in rows],
-        "ordem": list(range(1, len(rows) + 1)),
+        "ordem": positions,
         "z": [number(row, f"{prefix}_{key}_z") for row in rows],
         "% da original": [100 * number(row, f"{prefix}_{key}_synthetic") / number(row, f"{prefix}_{key}_real") for row in rows],
         "classificação": [row[f"{prefix}_{key}_status"] for row in rows],
@@ -578,6 +712,12 @@ def metric_chart(rows: list[dict], prefix: str, key: str, domain_rows: list[dict
         color=alt.Color("faixa:N", scale=alt.Scale(domain=list(METRIC_STATUSES), range=["#dff3e5", "#fff0c2", "#fde3e1"]), legend=None))
     rules = alt.Chart(pd.DataFrame({"limite": [-2, -1, 1, 2]})).mark_rule(color="#8a5a22", opacity=.6, strokeDash=[4, 4]).encode(y=alt.Y("limite:Q", scale=scale))
     selection = case_selection(nearest=True)
+    chart = band_layer + rules
+    # margem de erro do corte (IC 95% por bootstrap), quando a leitura a traz; atrás dos pontos
+    if any(np.isfinite(number_or_nan(row, f"{prefix}_{key}_z_low")) for row in rows):
+        ci = data.assign(baixo=[number_or_nan(row, f"{prefix}_{key}_z_low") for row in rows], alto=[number_or_nan(row, f"{prefix}_{key}_z_high") for row in rows]).dropna(subset=["baixo", "alto"])
+        chart = chart + alt.Chart(ci).mark_rule(color="#8c8f94", opacity=.5, strokeWidth=3).encode(
+            x=alt.X("ordem:Q"), y=alt.Y("baixo:Q", scale=scale, title=None), y2="alto:Q")
     points = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
         x=alt.X("ordem:Q", title="cortes do dataset"),
         y=alt.Y("z:Q", scale=scale, title="Δ (IQR das CTs reais)"),
@@ -588,6 +728,39 @@ def metric_chart(rows: list[dict], prefix: str, key: str, domain_rows: list[dict
         tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("z:Q", title="diferença (IQR)", format="+.2f"), alt.Tooltip("% da original:Q", format=".0f"), alt.Tooltip("classificação:N")],
     ).add_params(selection)
     # escalas de cor independentes: senão as faixas (tons claros) e os pontos (tons fortes) dividem uma só escala
+    return (chart + points).resolve_scale(color="independent").properties(height=260).configure_axis(grid=True, gridOpacity=.14).configure_view(stroke=None)
+
+
+def air_chart(rows: list[dict], domain_rows: list[dict] | None = None):
+    """Mesmo desenho dos gráficos do NPS: % do ar fora do corpo com manchas que a original não tem, nas faixas de AIR_LIMITS."""
+    ready = [(index, row) for index, row in enumerate(rows, 1) if air_available(row)]
+    data = pd.DataFrame({
+        "case_id": [row["case_id"] for _, row in ready],
+        "corte": [case_name(row["case_id"]) for _, row in ready],
+        "ordem": [index for index, _ in ready],
+        "% do ar": [number(row, "nps_air_synthetic") for _, row in ready],
+        "pico (× ruído natural)": [number(row, "nps_air_peak_sigmas") for _, row in ready],
+        "classificação": [row["nps_air_status"] for _, row in ready],
+    })
+    shared = [row for row in (domain_rows or rows) if air_available(row)]
+    limit = max(3.0, 1.12 * max((number(row, "nps_air_synthetic") for row in shared), default=0.0))
+    scale = alt.Scale(domain=[0, limit])
+    colors = alt.Scale(domain=list(METRIC_STATUSES), range=["#0b6b32", "#925a10", "#9f1f18"])
+    bands = pd.DataFrame([{"início": a, "fim": b, "faixa": f} for a, b, f in ((0, AIR_LIMITS[0], "aprovada"), (AIR_LIMITS[0], AIR_LIMITS[1], "revisão"), (AIR_LIMITS[1], limit, "reprovada"))])
+    band_layer = alt.Chart(bands).mark_rect(opacity=.14).encode(
+        y=alt.Y("início:Q", scale=scale, title="% do ar com manchas"), y2="fim:Q",
+        color=alt.Color("faixa:N", scale=alt.Scale(domain=list(METRIC_STATUSES), range=["#dff3e5", "#fff0c2", "#fde3e1"]), legend=None))
+    rules = alt.Chart(pd.DataFrame({"limite": list(AIR_LIMITS)})).mark_rule(color="#8a5a22", opacity=.6, strokeDash=[4, 4]).encode(y=alt.Y("limite:Q", scale=scale))
+    selection = case_selection(nearest=True)
+    points = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
+        x=alt.X("ordem:Q", title="cortes do dataset"),
+        y=alt.Y("% do ar:Q", scale=scale, title="% do ar com manchas"),
+        color=alt.Color("classificação:N", scale=colors, legend=None),
+        size=focused(285, 118),
+        stroke=focused("#17243b", "#24352d"),
+        strokeWidth=focused(2.2, .9),
+        tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("% do ar:Q", title="% do ar com manchas", format=".2f"), alt.Tooltip("pico (× ruído natural):Q", format=".1f"), alt.Tooltip("classificação:N")],
+    ).add_params(selection)
     return (band_layer + rules + points).resolve_scale(color="independent").properties(height=260).configure_axis(grid=True, gridOpacity=.14).configure_view(stroke=None)
 
 
@@ -597,6 +770,11 @@ def verdict_matrix(rows: list[dict], mode: str = "textura", case_order: list[str
         combined, techniques, statuses_of, verdict_of = "Brilho (combinado)", BRIGHTNESS_TECHNIQUES, brightness_statuses, brightness_verdict
         why = {"GLCM": glcm_brightness_why, "Wavelet": wavelet_brightness_why}
         reason_of, combined_reason = (lambda row, technique: why[technique](row)), brightness_explanation
+    elif mode == "ruido":
+        combined, techniques, statuses_of, verdict_of = "Ruído (combinado)", list(NOISE_READINGS.values()), noise_statuses, noise_verdict
+        metric_by_label = {label: key for key, label in NOISE_READINGS.items()}
+        reason_of = lambda row, technique: noise_reason(row, metric_by_label[technique])
+        combined_reason = lambda row: "A pior das cinco leituras decide: quatro medem o ruído dentro do pulmão e uma procura manchas inventadas no ar fora do corpo."
     else:
         combined, techniques, statuses_of, verdict_of = "Textura (combinado)", TECHNIQUES, technique_statuses, texture_status
         reason_of, combined_reason = (lambda row, technique: technique_reason(row, technique) or "dentro da faixa"), (lambda row: texture_decision(row)[1])
@@ -625,31 +803,38 @@ def verdict_matrix(rows: list[dict], mode: str = "textura", case_order: list[str
 
 
 def nex_chart(rows: list[dict], reference: dict, domain_rows: list[dict] | None = None):
-    """NEx da sintética por corte, com a faixa P5–P95 das CTs reais em verde."""
+    """Diferença de NEx sintética − própria original por corte, em IQR das CTs reais; faixa verde = ±1 IQR."""
     data = pd.DataFrame({
         "case_id": [row["case_id"] for row in rows],
         "corte": [case_name(row["case_id"]) for row in rows],
         "ordem": list(range(1, len(rows) + 1)),
+        "z": [number_or_nan(row, "nex_z") for row in rows],
+        "margem baixa": [number_or_nan(row, "nex_z_low") for row in rows],
+        "margem alta": [number_or_nan(row, "nex_z_high") for row in rows],
         "NEx sintética": [number(row, "nex_synthetic") for row in rows],
         "NEx real": [number(row, "nex_real") for row in rows],
         "classificação": [NEX_STATUS[row["nex_status"]] for row in rows],
     })
-    shared = domain_rows or rows
-    values = [*(number(row, "nex_synthetic") for row in shared), reference["p5"], reference["p95"]]
-    pad = .08 * (max(values) - min(values))
-    scale = alt.Scale(domain=[min(values) - pad, max(values) + pad])
-    band = alt.Chart(pd.DataFrame({"início": [reference["p5"]], "fim": [reference["p95"]]})).mark_rect(opacity=.14, color="#2f9e57").encode(y=alt.Y("início:Q", scale=scale, title="NEx da sintética"), y2="fim:Q")
+    shared = [value for row in (domain_rows or rows) for value in (number_or_nan(row, "nex_z"), number_or_nan(row, "nex_z_low"), number_or_nan(row, "nex_z_high")) if np.isfinite(value)]
+    limit = max(2.6, max(map(abs, shared), default=0) * 1.12)
+    scale = alt.Scale(domain=[-limit, limit])
+    band = alt.Chart(pd.DataFrame({"início": [-1], "fim": [1]})).mark_rect(opacity=.14, color="#2f9e57").encode(y=alt.Y("início:Q", scale=scale, title="Δ NEx (IQR das CTs reais)"), y2="fim:Q")
+    rules = alt.Chart(pd.DataFrame({"limite": [-1, 1]})).mark_rule(color="#8a5a22", opacity=.6, strokeDash=[4, 4]).encode(y=alt.Y("limite:Q", scale=scale))
     selection = case_selection(nearest=True)
-    points = alt.Chart(data).mark_circle(filled=True, cursor="pointer").encode(
+    measured = data.dropna(subset=["z"])
+    ci = alt.Chart(measured.dropna(subset=["margem baixa", "margem alta"])).mark_rule(color="#8c8f94", opacity=.5, strokeWidth=3).encode(
+        x=alt.X("ordem:Q"), y=alt.Y("margem baixa:Q", scale=scale, title=None), y2="margem alta:Q")
+    points = alt.Chart(measured).mark_circle(filled=True, cursor="pointer").encode(
         x=alt.X("ordem:Q", title="cortes do dataset"),
-        y=alt.Y("NEx sintética:Q", scale=scale, title="NEx da sintética"),
+        y=alt.Y("z:Q", scale=scale, title="Δ NEx (IQR das CTs reais)"),
         color=alt.Color("classificação:N", scale=STATUS_COLORS, legend=None),
         size=focused(285, 118),
         stroke=focused("#17243b", "#24352d"),
         strokeWidth=focused(2.2, .9),
-        tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("NEx sintética:Q", format=".3f"), alt.Tooltip("NEx real:Q", format=".3f"), alt.Tooltip("classificação:N")],
+        tooltip=[alt.Tooltip("corte:N"), alt.Tooltip("z:Q", title="diferença (IQR)", format="+.2f"), alt.Tooltip("margem baixa:Q", title="margem de erro, baixo (IQR)", format="+.2f"),
+                 alt.Tooltip("margem alta:Q", title="margem de erro, alto (IQR)", format="+.2f"), alt.Tooltip("NEx sintética:Q", format=".3f"), alt.Tooltip("NEx real:Q", format=".3f"), alt.Tooltip("classificação:N")],
     ).add_params(selection)
-    return (band + points).properties(height=260).configure_axis(grid=True, gridOpacity=.14).configure_view(stroke=None)
+    return (band + rules + ci + points).properties(height=260).configure_axis(grid=True, gridOpacity=.14).configure_view(stroke=None)
 
 
 def brightness_chart(rows: list[dict]):
@@ -694,6 +879,19 @@ def metrics_table(rows: list[dict], mode: str) -> pd.DataFrame:
         data = [{"case_id": row["case_id"], "corte": case_name(row["case_id"]), "decisão de brilho": brightness_decision(row), **brightness_statuses(row),
                  "por quê": brightness_explanation(row), "|Δμ|": number(row, "abs_delta_mu"), "Sat31 (%)": number(row, "sat31_pct"),
                  "Wavelet LL": metric_reading(row, "wavelet", "ll"), "densidade (não decide)": density_reading(row)} for row in rows]
+    elif mode == "ruido":
+        data = [{
+            "case_id": row["case_id"], "corte": case_name(row["case_id"]),
+            "leitura de ruído": NOISE_LABEL[noise_verdict(row)],
+            **noise_statuses(row),
+            "maior distância (IQR)": max((abs(number_or_nan(row, f"nps_{key}_z")) for key in NPS_METRICS), default=float("nan")),
+            "quantidade (IQR)": number_or_nan(row, "nps_quantity_z"),
+            "tamanho do grão (IQR)": number_or_nan(row, "nps_grain_z"),
+            "padrões largos (IQR)": number_or_nan(row, "nps_low_band_z"),
+            "grão fino (IQR)": number_or_nan(row, "nps_high_band_z"),
+            "manchas no ar (% do ar)": number_or_nan(row, "nps_air_synthetic"),
+            "ROIs usadas": number_or_nan(row, "nps_roi_count"),
+        } for row in rows]
     else:
         data = [{"case_id": row["case_id"], "corte": case_name(row["case_id"]), "leitura de textura": texture_decision(row)[0],
                  **technique_statuses(row), "por quê": texture_decision(row)[1],
@@ -729,6 +927,29 @@ def show_method_cards(mode: str, reference: dict):
                 ["Wavelet · energia e entropia", "não respondem ao brilho (só ao detalhe), por isso ficam na aba de textura"],
                 ["Densidade (contexto)", "pixels fora da faixa P1–P99 real e deslocamento da mediana; não decide"],
             ], columns=["técnica", "o que ela mede"]), hide_index=True, width="stretch")
+    elif mode == "ruido":
+        st.markdown("#### Como ler o ruído")
+        st.write("**Ruído aqui é o sobe-e-desce dos pixels que não é anatomia.** Ele é medido de duas formas, e a pior leitura decide o corte.")
+        st.markdown("""
+- **(a) NPS no pulmão.** Em pequenas regiões de 32 × 32 px, as mais lisas do pulmão, mede a quantidade do sobe-e-desce (a força) e o tamanho do grão (padrões largos ou grão fino). A régua é a variação das CTs reais, em IQR, como antes.
+- **(b) Manchas no ar.** O ar fora do corpo na CT original é perfeitamente liso. Qualquer mancha ali na sintética foi inventada pelo gerador. Cada CT é comparada com o próprio ruído: o teste mede o ruído natural dessa CT no tecido mole homogêneo e conta a % do ar com desvio maior que 3 vezes esse ruído (o ruído natural sozinho passa disso em só 0,3% dos pixels). Até 0,5% é aprovada; até 2%, revisão; acima, reprovada. Esses limites são regra de política (as CTs reais têm 0%), não limite clínico.
+- **Incerteza da medida.** Cada leitura do pulmão vem com uma margem de erro calculada pelas próprias regiões medidas (bootstrap). Só conta como diferença quando passa da régua *e* a margem de erro não inclui zero; senão o corte não é penalizado por algo que pode ser só oscilação.
+- **Por que medir nas mesmas regiões.** O NPS do pulmão mistura um pouco de anatomia fina: se a mesma CT fosse medida em regiões diferentes, a leitura mudaria quase tanto quanto mudar de paciente. Por isso a sintética é sempre medida exatamente nas mesmas regiões da original. Assim a anatomia se cancela e a margem de erro de cada corte fica pequena (tipicamente 0,3 a 1 IQR); as diferenças que passam da régua com margem longe de zero são reais.
+- **Pulmão pequeno.** Se não cabem 4 regiões sem sobreposição, o pulmão fica inconclusivo. Nesse caso o ar ainda pode reprovar, mas o corte nunca sai aprovado: vai no mínimo para revisão, porque o pulmão não foi medido.
+""")
+        approved, review, rejected = st.columns(3)
+        approved.success("**Próximo da original**\n\nDiferença até 1 IQR no pulmão; ar até 0,5% com manchas > 3× ruído natural.", icon=":material/check_circle:")
+        review.warning("**Revisar**\n\nEntre 1 e 2 IQR no pulmão; ar entre 0,5% e 2% com manchas > 3× ruído natural.", icon=":material/visibility:")
+        rejected.error("**Distante**\n\nPassou de 2 IQR no pulmão; ar acima de 2% com manchas > 3× ruído natural.", icon=":material/cancel:")
+        st.caption("IQR é a faixa central de variação encontrada nas CTs reais. A pior das cinco leituras define o resultado do corte.")
+        with st.expander("Quantidade, tamanho do grão e cores — sem jargão", expanded=True):
+            st.markdown("""
+- **Flutuação local** é o sobe-e-desce dos pixels em torno do brilho esperado daquela pequena região. Cor mais intensa significa desvio maior.
+- **Vermelho** significa pixel acima da tendência local; **azul**, abaixo. Vermelho não é ruim e azul não é bom: o NPS usa os dois como os dois lados da mesma oscilação.
+- **Quantidade de ruído** mede a força total desse sobe-e-desce. Mais quantidade deixa o mapa mais intenso, mas não diz se o grão é fino ou grosso.
+- **Tamanho do grão** mede a largura dos padrões. Manchas pequenas alternando rápido indicam grão fino; áreas largas indicam grão grosso.
+- **Distribuição** diz onde a quantidade está concentrada: em padrões largos, intermediários ou finos. O resultado ideal não é zero ruído; é uma distribuição próxima à CT original.
+""")
     else:
         st.markdown("#### Como ler a textura")
         st.write("Aqui, **só a textura decide**. O brilho fica na outra aba.")
@@ -740,7 +961,7 @@ def show_method_cards(mode: str, reference: dict):
                 ["Wavelet · 2 px e 4 px", "quantidade de detalhe na escala fina (~2 px) e na grossa (~4 px)"],
                 ["Wavelet · entropia", "variação/complexidade da distribuição de detalhes"],
                 ["Wavelet · tipo", "rótulo descritivo (borrou, ruído, perdeu contraste…); descreve a mudança, não decide"],
-                ["NEx · assinatura espectral", "excesso ou falta de estrutura perto do limite de resolução; compara a sintética com a faixa P5–P95 das CTs reais"],
+                ["NEx · assinatura espectral", "excesso ou falta de estrutura perto do limite de resolução; compara a sintética com a própria original; mais de 1 IQR de diferença pede revisão"],
             ], columns=["técnica", "o que ela mede"]), hide_index=True, width="stretch")
 
 
@@ -758,10 +979,12 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
         st.markdown("##### Comparação visual do mesmo corte")
         st.image(version_triptych_png(str(history_dir), stamp, case_id, comparison_version, version), width="stretch")
         st.caption(f"A mesma janela P1–P99 e os TIFFs originais são usados nas três imagens. Compare a sintética de {comparison_version} com a de {version}; não são PNGs de prévia.")
-        st.markdown("##### GLCM e Wavelet, lado a lado")
+        st.markdown("##### Métricas lado a lado")
         st.dataframe(case_comparison_table(board, case_id, comparison_version, version, mode), hide_index=True, width="stretch")
         if mode == "textura":
             st.caption("“% da original” usa a CT original deste mesmo corte como denominador. Em “distância da original”, aprovação vai de −1 a +1 IQR; ao cruzar esse limite, o rótulo muda mesmo que a diferença visual seja pequena.")
+        elif mode == "ruido":
+            st.caption("A distância usa a mesma régua para as duas gerações: até ±1 IQR é próximo da original; entre 1 e 2 pede revisão; acima de 2 é distante. Em manchas no ar, a medida é a % do ar com manchas: até 0,5% aprovada; até 2%, revisão.")
         else:
             st.caption("A classificação mostra a mudança da versão de comparação para a versão aberta.")
     else:
@@ -773,6 +996,11 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
         summary = [("Brilho geral", brightness_verdict(before), brightness_verdict(row)),
                    *[(technique, previous_statuses[technique], current_statuses[technique]) for technique in BRIGHTNESS_TECHNIQUES]]
         choices = {"CT real × sintética (Δμ)": "delta_mu", "Densidade · pixels fora da faixa real": "densidade", "Brilho local (Wavelet LL)": "ll"}
+    elif mode == "ruido":
+        current_statuses, previous_statuses = noise_statuses(row), noise_statuses(before)
+        summary = [("Ruído geral", noise_verdict(before), noise_verdict(row)),
+                   *[(label, previous_statuses[label], current_statuses[label]) for label in NOISE_READINGS.values()]]
+        choices = {}
     else:
         current_statuses, previous_statuses = technique_statuses(row), technique_statuses(before)
         summary = [("Textura geral", texture_status(before), texture_status(row)),
@@ -780,9 +1008,16 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
         choices = {"GLCM · contraste": "glcm_contraste", "Wavelet · detalhe fino": "wavelet_fina", "Wavelet · detalhe grosso": "wavelet_grossa"}
 
     st.markdown("##### Veredito deste corte")
-    for column, (label, previous, current) in zip(st.columns(len(summary)), summary):
-        previous_mark, current_mark = STATUS_MARK[previous], STATUS_MARK[current]
-        column.markdown(f"**{label}**  \n{previous_mark} {previous} → {current_mark} {current}")
+    if mode == "ruido":
+        label, previous, current = summary[0]
+        show, icon = STATUS_BOX[current]
+        show(f"**{label}: {NOISE_LABEL[current]}** · {STATUS_MARK[previous]} {previous} → {STATUS_MARK[current]} {current}", icon=icon)
+        for column, (label, previous, current) in zip(st.columns(5), summary[1:]):
+            column.markdown(f"**{label}**  \n{STATUS_MARK[previous]} {previous} → {STATUS_MARK[current]} {current}")
+    else:
+        for column, (label, previous, current) in zip(st.columns(len(summary)), summary):
+            previous_mark, current_mark = STATUS_MARK[previous], STATUS_MARK[current]
+            column.markdown(f"**{label}**  \n{previous_mark} {previous} → {current_mark} {current}")
 
     with st.expander("Por que recebeu este veredito", expanded=False):
         if mode == "brilho":
@@ -793,6 +1028,13 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
             for technique in BRIGHTNESS_TECHNIQUES:
                 st.markdown(f"**{technique}:** {why[technique](row)}")
             st.caption(f"Contexto, não decide · densidade: {density_reading(row)}")
+        elif mode == "ruido":
+            verdict, statuses = noise_verdict(row), noise_statuses(row)
+            show, icon = STATUS_BOX[verdict]
+            show(f"**Ruído: {NOISE_LABEL[verdict]}** — {verdict_summary(statuses, verdict)}", icon=icon)
+            for metric in NOISE_READINGS:
+                st.markdown(f"**{NOISE_READINGS[metric]}:** {noise_reason(row, metric)}")
+            st.caption("O objetivo é reproduzir o ruído da original, não eliminar o ruído da imagem.")
         else:
             reference = board["history"]["calibration"]["nex_reference"]
             verdict, statuses = texture_status(row), technique_statuses(row)
@@ -801,6 +1043,13 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
             for technique in TECHNIQUES:
                 st.markdown(f"**{technique}:** {technique_why(row, technique, reference)}")
             st.caption(f"Tipo de mudança visto pela Wavelet: {row.get('wavelet_verdict', 'n/a')}.")
+    if mode == "ruido":
+        st.markdown("##### O que o NPS e o teste do ar enxergaram neste corte")
+        st.image(nps_case_png(str(history_dir), stamp, case_id, baseline, version), width="stretch")
+        st.caption("Nos três mapas do pulmão a escala de cor é a mesma. Mais vermelho e azul intensos significa maior amplitude local; manchas menores ou maiores indicam o tamanho do grão. A curva mostra onde essa quantidade se distribui entre padrões largos e finos. Na linha de baixo, o ar fora do corpo: cor clara é desvio acima de 3× o ruído natural desta CT, ou seja, mancha visível.")
+        with st.expander("Como a anatomia é separada do ruído", expanded=False):
+            st.write("O método procura regiões de 32 × 32 pixels com pouco vaso e pouca borda, e nenhuma se sobrepõe a outra em mais de 25%. Em cada região, ajusta um plano suave para representar o brilho local e subtrai esse plano; o que sobra é a flutuação usada no NPS. Ainda pode restar anatomia muito fina; por isso o NPS do pulmão é uma leitura local e clínica, não uma medição de fantoma. O teste das manchas no ar não depende de anatomia: olha só o ar fora do corpo, que na CT original é liso.")
+        return
     tones = glcm_tone_counts(str(history_dir), stamp, case_id, version)
     # na textura os extremos são detalhe técnico; no brilho eles explicam o Sat31
     with st.expander("Extremos da discretização GLCM", expanded=mode == "brilho"):
@@ -895,10 +1144,10 @@ if history is None:
             st.error(str(error))
     st.stop()
 
-if any(key not in history["calibration"] for key in ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr")):
-    st.warning("Este histórico foi calculado antes da integração do NEx ou da classificação por métrica GLCM/Wavelet. Recalcule as versões para aplicar as faixas reais aos resultados.")
+if any(key not in history["calibration"] for key in ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr", "nps_reference")) or any(key not in history["calibration"].get("nps_reference", {}) for key in ("air_tone", "air_fallback_sigma")):
+    st.warning("Este histórico ainda não tem todas as métricas atuais, incluindo o NPS. Recalcule as versões para aplicar a mesma régua real a todos os resultados.")
     if st.button("Recalcular versões", type="primary"):
-        with st.spinner("Recalculando GLCM, Wavelet e NEx..."):
+        with st.spinner("Recalculando brilho, textura e ruído NPS..."):
             st.success(refresh_history(history_dir))
             write_outputs(history_dir, build_board(history_dir))
         st.rerun()
@@ -974,12 +1223,16 @@ if "pending_case" in st.session_state:
 with st.sidebar:
     st.markdown("---")
     st.header("3 · Corte")
-    active_mode = st.radio("Filtro a explorar", ["Análise de textura", "Filtro de brilho"], index=0)
-    mode = "textura" if active_mode == "Análise de textura" else "brilho"
+    active_mode = st.radio("Filtro a explorar", ["Análise de textura", "Filtro de brilho", "Análise de ruído"], index=0)
+    mode = {"Análise de textura": "textura", "Filtro de brilho": "brilho", "Análise de ruído": "ruido"}[active_mode]
     if mode == "brilho":
         selection = st.selectbox("Mostrar cortes", ["todos", *BRIGHTNESS_LABEL.values(), *(f"{technique} fora da faixa" for technique in BRIGHTNESS_TECHNIQUES)], key="case_filter_brilho")
         choices = [row["case_id"] for row in rows if selection == "todos" or brightness_decision(row) == selection
                    or selection.endswith("fora da faixa") and brightness_statuses(row)[selection.split()[0]] in {"revisão", "reprovada"}]
+    elif mode == "ruido":
+        selection = st.selectbox("Mostrar cortes", ["todos", *NOISE_LABEL.values(), *(f"{label} fora da faixa" for label in NOISE_READINGS.values())], key="case_filter_ruido")
+        choices = [row["case_id"] for row in rows if selection == "todos" or NOISE_LABEL[noise_verdict(row)] == selection
+                   or selection.endswith("fora da faixa") and noise_statuses(row)[selection.removesuffix(" fora da faixa")] in {"revisão", "reprovada"}]
     else:
         selection = st.selectbox("Mostrar cortes", ["todos", *TEXTURE_LABEL.values(), *(f"{technique} fora da faixa" for technique in TECHNIQUES)], key="case_filter_textura")
         choices = [row["case_id"] for row in rows if selection == "todos" or texture_decision(row)[0] == selection
@@ -1004,6 +1257,18 @@ if mode == "brilho":
     only_wavelet = sum(statuses_["GLCM"] == "aprovada" and statuses_["Wavelet"] != "aprovada" for statuses_ in map(brightness_statuses, rows))
     if only_wavelet:
         st.caption(f"{only_wavelet} corte(s) passariam só com a GLCM e foram apontados pela Wavelet LL.")
+elif mode == "ruido":
+    statuses = pd.Series([noise_verdict(row) for row in rows]).value_counts()
+    first, second, third = st.columns(3)
+    first.metric("✓ Próximo da original", int(statuses.get("aprovada", 0)), f"de {len(rows)} cortes", delta_color="off", delta_arrow="off")
+    second.metric("! Revisão necessária", int(statuses.get("revisão", 0)), "alguma leitura passou de 1 IQR", delta_color="off", delta_arrow="off")
+    third.metric("✕ Ruído distante", int(statuses.get("reprovada", 0)), "alguma leitura passou de 2 IQR", delta_color="off", delta_arrow="off")
+    st.caption("O ideal não é uma imagem sem ruído: é quantidade e distribuição próximas das CTs originais.")
+    st.markdown("##### Qual parte do ruído se afastou")
+    for column, label in zip(st.columns(5), NOISE_READINGS.values()):
+        counts = pd.Series([noise_statuses(row)[label] for row in rows]).value_counts()
+        column.metric(f"{label}: fora", int(counts.get("revisão", 0) + counts.get("reprovada", 0)),
+                      " · ".join(f"{int(counts.get(status, 0))} {status}" for status in METRIC_STATUSES if counts.get(status, 0)), delta_color="off", delta_arrow="off")
 else:
     statuses = pd.Series([texture_decision(row)[0] for row in rows]).value_counts()
     first, second, third = st.columns(3)
@@ -1047,6 +1312,10 @@ if len(names) > 1:
         st.info("Nenhum corte nessa mudança.")
     else:
         display_transitions = transition_table.copy()
+        # O prefixo numérico faz o clique nos cabeçalhos "antes" e "agora"
+        # respeitar a gravidade: 3 → 2 → 1 é pior → melhor.
+        for status_column in ("antes", "agora"):
+            display_transitions[status_column] = display_transitions[status_column].map(sortable_status_label)
         display_transitions["mudança"] = display_transitions["mudança"].map({
             "melhorou": "↑ melhorou",
             "piorou": "↓ piorou",
@@ -1070,6 +1339,7 @@ if len(names) > 1:
             selection_mode="single-row",
             key=f"transitions_{dataset}_{baseline}_{version}_{mode}_{transition_filter}__{case_id}",
         )
+        st.caption("Ordem dos estados: 3 = pior, 2 = revisão, 1 = melhor. Assim, ordenar do maior para o menor sempre mostra revisão no meio.")
         selected = event.selection.rows
         if selected:
             clicked = transition_table.iloc[selected[0]]["case_id"]
@@ -1156,8 +1426,18 @@ if mode == "textura":
     with nex_tab:
         reference = history["calibration"]["nex_reference"]
         counts = pd.Series([NEX_STATUS[row["nex_status"]] for row in rows]).value_counts()
-        st.caption(f"NEx da sintética por corte. A faixa verde é P5–P95 das CTs reais ({br(reference['p5'])} a {br(reference['p95'])}); fora dela, revisão. Cinza = inconclusivo (poucas janelas na ROI). "
+        st.caption("Diferença de NEx entre a sintética e a própria original, em IQR das CTs reais, com a margem de erro de cada corte (barra cinza). Revisão só quando passa de ±1 IQR e a margem não cruza o zero. O NEx nunca reprova. "
                    + " · ".join(f"{int(counts.get(status, 0))} {status}" for status in (*METRIC_STATUSES, "inconclusivo") if counts.get(status, 0)))
+        nex_values = np.array([number_or_nan(row, "nex_z") for row in rows])
+        nex_values = nex_values[np.isfinite(nex_values)]
+        if nex_values.size >= 10 and np.any(nex_values != 0):
+            nex_p, nex_median = float(wilcoxon(nex_values).pvalue), float(np.median(nex_values))
+            verdict = (f"há um desvio sistemático (p = {nex_p:.3f}) — a versão tende a {'aumentar' if nex_median > 0 else 'diminuir'} o NEx" if nex_p < 0.05
+                       else f"sem desvio sistemático (p = {nex_p:.2f}); as diferenças por corte vão para os dois lados")
+            st.caption(f"No conjunto da versão: Δ mediano {nex_median:+.2f} IQR; {verdict}".replace(".", ",") + ".")
+        if np.isfinite(reliability := float(reference.get("repeatability_iqr", float("nan")))):
+            st.caption(f"Confiabilidade: medir duas metades da mesma CT real já muda o NEx em cerca de {reliability:.1f} IQR".replace(".", ",")
+                       + ". Diferenças pouco acima de 1 IQR podem ser oscilação da própria medida; por isso o NEx só pede revisão, nunca reprova.")
         if comparison_rows:
             old_column, new_column = st.columns(2)
             old_column.caption(version_label(comparison_version))
@@ -1178,6 +1458,54 @@ if mode == "textura":
     if clicked_case and clicked_case != case_id:
         st.session_state["pending_case"] = clicked_case
         st.session_state["pending_mode"] = "textura"
+        st.rerun()
+elif mode == "ruido":
+    st.markdown("#### Veredito de ruído por corte")
+    st.caption("A primeira linha combina as cinco leituras. As linhas seguintes mostram se mudou a quantidade, o tamanho do grão, a distribuição ou as manchas no ar.")
+    common_order = [row["case_id"] for row in (comparison_rows or rows)]
+    if comparison_rows:
+        st.markdown(f"**{version_label(comparison_version)}**")
+        clicked_case = selectable_chart(st, verdict_matrix(comparison_rows, "ruido", common_order), f"noise_matrix_{comparison_version}", "ruido")
+        st.markdown(f"**{version_label(version)}**")
+        clicked_case = selectable_chart(st, verdict_matrix(rows, "ruido", common_order), f"noise_matrix_{version}", "ruido") or clicked_case
+    else:
+        clicked_case = selectable_chart(st, verdict_matrix(rows, "ruido"), "noise_matrix", "ruido")
+    st.markdown("#### Quanto cada leitura se afastou da original")
+    st.caption("O zero é a CT original. Verde fica até ±1 IQR; amarelo, entre 1 e 2; vermelho, além de 2. Valores positivos e negativos indicam direção, não qualidade.")
+    st.caption("A barra cinza é a margem de erro do corte. Pontos fora de ±1 IQR mas com a barra cruzando o zero ficam verdes: a diferença pode ser só oscilação.")
+    for key, label in NPS_METRICS.items():
+        st.markdown(f"**{label}**")
+        explanation = {
+            "quantity": "Positivo = flutuação mais forte; negativo = mais fraca.",
+            "grain": "Positivo = grão mais fino; negativo = mais largo.",
+            "low_band": "Positivo = mais quantidade concentrada em padrões largos.",
+            "high_band": "Positivo = mais quantidade concentrada em grão fino.",
+        }[key]
+        st.caption(explanation)
+        reliability = history["calibration"]["nps_reference"]["metrics"][key].get("repeatability_iqr")
+        if reliability is not None and np.isfinite(reliability):
+            st.caption(f"Em regiões diferentes da mesma CT real esta leitura mudaria cerca de {reliability:.1f} IQR".replace(".", ",") + "; por isso original e sintética são medidas nas mesmas regiões. A barra cinza é a margem de erro real de cada corte.")
+        if comparison_rows:
+            old_column, new_column = st.columns(2)
+            old_column.caption(version_label(comparison_version))
+            new_column.caption(version_label(version))
+            clicked_case = selectable_chart(old_column, metric_chart(comparison_rows, "nps", key, shared_rows), f"nps_{key}_{comparison_version}", "ruido") or clicked_case
+            clicked_case = selectable_chart(new_column, metric_chart(rows, "nps", key, shared_rows), f"nps_{key}_{version}", "ruido") or clicked_case
+        else:
+            clicked_case = selectable_chart(st, metric_chart(rows, "nps", key), f"nps_{key}", "ruido") or clicked_case
+    st.markdown(f"**{AIR_LABEL}**")
+    st.caption("Na CT original o ar fora do corpo é liso. Cada ponto mostra quanto desse ar ganhou manchas mais fortes que 3× o ruído natural da própria CT — nível que o ruído natural quase nunca atinge (0,3% dos pixels). Verde até 0,5%; amarelo até 2%; vermelho acima.")
+    if comparison_rows:
+        old_column, new_column = st.columns(2)
+        old_column.caption(version_label(comparison_version))
+        new_column.caption(version_label(version))
+        clicked_case = selectable_chart(old_column, air_chart(comparison_rows, shared_rows), f"nps_air_{comparison_version}", "ruido") or clicked_case
+        clicked_case = selectable_chart(new_column, air_chart(rows, shared_rows), f"nps_air_{version}", "ruido") or clicked_case
+    else:
+        clicked_case = selectable_chart(st, air_chart(rows), "nps_air", "ruido") or clicked_case
+    if clicked_case and clicked_case != case_id:
+        st.session_state["pending_case"] = clicked_case
+        st.session_state["pending_mode"] = "ruido"
         st.rerun()
 else:
     st.markdown("#### Veredito por corte e por técnica")
@@ -1200,8 +1528,10 @@ with st.expander("Tabela técnica completa (opcional)", expanded=False):
     table = metrics_table(rows, mode)
     # reset_index: a linha clicada volta como posição, e ela precisa bater com a ordem mostrada
     # mais graves primeiro; dentro de cada grupo, o maior desvio
-    severity = {label: index for labels in (BRIGHTNESS_LABEL, TEXTURE_LABEL) for index, label in enumerate(reversed(labels.values()))}
-    verdict_column, spread_column = ("decisão de brilho", "|Δμ|") if mode == "brilho" else ("leitura de textura", "NEx sintética")
+    severity = {label: index for labels in (BRIGHTNESS_LABEL, TEXTURE_LABEL, NOISE_LABEL) for index, label in enumerate(reversed(labels.values()))}
+    verdict_column, spread_column = (("decisão de brilho", "|Δμ|") if mode == "brilho" else
+                                     ("leitura de ruído", "maior distância (IQR)") if mode == "ruido" else
+                                     ("leitura de textura", "NEx sintética"))
     table = table.assign(_ordem=table[verdict_column].map(severity)).sort_values(["_ordem", spread_column], ascending=[True, False]).drop(columns="_ordem").reset_index(drop=True)
     table.insert(0, "em foco", np.where(table["case_id"] == case_id, "●", ""))
     st.caption("Use esta tabela para auditoria detalhada. A comparação principal está nos gráficos acima; clique numa linha para abrir o corte.")
@@ -1216,6 +1546,8 @@ with st.expander("Tabela técnica completa (opcional)", expanded=False):
         st.rerun()
     if mode == "brilho":
         st.caption("A tabela ignora completamente a textura. As colunas GLCM e Wavelet mostram a classificação de cada técnica; “decisão de brilho” é a mais severa. A densidade aparece só como contexto.")
+    elif mode == "ruido":
+        st.caption("A tabela separa força e tamanho do grão. Um valor positivo em quantidade significa mais flutuação; em tamanho do grão, significa padrões mais finos. Em manchas no ar, a coluna mostra a % do ar fora do corpo com manchas que a original não tem.")
     else:
         st.caption("A tabela ignora completamente o brilho. As colunas GLCM, Wavelet e NEx mostram a classificação de cada técnica; “leitura de textura” é a pior delas.")
     st.caption("Os pontos e linhas resumem cortes do dataset; fases do mesmo paciente não devem ser interpretadas como pacientes independentes.")

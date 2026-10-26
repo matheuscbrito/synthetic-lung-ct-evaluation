@@ -12,7 +12,7 @@ from wavelet.src.densidade_wavelet import wavelet_verdict
 from wavelet.src.wavelet_diagnostico import raw_readings, relative
 from wavelet.src.wavelet_features_fullimage import wavelet_energy_entropy_fullimage
 from wavelet.src.wavelet_brightness import ll_mean
-from frameworks.texture_evaluator.nex_referencia import measure as nex_measure, summary as nex_summary
+from frameworks.texture_evaluator.nex_referencia import measure as nex_measure, nex_paired, split_half_delta as nex_split_half, summary as nex_summary
 from frameworks.texture_evaluator.glcm.src import RobustScale, calibrate_robust_scale, extract_glcm
 from frameworks.texture_evaluator.decision import GLCM_METRICS, WAVELET_METRICS, decide, glcm_metric_columns, ll_columns, wavelet_metric_columns
 from frameworks.texture_evaluator.regional import apply_pair_check, calibrate_maps, pair_correlation, regional, regional_columns
@@ -29,8 +29,12 @@ def calibrate(valid) -> SimpleNamespace:
     ruler = {'p1': scale.clip_low, 'p99': scale.clip_high}
     means = np.array([c.original[c.lung_mask].mean() for c in valid]); mean_iqr = float(np.diff(np.percentile(means, [25, 75]))[0])
     # NEx é medido nas mesmas janelas inteiramente dentro da ROI pulmonar. A
-    # faixa P5–P95 nasce somente das originais e fica congelada no histórico.
+    # régua (IQR) nasce somente das originais e fica congelada no histórico.
     nex_reference = nex_summary(np.array([nex_measure(c.original, c.lung_mask)["nex_roi"] for c in valid]))
+    # confiabilidade: quanto o NEx muda entre duas metades da mesma CT real, em IQR
+    halves = np.array([nex_split_half(c.original, c.lung_mask) for c in valid])
+    halves = np.abs(halves[np.isfinite(halves)])
+    nex_reference["repeatability_iqr"] = float(np.median(halves) / nex_reference["iqr"]) if halves.size else float("nan")
     settings = SimpleNamespace(wavelet='haar', min_tissue=.9)
     # IQR de cada métrica Wavelet entre as originais: a régua da classificação por métrica (decision.wavelet_metric_columns)
     readings = [raw_readings(c.original, c.lung_mask, ruler, settings) for c in valid]
@@ -65,14 +69,18 @@ def evaluate_pair(case_id, original, synthetic, mask, ctx) -> dict:
     delta=float(synthetic[mask].mean()-original[mask].mean()); sat=syn_g['saturation_tone_31_pct']
     dens_real, dens_syn = density_features(original,mask,interval), density_features(synthetic,mask,interval)
     nex_real, nex_synthetic = nex_measure(original, mask), nex_measure(synthetic, mask)
+    nex_iqr = max(ctx.nex_reference['iqr'], 1e-12)
+    nex_z = nex_z_low = nex_z_high = np.nan
     if nex_real['poucas_janelas'] or nex_synthetic['poucas_janelas']:
         nex_status = 'inconclusivo'
-    elif nex_synthetic['nex_roi'] > ctx.nex_reference['p95']:
-        nex_status = 'alto'
-    elif nex_synthetic['nex_roi'] < ctx.nex_reference['p5']:
-        nex_status = 'baixo'
     else:
-        nex_status = 'ok'
+        # pareado como GLCM e Wavelet: a sintética contra a própria original, em IQR
+        # das originais, nas mesmas janelas. Uma cópia perfeita sempre passa, mesmo se a original
+        # estiver fora da faixa das reais. Só pesa quando o IC 95% não cruza zero (mesma regra do NPS).
+        paired = nex_paired(original, synthetic, mask)
+        nex_z, nex_z_low, nex_z_high = paired['delta'] / nex_iqr, paired['low'] / nex_iqr, paired['high'] / nex_iqr
+        certain = nex_z_low > 0 or nex_z_high < 0
+        nex_status = 'alto' if nex_z > 1 and certain else 'baixo' if nex_z < -1 and certain else 'ok'
     # veredito da Wavelet: energia fina/grossa da sintética em % da original (limites exploratórios)
     raw_real, raw_synthetic = raw_readings(original,mask,ruler,settings), raw_readings(synthetic,mask,ruler,settings)
     reading = relative(raw_synthetic, raw_real)
@@ -89,6 +97,7 @@ def evaluate_pair(case_id, original, synthetic, mask, ctx) -> dict:
          **(ll_columns(ll_real, ll_synthetic, ctx.ll_iqr) if ctx.ll_iqr else {}),
          'nex_real':nex_real['nex_roi'],'nex_synthetic':nex_synthetic['nex_roi'],
          'nex_delta':nex_synthetic['nex_roi'] - nex_real['nex_roi'], 'nex_status':nex_status,
+         'nex_z':nex_z,'nex_z_low':nex_z_low,'nex_z_high':nex_z_high,
          'nex_janelas_real':nex_real['janelas'],'nex_janelas_sintetica':nex_synthetic['janelas'],
          **(wavelet_metric_columns(raw_real, raw_synthetic, ctx.wavelet_iqr) if ctx.wavelet_iqr else {}),
          **(glcm_metric_columns(glcm_reading(real_g), glcm_reading(syn_g), ctx.glcm_iqr) if ctx.glcm_iqr else {}),
