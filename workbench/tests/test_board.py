@@ -6,8 +6,9 @@ from urllib.parse import quote
 import pytest
 from fastapi.testclient import TestClient
 
+from frameworks.texture_evaluator.placar import load_history, load_rows
 from workbench.api.app import create_app
-from workbench.tests.conftest import DATA_OK, ROOT
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, ROOT, framework_counts, nonzero
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
@@ -15,17 +16,31 @@ CID = "1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058"
 RESULTS = {"improved", "worse", "small change", "no clear difference", "n/a"}
 
 
+def real_names():
+    return [item["name"] for item in load_history(HISTORY_DIR)["versions"]]
+
+
 def test_board_baseline_only(client):
     b = client.get("/api/board").json()
     g = b["generators"][0]
     assert b["baseline"] == "Dsr" and g["is_baseline"] and g["vs_baseline"] is None
-    assert g["counts"]["texture"] == {"approved": 8, "review": 29, "rejected": 0}
+    assert nonzero(g["counts"]["texture"]) == framework_counts(load_rows(HISTORY_DIR, "Dsr"))["texture"]
+    assert nonzero(g["counts"]["brightness"]) == framework_counts(load_rows(HISTORY_DIR, "Dsr"))["brightness"]
+
+
+def test_board_counts_match_framework_for_every_version(client):
+    b = client.get("/api/board").json()
+    assert [g["name"] for g in b["generators"]] == real_names()
+    for g in b["generators"]:
+        expected = framework_counts(load_rows(HISTORY_DIR, g["name"]))
+        assert nonzero(g["counts"]["texture"]) == expected["texture"], g["name"]
+        assert nonzero(g["counts"]["brightness"]) == expected["brightness"], g["name"]
 
 
 def test_board_vs_itself(tmp_history):
     b = TestClient(create_app(tmp_history)).get("/api/board").json()
-    other = b["generators"][1]
-    assert other["name"] == "Dsr-copy" and not other["is_baseline"]
+    other = next(g for g in b["generators"] if g["name"] == "Dsr-copy")
+    assert not other["is_baseline"]
     assert {r["result"] for r in other["vs_baseline"]} <= {"no clear difference", "n/a"}
 
 
@@ -71,7 +86,7 @@ def test_admin_errors(tmp_history):
     assert c.delete("/api/versions/Dsr").status_code == 400
     assert c.delete("/api/versions/Versao-inexistente").status_code == 404
     assert c.delete("/api/versions/Dsr-copy").status_code == 200
-    assert [v["name"] for v in c.get("/api/versions").json()] == ["Dsr"]
+    assert [v["name"] for v in c.get("/api/versions").json()] == real_names()
 
 
 def test_add_duplicate_name_400(tmp_history):
@@ -86,7 +101,7 @@ def test_admin_writes_only_to_app_history(tmp_history):
     assert (tmp_history / "placar.csv").exists()
     assert not (tmp_history / "versoes" / "Dsr-copy.csv").exists()
     hist = json.loads((tmp_history / "historico.json").read_text(encoding="utf-8"))
-    assert [v["name"] for v in hist["versions"]] == ["Dsr"]
+    assert [v["name"] for v in hist["versions"]] == real_names()
 
 
 def test_refresh_route(tmp_history):

@@ -14,8 +14,10 @@ from frameworks.texture_evaluator import decision, placar, regional
 ROOT = Path(__file__).resolve().parents[2]
 HISTORY_DIR = ROOT / "outputs" / "placar"
 STATUS = {"aprovada": "approved", "revisão": "review", "reprovada": "rejected", "inconclusivo": "inconclusive"}
-# réguas que o placar precisa para comparar versões novas; sem elas, o histórico está desatualizado
-STALE_KEYS = ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr")
+# réguas que o placar precisa para comparar versões novas; sem elas, o histórico está desatualizado.
+# Lista de `ui_placar.py:1147` (chaves de calibração e as duas do NPS, dentro de `nps_reference`).
+STALE_KEYS = ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr", "nps_reference")
+STALE_NPS_KEYS = ("air_tone", "air_fallback_sigma")
 
 
 class NotFound(Exception):
@@ -52,7 +54,10 @@ _CACHE: dict[tuple[str, float], Workbench] = {}
 
 
 def load(history_dir: Path) -> Workbench:
-    """Carrega o histórico; reaproveita o resultado enquanto historico.json não muda."""
+    """Carrega o histórico; reaproveita o resultado enquanto historico.json não muda.
+
+    Um resultado por pasta de histórico: Dsr e Dgen podem alternar sem reconstruir o placar.
+    """
     path = Path(history_dir) / placar.HISTORY_FILE
     if not path.exists():
         raise NotFound(f"histórico não encontrado em {history_dir}")
@@ -62,14 +67,18 @@ def load(history_dir: Path) -> Workbench:
         if board is None:
             raise NotFound(f"histórico vazio em {history_dir}")
         history = board["history"]
-        _CACHE.clear()
+        for old in [k for k in _CACHE if k[0] == key[0]]:
+            del _CACHE[old]
         _CACHE[key] = Workbench(history=history, board=board, baseline=history["versions"][0]["name"], history_dir=Path(history_dir))
     return _CACHE[key]
 
 
 def is_stale(history: dict) -> bool:
     calibration = history.get("calibration", {})
-    return any(key not in calibration for key in STALE_KEYS)
+    if any(key not in calibration for key in STALE_KEYS):
+        return True
+    nps = calibration.get("nps_reference", {})
+    return any(key not in nps for key in STALE_NPS_KEYS)
 
 
 def slice_label(case_id: str) -> str:
@@ -148,6 +157,11 @@ def slice_json(row: dict, calibration: dict) -> dict:
 
 
 def versions_json(wb: Workbench) -> list[dict]:
+    reference = wb.history.get("reference")
     return [{"name": item["name"], "mode": item["mode"], "n_cases": item["n_cases"], "folder": item["folder"],
-             "added": item["added"], "is_baseline": item["name"] == wb.baseline}
+             "added": item["added"], "is_baseline": item["name"] == wb.baseline,
+             "reference": item["name"] == reference,
+             # None quando a versão é anterior ao campo: contagem desconhecida, não zero
+             "suspicious_pairs": item.get("suspicious_pairs"),
+             "n_common": wb.board["n_cases"]}
             for item in wb.history["versions"]]

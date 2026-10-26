@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from workbench.api.app import create_app
 from workbench.api.data import patient, slice_json, slice_label
-from workbench.tests.conftest import DATA_OK, HISTORY_DIR
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero
 from frameworks.texture_evaluator.placar import load_rows
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
@@ -21,12 +21,12 @@ def calibration():
 
 
 def test_counts_match_framework(client):
+    rows = load_rows(HISTORY_DIR, "Dsr")
     body = client.get("/api/slices", params={"version": "Dsr"}).json()
-    assert body["n_cases"] == 37
-    tex = Counter(s["texture"]["verdict"] for s in body["slices"])
-    bri = Counter(s["brightness"]["verdict"] for s in body["slices"])
-    assert (tex["approved"], tex["review"], tex["rejected"]) == (8, 29, 0)
-    assert (bri["approved"], bri["review"], bri["rejected"]) == (35, 2, 0)
+    assert body["n_cases"] == len(rows)
+    expected = framework_counts(rows)
+    assert nonzero(Counter(s["texture"]["verdict"] for s in body["slices"])) == expected["texture"]
+    assert nonzero(Counter(s["brightness"]["verdict"] for s in body["slices"])) == expected["brightness"]
 
 
 def test_slice_schema(client):
@@ -53,9 +53,15 @@ def test_unknown_version_404(client):
 
 def test_versions_and_status(client):
     v = client.get("/api/versions").json()
+    history = json.loads((HISTORY_DIR / "historico.json").read_text(encoding="utf-8"))
+    assert [item["name"] for item in v] == [item["name"] for item in history["versions"]]
     assert v[0]["name"] == "Dsr" and v[0]["is_baseline"] is True
+    assert [item["reference"] for item in v] == [item["name"] == history["reference"] for item in v]
+    assert all(item["n_common"] == 37 for item in v)
+    assert all(isinstance(item["suspicious_pairs"], int) for item in v)
     status = client.get("/api/status").json()
     assert status["stale"] is False and status["has_history"] is True and status["baseline"] == "Dsr"
+    assert status["reference"] == history["reference"]
     assert isinstance(status["token"], float)
 
 

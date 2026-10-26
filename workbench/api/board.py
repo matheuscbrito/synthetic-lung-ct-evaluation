@@ -8,8 +8,6 @@ para o inglês da interface.
 from __future__ import annotations
 
 import io
-import re
-import threading
 from pathlib import Path
 
 import matplotlib
@@ -18,16 +16,16 @@ matplotlib.use("Agg")  # antes de qualquer import de pyplot (feito pelo framewor
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from fastapi import APIRouter, HTTPException  # noqa: E402
+from fastapi import APIRouter, HTTPException, Query  # noqa: E402
 from fastapi.responses import Response  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
 from frameworks.texture_evaluator import placar  # noqa: E402
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES, map_figure, technique_figure  # noqa: E402
-from workbench.api import data  # noqa: E402
+from workbench.api import data, datasets as ds  # noqa: E402
 from workbench.api.data import NotFound, Workbench  # noqa: E402
+from workbench.api.datasets import DEFAULT  # noqa: E402
 
-MASK_DIR = data.ROOT / "dados" / "Dgen"
 DPI = 120
 STATUSES = ("approved", "review", "rejected")
 RESULT = {"melhorou": "improved", "piorou": "worse", "mudança pequena": "small change",
@@ -48,12 +46,8 @@ INDICATOR_LABEL = {
     "map_corr_textura": "Map: spatial correlation",
 }
 GROUP = {"brilho": "brightness", "textura": "texture"}
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
-_ADMIN_LOCK = threading.Lock()  # uma escrita no histórico por vez
-
-
 class VersionIn(BaseModel):
-    name: str
+    name: str | None = None  # padrão: nome da pasta
     folder: str
 
 
@@ -127,69 +121,82 @@ def _case_rows(wb: Workbench, case_id: str) -> dict[str, dict]:
     return rows
 
 
-def router(history_dir: Path) -> APIRouter:
+def router(datasets: dict) -> APIRouter:
     api = APIRouter()
 
+    def _wb(dataset: str) -> Workbench:
+        return ds.wb_for(dataset, datasets)
+
     @api.get("/api/board")
-    def board():
-        return board_json(data.load(history_dir))
+    def board(dataset: str = Query(DEFAULT)):
+        return board_json(_wb(dataset))
 
     @api.get("/api/figure/{case_id}/technique/{technique}.png")
-    def technique(case_id: str, technique: str):
+    def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT)):
         if technique not in TECHNIQUE_FIGURES:
             raise NotFound(f"técnica desconhecida: {technique}")
-        wb = data.load(history_dir)
-        fig = technique_figure(history_dir, case_id, technique, _case_rows(wb, case_id))
+        wb = _wb(dataset)
+        fig = technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id))
         return _response(fig)
 
     @api.get("/api/figure/{case_id}/map/{layer}.png")
-    def map_png(case_id: str, layer: str, compared: bool = False):
+    def map_png(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT)):
         if layer not in MAP_LAYERS:
             raise NotFound(f"camada desconhecida: {layer}")
         if layer == "veredito" and not compared:
             raise HTTPException(400, "a camada de veredito só existe comparada com a original")
-        wb = data.load(history_dir)  # histórico ausente: 404
+        wb = _wb(dataset)  # histórico ausente: 404
         _case_rows(wb, case_id)  # corte desconhecido: 404
-        fig = map_figure(history_dir, case_id, layer, compared)
+        fig = map_figure(wb.history_dir, case_id, layer, compared)
         return _response(fig)
 
     @api.post("/api/versions")
-    def add_version(body: VersionIn):
-        name = body.name.strip()
-        if not NAME_PATTERN.match(name):
-            raise HTTPException(400, "nome inválido: use só letras, números, ponto, hífen e sublinhado")
-        folder = Path(body.folder)
+    def add_version(body: VersionIn, dataset: str = Query(DEFAULT)):
+        cfg = ds.config(datasets, dataset)
+        history_dir = Path(cfg["history"])
+        folder = Path(body.folder).expanduser()
         if not folder.is_dir():
             raise HTTPException(400, f"pasta de versão não encontrada: {folder}")
-        with _ADMIN_LOCK:
+        name = (body.name or "").strip() or folder.resolve().name
+        if not ds.NAME_PATTERN.match(name):
+            raise HTTPException(400, "nome inválido: use só letras, números, ponto, hífen e sublinhado")
+        with ds.ADMIN_LOCK:
             history = placar.load_history(history_dir)
+            if history is None or not history.get("versions"):
+                raise HTTPException(400, f"{dataset} ainda não foi avaliado: use POST /api/datasets/{dataset}/init")
+            resolved = folder.resolve()
+            if any(Path(item["folder"]).resolve() == resolved for item in history["versions"]):
+                raise HTTPException(400, f"essa execução já está no histórico: {folder.name}")
             target = placar.rows_path(history_dir, name)
-            if history and any(placar.rows_path(history_dir, item["name"]) == target for item in history["versions"]):
+            if any(placar.rows_path(history_dir, item["name"]) == target for item in history["versions"]):
                 raise HTTPException(400, f"o nome {name!r} usaria o mesmo arquivo de outra versão")
             try:
-                message = placar.add_version(history_dir, name, folder, MASK_DIR)
+                ds.validate_complete_version(folder, history)
+                message = placar.add_version(history_dir, name, folder, Path(cfg["masks"]))
                 placar.write_outputs(history_dir, placar.build_board(history_dir))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
-        return {"message": message}
+        return {"message": message, "name": name}
 
     @api.delete("/api/versions/{name}")
-    def remove_version(name: str):
-        wb = data.load(history_dir)
+    def remove_version(name: str, dataset: str = Query(DEFAULT)):
+        cfg = ds.config(datasets, dataset)
+        wb = _wb(dataset)
         wb.entry(name)  # desconhecida: 404
         if name == wb.baseline:
             raise HTTPException(400, "a versão de referência não pode ser removida")
-        with _ADMIN_LOCK:
+        with ds.ADMIN_LOCK:
             try:
-                placar.remove_version(history_dir, name)
-                placar.write_outputs(history_dir, placar.build_board(history_dir))
+                placar.remove_version(Path(cfg["history"]), name)
+                placar.write_outputs(Path(cfg["history"]), placar.build_board(Path(cfg["history"])))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
         return {"message": f"versão removida: {name}"}
 
     @api.post("/api/refresh")
-    def refresh():
-        with _ADMIN_LOCK:
+    def refresh(dataset: str = Query(DEFAULT)):
+        history_dir = Path(ds.config(datasets, dataset)["history"])
+        with ds.ADMIN_LOCK:
             try:
                 message = placar.refresh_history(history_dir)
                 placar.write_outputs(history_dir, placar.build_board(history_dir))

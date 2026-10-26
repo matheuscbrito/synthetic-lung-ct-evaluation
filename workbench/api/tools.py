@@ -82,7 +82,8 @@ def reference_band(wb: Workbench) -> dict:
             case = images.case(wb, wb.baseline, row["case_id"])
             spectra.append(radial_spectrum(normalise(case.original, ruler), case.lung_mask)[1])
         table = np.array(spectra)
-        _REFERENCE.clear()
+        for old in [k for k in _REFERENCE if k[0] == key[0]]:  # uma faixa por pasta de histórico
+            del _REFERENCE[old]
         _REFERENCE[key] = {"p5": np.percentile(table, 5, axis=0).tolist(),
                            "p95": np.percentile(table, 95, axis=0).tolist()}
     return _REFERENCE[key]

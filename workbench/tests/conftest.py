@@ -2,6 +2,7 @@
 import json
 import shutil
 import sys
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,23 @@ sys.path.insert(0, str(ROOT))
 HISTORY_DIR = ROOT / "outputs" / "placar"
 DATA_OK = (HISTORY_DIR / "historico.json").exists() and (ROOT / "dados" / "Dsr").exists()
 
+from frameworks.texture_evaluator import decision  # noqa: E402
+from workbench.api import data as wb_data  # noqa: E402
 from workbench.api.app import create_app  # noqa: E402
+
+
+def framework_counts(rows: list[dict]) -> dict:
+    """Contagens por veredito das linhas do CSV, pelas funções de `decision` (nunca números fixos).
+
+    Só entram os vereditos presentes (zeros são omitidos), como em `nonzero`.
+    """
+    def tally(verdict):
+        return nonzero(Counter(wb_data.STATUS[verdict(row)] for row in rows))
+    return {"brightness": tally(decision.brightness_verdict), "texture": tally(decision.texture_status)}
+
+
+def nonzero(counts) -> dict:
+    return {key: value for key, value in dict(counts).items() if value}
 
 
 @pytest.fixture

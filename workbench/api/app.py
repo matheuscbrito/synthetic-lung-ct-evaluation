@@ -1,18 +1,23 @@
-"""API FastAPI do QC workbench, sobre o histórico do placar do avaliador de textura."""
+"""API FastAPI do QC workbench, sobre o histórico do placar do avaliador de textura.
+
+Toda rota de dados aceita `dataset` (Dsr por padrão, Dgen); dataset desconhecido é 404.
+"""
 from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse, Response
 
-from frameworks.texture_evaluator import placar
 from frameworks.texture_evaluator.placar import PlacarError
 from frameworks.texture_evaluator.run_mvp import context_from_dict
-from workbench.api import board, data, images, notebook, tools
-from workbench.api.data import HISTORY_DIR, NotFound
+from workbench.api import board, data, datasets as ds, images, notebook, tools
+from workbench.api.data import NotFound
+from workbench.api.datasets import DATASETS, DEFAULT
 
 
-def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
+def create_app(datasets: dict | Path = DATASETS) -> FastAPI:
+    """`datasets` é o mapa de datasets; uma única pasta de histórico (Path) vale como o dataset Dsr."""
+    datasets = ds.normalise(datasets)
     app = FastAPI(title="QC workbench")
 
     @app.exception_handler(NotFound)
@@ -23,29 +28,20 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
     async def broken_history(request, exc: PlacarError):
         return JSONResponse(status_code=409, content={"detail": str(exc)})
 
+    def _wb(dataset: str):
+        return ds.wb_for(dataset, datasets)
+
     @app.get("/api/status")
-    def status():
-        path = Path(history_dir) / placar.HISTORY_FILE
-        if not path.exists():
-            return {"stale": False, "has_history": False, "baseline": None, "token": None}
-        # histórico desatualizado: responde antes de montar o placar, que quebraria sem as réguas novas
-        history = placar.load_history(Path(history_dir))
-        if not history or not history.get("versions"):
-            return {"stale": False, "has_history": False, "baseline": None, "token": None}
-        token = path.stat().st_mtime
-        baseline = history["versions"][0]["name"]
-        if data.is_stale(history):
-            return {"stale": True, "has_history": True, "baseline": baseline, "token": token}
-        data.load(history_dir)
-        return {"stale": False, "has_history": True, "baseline": baseline, "token": token}
+    def status(dataset: str = Query(DEFAULT)):
+        return ds.status_json(ds.config(datasets, dataset))
 
     @app.get("/api/versions")
-    def versions():
-        return data.versions_json(data.load(history_dir))
+    def versions(dataset: str = Query(DEFAULT)):
+        return data.versions_json(_wb(dataset))
 
     @app.get("/api/slices")
-    def slices(version: str = Query(...)):
-        wb = data.load(history_dir)
+    def slices(version: str = Query(...), dataset: str = Query(DEFAULT)):
+        wb = _wb(dataset)
         rows = wb.rows(version)
         calibration = wb.history["calibration"]
         return {"version": version, "n_cases": len(rows),
@@ -53,18 +49,18 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
 
     @app.get("/api/image/{version}/{case_id}/{kind}.png")
     def image(version: str, case_id: str, kind: str, size: int | None = Query(None, ge=1, le=2048),
-              window: Literal["pair", "reference"] = "pair"):
-        case = images.case(data.load(history_dir), version, case_id)
+              window: Literal["pair", "reference"] = "pair", dataset: str = Query(DEFAULT)):
+        case = images.case(_wb(dataset), version, case_id)
         return Response(images.render(case, kind, size, window == "reference"), media_type="image/png",
                         headers={"Cache-Control": "max-age=3600"})
 
-    def _tool_case(version: str, case_id: str):
-        wb = data.load(history_dir)
+    def _tool_case(version: str, case_id: str, dataset: str):
+        wb = _wb(dataset)
         return wb, images.case(wb, version, case_id)
 
     @app.get("/api/tools/{version}/{case_id}/spectrum")
-    def tool_spectrum(version: str, case_id: str):
-        wb, case = _tool_case(version, case_id)
+    def tool_spectrum(version: str, case_id: str, dataset: str = Query(DEFAULT)):
+        wb, case = _tool_case(version, case_id, dataset)
         ruler = context_from_dict(wb.history["calibration"]).ruler
         freq, real = tools.radial_spectrum(tools.normalise(case.original, ruler), case.lung_mask)
         _, synthetic = tools.radial_spectrum(tools.normalise(case.synthetic, ruler), case.lung_mask)
@@ -72,8 +68,8 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
         return {"freq": freq, "real": real, "synthetic": synthetic, "ref_p5": band["p5"], "ref_p95": band["p95"], "nyquist": 0.5}
 
     @app.get("/api/tools/{version}/{case_id}/glcm")
-    def tool_glcm(version: str, case_id: str):
-        wb, case = _tool_case(version, case_id)
+    def tool_glcm(version: str, case_id: str, dataset: str = Query(DEFAULT)):
+        wb, case = _tool_case(version, case_id, dataset)
         scale = context_from_dict(wb.history["calibration"]).scale
         return {"levels": scale.levels,
                 "real": tools.glcm_matrix(case.original, case.lung_mask, scale),
@@ -82,8 +78,8 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
                           "synthetic": tools.tone_shares(case.synthetic, case.lung_mask, scale)}}
 
     @app.get("/api/tools/{version}/{case_id}/nex")
-    def tool_nex(version: str, case_id: str):
-        wb, case = _tool_case(version, case_id)
+    def tool_nex(version: str, case_id: str, dataset: str = Query(DEFAULT)):
+        wb, case = _tool_case(version, case_id, dataset)
         row = wb.row(version, case_id)
         band = wb.history["calibration"].get("nex_reference") or {}
         windows = [{"row": w["row"], "col": w["col"], "value": tools.json_number(w["value"])}
@@ -95,8 +91,8 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
                 "p5": tools.json_number(band.get("p5")), "p95": tools.json_number(band.get("p95"))}
 
     @app.get("/api/tools/{version}/{case_id}/wavelet")
-    def tool_wavelet(version: str, case_id: str):
-        wb, case = _tool_case(version, case_id)
+    def tool_wavelet(version: str, case_id: str, dataset: str = Query(DEFAULT)):
+        wb, case = _tool_case(version, case_id, dataset)
         row = wb.row(version, case_id)
         ruler = context_from_dict(wb.history["calibration"]).ruler
         real = tools.wavelet_bands(tools.normalise(case.original, ruler), case.lung_mask)
@@ -111,7 +107,8 @@ def create_app(history_dir: Path = HISTORY_DIR) -> FastAPI:
     def agent_notebook():
         return notebook.read_caderno(notebook.LAB_DIR)
 
-    app.include_router(board.router(history_dir))
+    app.include_router(board.router(datasets))
+    app.include_router(ds.router(datasets))
 
     return app
 
