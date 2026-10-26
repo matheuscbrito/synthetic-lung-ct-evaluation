@@ -11,7 +11,7 @@ Três perguntas, nesta ordem:
 3. **Que tipo de defeito?** Veredito Wavelet (razão fino/grosso): borrou,
    ruído, perdeu contraste…
 4. **Há assinatura espectral anômala?** NEx medido na mesma ROI pulmonar;
-   fora de P5–P95 das originais manda para revisão. Poucas janelas =
+   Δ sintética − original acima de 1 IQR das originais manda para revisão. Poucas janelas =
    inconclusivo, nunca reprova sozinho.
 
 Resultado: `aprovada`, `revisar` ou `rejeitar`, com os motivos em texto.
@@ -37,7 +37,7 @@ WAVELET_METRICS = {"fine": "Wavelet 2 px (textura fina)", "coarse": "Wavelet 4 p
 # a GLCM segue a mesma regra, com o IQR de cada métrica entre as originais
 GLCM_METRICS = {"contrast": "GLCM contraste", "energy": "GLCM energia"}
 METRIC_STATUSES = ("aprovada", "revisão", "reprovada")
-# NEx mantém a própria regra (sintética fora de P5–P95 das originais = revisão);
+# NEx: Δ sintética − original em IQR das originais; acima de ±1 = revisão, nunca reprova;
 # com poucas janelas na ROI a leitura é inconclusiva e não pesa no veredito
 NEX_STATUS = {"ok": "aprovada", "alto": "revisão", "baixo": "revisão", "inconclusivo": "inconclusivo"}
 TECHNIQUES = ("GLCM", "Wavelet", "NEx")
@@ -143,7 +143,7 @@ def decide(row: dict) -> dict:
     nex_status = row.get("nex_status", "inconclusivo")
     if nex_status in {"alto", "baixo"}:
         status = max(status, "revisar", key=FINAL_STATUSES.index)
-        reasons.append(f"NEx: {nex_status} fora da faixa real (Δ {float(row['nex_delta']):+.3f})")
+        reasons.append(f"NEx: {nex_status}, {float(row['nex_z']):+.1f} IQR da original")
     elif nex_status == "inconclusivo":
         reasons.append("NEx: inconclusivo (poucas janelas na ROI)")
 

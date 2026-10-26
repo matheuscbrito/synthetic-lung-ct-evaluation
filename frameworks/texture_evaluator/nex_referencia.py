@@ -49,6 +49,24 @@ def nex_roi(image: np.ndarray, roi: np.ndarray, coverage: float = 1.0) -> tuple[
     return (float(np.median(values)) if values else float("nan")), len(values)
 
 
+def nex_paired(original: np.ndarray, synthetic: np.ndarray, roi: np.ndarray, boots: int = 500, seed: int = 0) -> dict:
+    """NEx das mesmas janelas na original e na sintética, com IC 95% por bootstrap das janelas."""
+    pairs = [
+        (nyquist_excess(original[r:r + TILE, c:c + TILE]), nyquist_excess(synthetic[r:r + TILE, c:c + TILE]))
+        for r in range(0, original.shape[0] - TILE + 1, STRIDE)
+        for c in range(0, original.shape[1] - TILE + 1, STRIDE)
+        if roi[r:r + TILE, c:c + TILE].all()
+    ]
+    if len(pairs) < MIN_TILES:
+        return {"delta": float("nan"), "low": float("nan"), "high": float("nan"), "windows": len(pairs)}
+    values = np.array(pairs)
+    rng = np.random.default_rng(seed)
+    draws = [np.median(values[idx, 1]) - np.median(values[idx, 0])
+             for idx in (rng.integers(0, len(values), len(values)) for _ in range(boots))]
+    low, high = np.percentile(draws, [2.5, 97.5])
+    return {"delta": float(np.median(values[:, 1]) - np.median(values[:, 0])), "low": float(low), "high": float(high), "windows": len(values)}
+
+
 def measure(image: np.ndarray, roi: np.ndarray) -> dict:
     roi100, n100 = nex_roi(image, roi, 1.0)
     roi90, n90 = nex_roi(image, roi, 0.9)
@@ -65,6 +83,22 @@ def load_version(data_dir: Path, mask_dir: Path | None) -> list[ValidCase]:
         if isinstance(result, ValidCase):
             cases.append(result)
     return cases
+
+
+def split_half_delta(image: np.ndarray, roi: np.ndarray) -> float:
+    """Diferença de NEx entre duas metades intercaladas (blocos de 32 px) da mesma imagem.
+
+    Mede a confiabilidade da própria leitura: numa CT real, as duas metades
+    deveriam dar o mesmo NEx. NaN quando alguma metade tem menos de MIN_TILES janelas.
+    """
+    halves = ([], [])
+    for r in range(0, image.shape[0] - TILE + 1, STRIDE):
+        for c in range(0, image.shape[1] - TILE + 1, STRIDE):
+            if roi[r:r + TILE, c:c + TILE].all():
+                halves[(r // 32 + c // 32) % 2].append(nyquist_excess(image[r:r + TILE, c:c + TILE]))
+    if min(map(len, halves)) < MIN_TILES:
+        return float("nan")
+    return float(np.median(halves[0]) - np.median(halves[1]))
 
 
 def summary(values: np.ndarray) -> dict:

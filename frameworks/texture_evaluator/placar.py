@@ -51,10 +51,37 @@ from wavelet.src.validate_cases import ValidCase, validate_case
 from frameworks.texture_evaluator.decision import brightness_statuses, brightness_verdict, technique_statuses, texture_status
 from frameworks.texture_evaluator.regional import apply_pair_check
 from frameworks.texture_evaluator.run_mvp import calibrate, context_from_dict, context_to_dict, evaluate_pair
+from frameworks.noise_evaluator.integration import calibrate_nps, evaluate_nps_pair, noise_verdict
 
 BOOTSTRAP = 2000
 HISTORY_FILE = "historico.json"
-GROUPS = {"final": "Veredito final", "brilho": "Brilho", "textura": "Textura"}
+GROUPS = {"final": "Veredito final", "brilho": "Brilho", "textura": "Textura", "ruido": "Ruído"}
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def relocate_project_path(value: str | Path, relative_to: Path | None = None) -> Path:
+    """Recupera caminhos absolutos salvos antes de os projetos serem movidos.
+
+    Os históricos e ``report.json`` guardam caminhos locais para os TIFFs. Se o
+    usuário mover ``synthetic-lung-ct-evaluation`` e ``lung-agent-lab`` juntos
+    para outra pasta, preservamos o trecho a partir do nome do repositório e o
+    reancoramos no diretório que contém este projeto.
+    """
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        candidate = (relative_to or PROJECT_ROOT) / path
+        if candidate.exists():
+            return candidate
+    if path.exists():
+        return path
+    for repository in ("synthetic-lung-ct-evaluation", "lung-agent-lab"):
+        if repository not in path.parts:
+            continue
+        suffix = path.parts[path.parts.index(repository) :]
+        candidate = PROJECT_ROOT.parent.joinpath(*suffix)
+        if candidate.exists():
+            return candidate
+    return path
 
 
 class Indicator(NamedTuple):
@@ -83,7 +110,7 @@ INDICATORS = (
               test=lambda row: row["brightness_status"] != "approved" or row["density_status"] != "ok", image="densidade"),
     Indicator("abs_delta_ll", "Wavelet LL (média local, 4×4 px)", "diferença do brilho médio vista pela wavelet, em fração da régua", "brilho", 0.0, "|sintética − original|", .05,
               image="ll"),
-    Indicator("nex", "NEx na ROI pulmonar", "excesso de energia perto de Nyquist nas janelas internas do pulmão; fora de P5–P95 real pede revisão", "textura", 0.0, "% dos cortes", 5.0,
+    Indicator("nex", "NEx na ROI pulmonar", "excesso de energia perto de Nyquist nas janelas internas do pulmão; mais de 1 IQR longe da própria original pede revisão", "textura", 0.0, "% dos cortes", 5.0,
               test=lambda row: row.get("nex_status") in {"alto", "baixo"}),
     Indicator("map_area_brilho_local_pct", "Mapa: brilho por bloco (16 px)", "área do pulmão em que o bloco clareou ou escureceu além da tolerância", "brilho", 0.0, "% do pulmão", 5.0),
     Indicator("wavelet_fine_pct", "Wavelet 2 px (textura fina)", "detalhe entre pixels a ~2 px: bordas finas, ruído, pequenos vasos", "textura", 100.0, "% da original", 5.0,
@@ -99,8 +126,16 @@ INDICATORS = (
               test=lambda row: row["wavelet_verdict"] != "textura preservada"),
     Indicator("map_area_textura_alterada_pct", "Mapa: textura por bloco (16 px)", "área do pulmão em que o bloco tem textura alterada", "textura", 0.0, "% do pulmão", 5.0),
     Indicator("map_corr_textura", "Mapa: correlação espacial", "a textura está nos mesmos lugares da original? (1 = sim)", "textura", 1.0, "correlação", .05),
+    Indicator("nps_abs_quantity_z", "NPS · quantidade", "quanto a intensidade das flutuações locais se afastou da original", "ruido", 0.0, "|diferença| em IQR", .20),
+    Indicator("nps_abs_grain_z", "NPS · tamanho do grão", "se as flutuações ficaram mais largas ou mais finas", "ruido", 0.0, "|diferença| em IQR", .20),
+    Indicator("nps_abs_low_band_z", "NPS · padrões largos", "parcela do ruído concentrada em variações lentas e largas", "ruido", 0.0, "|diferença| em IQR", .20),
+    Indicator("nps_abs_high_band_z", "NPS · grão fino", "parcela do ruído concentrada em variações rápidas e pequenas", "ruido", 0.0, "|diferença| em IQR", .20),
+    Indicator("nps_air_synthetic", "Ruído · manchas no ar", "% do ar fora do corpo com manchas que a original não tem", "ruido", 0.0, "% do ar", .2),
+    Indicator("nps_aprovada", "NPS · cortes aprovados", "cortes em que o ruído do pulmão ficou dentro de ±1 IQR e o ar fora do corpo não ganhou manchas", "ruido", 100.0, "% dos cortes", 5.0,
+              test=lambda row: noise_verdict(row) == "aprovada"),
 )
-DECIMALS = {"wavelet_ratio": 2, "map_corr_textura": 2, "abs_delta_mu": 3, "abs_delta_ll": 3}
+DECIMALS = {"wavelet_ratio": 2, "map_corr_textura": 2, "abs_delta_mu": 3, "abs_delta_ll": 3,
+            "nps_abs_quantity_z": 2, "nps_abs_grain_z": 2, "nps_abs_low_band_z": 2, "nps_abs_high_band_z": 2, "nps_air_synthetic": 2}
 FILTER_TEXT = {"approved": "filtro: aprovado", "manual_review": "filtro: revisão", "hard_reject": "filtro: rejeição"}
 DENSITY_TEXT = {"ok": "densidade: ok", "brighter": "densidade: clareou", "darker": "densidade: escureceu", "too_bright": "densidade: claro demais", "too_dark": "densidade: escuro demais"}
 
@@ -113,7 +148,16 @@ class PlacarError(Exception):
 
 def load_history(folder: Path) -> dict | None:
     path = folder / HISTORY_FILE
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    if not path.exists():
+        return None
+    history = json.loads(path.read_text(encoding="utf-8"))
+    if history.get("mask_dir"):
+        history["mask_dir"] = str(relocate_project_path(history["mask_dir"]))
+    for version in history.get("versions", []):
+        version["folder"] = str(relocate_project_path(version["folder"]))
+        if version.get("mask_dir"):
+            version["mask_dir"] = str(relocate_project_path(version["mask_dir"]))
+    return history
 
 
 def save_history(folder: Path, history: dict) -> None:
@@ -131,11 +175,56 @@ def load_rows(folder: Path, name: str) -> list[dict]:
     for row in rows:
         row["abs_delta_ll"] = abs(float(row["wavelet_ll_synthetic"]) - float(row["wavelet_ll_real"]))
         row["glcm_energy_pct"] = 100 * float(row["glcm_energy_synthetic"]) / float(row["glcm_energy_real"])
+        for metric in ("quantity", "grain", "low_band", "high_band"):
+            key = f"nps_{metric}_z"
+            row[f"nps_abs_{metric}_z"] = abs(float(row[key])) if key in row and row[key] not in {"", None} else float("nan")
     return rows
 
 
+def _report_path(folder: Path, value: str) -> Path:
+    """Resolve caminhos do relatório, aceitando execuções portáveis ou locais."""
+    path = Path(value)
+    candidate = path if path.is_absolute() else folder / path
+    return relocate_project_path(candidate, relative_to=folder)
+
+
+def report_case_paths(folder: Path) -> list[CasePaths] | None:
+    """Lê os pares de uma execução do agente descrita por ``report.json``.
+
+    Uma execução completa pode reutilizar imagens de uma rodada rápida. Por
+    isso, descobrir apenas os TIFFs presentes na pasta perde alguns cortes; o
+    relatório é a fonte correta e aponta para todos os 37 pares usados.
+    """
+    report_file = folder / "report.json"
+    if not report_file.exists():
+        return None
+    try:
+        report = json.loads(report_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise PlacarError(f"não foi possível ler {report_file}: {error}") from error
+
+    records = report.get("cases")
+    if not isinstance(records, list) or not records:
+        raise PlacarError(f"{report_file} não contém uma lista de casos")
+    paths = []
+    for record in records:
+        case_id = record.get("case_id")
+        files = record.get("evaluation", {}).get("files", {})
+        missing = [key for key in ("original", "synthetic", "mask") if not files.get(key)]
+        if not case_id or missing:
+            detail = ", ".join(missing) if missing else "case_id"
+            raise PlacarError(f"caso incompleto em {report_file}: faltando {detail}")
+        paths.append(CasePaths(
+            case_id=case_id,
+            original=_report_path(folder, files["original"]),
+            synthetic=_report_path(folder, files["synthetic"]),
+            mask=_report_path(folder, files["mask"]),
+        ))
+    return paths
+
+
 def case_paths(folder: Path, mask_dir: Path | None) -> list[CasePaths]:
-    paths = discover_cases(folder)
+    paths = report_case_paths(folder) or discover_cases(folder)
     if mask_dir:
         paths = [CasePaths(p.case_id, p.original, p.synthetic, mask_dir / f"{p.case_id}_mask.tiff") for p in paths]
     return paths
@@ -178,7 +267,7 @@ def add_version(history_dir: Path, name: str, folder: Path, mask_dir: Path | Non
         ctx = calibrate(list(valid.values()))
         history = {
             "reference": name, "mask_dir": str(mask_dir) if mask_dir else None,
-            "calibration": context_to_dict(ctx),
+            "calibration": {**context_to_dict(ctx), "nps_reference": calibrate_nps(list(valid.values()), glcm_scale=context_to_dict(ctx)["glcm_scale"])},
             "originals": {case: fingerprint(c.original) for case, c in valid.items()},
             "versions": [],
         }
@@ -193,7 +282,9 @@ def add_version(history_dir: Path, name: str, folder: Path, mask_dir: Path | Non
 
     rows = []
     for case in cases:
-        row = evaluate_pair(case, valid[case].original, valid[case].synthetic, valid[case].lung_mask, ctx)
+        item = valid[case]
+        row = evaluate_pair(case, item.original, item.synthetic, item.lung_mask, ctx)
+        row.update(evaluate_nps_pair(item.original, item.synthetic, item.lung_mask, history["calibration"]["nps_reference"]))
         rows.append({**row, "abs_delta_mu": abs(row["delta_mu"])})
     mode = apply_pair_check(rows)
     suspicious = sum(row["pair_status"] == "suspeito" for row in rows)
@@ -223,12 +314,18 @@ def refresh_history(history_dir: Path) -> str:
     if not reference_valid:
         raise PlacarError("não foi possível recarregar a versão de referência")
     ctx = calibrate(list(reference_valid.values()))
-    history["calibration"] = context_to_dict(ctx)
+    nps_reference = calibrate_nps(list(reference_valid.values()), glcm_scale=context_to_dict(ctx)["glcm_scale"])
+    history["calibration"] = {**context_to_dict(ctx), "nps_reference": nps_reference}
     for version in history["versions"]:
         masks = Path(version["mask_dir"]) if version.get("mask_dir") else None
         valid = load_valid(Path(version["folder"]), masks)
         cases = sorted(case for case in valid if case in history["originals"])
-        rows = [{**evaluate_pair(case, valid[case].original, valid[case].synthetic, valid[case].lung_mask, ctx), "abs_delta_mu": 0.0} for case in cases]
+        rows = []
+        for case in cases:
+            item = valid[case]
+            row = {**evaluate_pair(case, item.original, item.synthetic, item.lung_mask, ctx), "abs_delta_mu": 0.0}
+            row.update(evaluate_nps_pair(item.original, item.synthetic, item.lung_mask, nps_reference))
+            rows.append(row)
         for row in rows:
             row["abs_delta_mu"] = abs(row["delta_mu"])
         mode = apply_pair_check(rows)
@@ -279,7 +376,7 @@ def values(rows: list[dict], indicator: Indicator) -> np.ndarray:
         rows = [row for row in rows if trusted(row)]
     if indicator.test:
         return np.array([indicator.test(row) for row in rows], dtype=float)
-    out = np.array([float(row[indicator.key]) for row in rows])
+    out = np.array([float(row[indicator.key]) if row.get(indicator.key) not in {"", None} else np.nan for row in rows], dtype=float)
     # colunas do mapa ficam vazias no modo só máscara
     return out[np.isfinite(out)]
 
@@ -329,6 +426,7 @@ COUNTS = {
     "final": lambda row: [verdict_label(row)],
     "brilho": lambda row: [FILTER_TEXT[row["brightness_status"]], DENSITY_TEXT[row["density_status"]]],
     "textura": lambda row: [row["wavelet_verdict"], f"NEx: {row.get('nex_status', 'indisponível')}"] ,
+    "ruido": lambda row: [f"NPS: {noise_verdict(row)}"],
 }
 
 
@@ -354,7 +452,9 @@ def build_board(history_dir: Path) -> dict | None:
 
 
 def load_case(entry: dict, case_id: str) -> ValidCase:
-    paths = next((p for p in case_paths(Path(entry["folder"]), Path(entry["mask_dir"]) if entry["mask_dir"] else None) if p.case_id == case_id), None)
+    folder = relocate_project_path(entry["folder"])
+    mask_dir = relocate_project_path(entry["mask_dir"]) if entry["mask_dir"] else None
+    paths = next((p for p in case_paths(folder, mask_dir) if p.case_id == case_id), None)
     if paths is None:
         raise PlacarError(f"{case_id} não encontrado em {entry['folder']}")
     case = validate_case(paths, erosion_radius=2)

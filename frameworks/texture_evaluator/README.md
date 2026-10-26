@@ -31,7 +31,7 @@ Cada corte sai com `final_status` (`aprovada`, `revisar` ou `rejeitar`) e os mot
 1. **Brilho:** só o filtro do contrato rejeita; a densidade manda para revisão.
 2. **Quantidade de detalhe:** contraste GLCM e energia fina Wavelet devem concordar (80–125% da original); se discordarem, o corte vai para revisão.
 3. **Tipo de defeito:** veredito Wavelet diferente de "textura preservada" manda para revisão.
-4. **NEx:** fora de P5–P95 das originais manda para revisão; poucas janelas na ROI é inconclusivo.
+4. **NEx:** Δ sintética − própria original acima de 1 IQR das originais, com a margem de erro do corte (IC 95%) sem cruzar zero, manda para revisão; poucas janelas na ROI é inconclusivo.
 
 ## Classificação por técnica (painel)
 
@@ -43,7 +43,7 @@ O painel lê cada técnica separadamente, sem mudar o veredito final acima. Toda
 |---|---|---|
 | GLCM | contraste, energia | diferença sintética − original em IQR da métrica entre as CTs reais (`glcm_iqr`): até 1 **aprovada**, 1–2 **revisão**, acima de 2 **reprovada**; a pior métrica decide |
 | Wavelet | 2 px, 4 px, entropia | a mesma regra (`wavelet_iqr`); o "tipo" (borrou, ruído…) descreve, não decide |
-| NEx | NEx na ROI | fora de P5–P95 das CTs reais = **revisão**; poucas janelas = inconclusivo, não pesa |
+| NEx | NEx na ROI | Δ sintética − própria original acima de 1 IQR das CTs reais **e** a margem de erro do corte (IC 95% por bootstrap das janelas) não inclui zero = **revisão**; poucas janelas = inconclusivo, não pesa |
 
 **Veredito de brilho (aba de brilho do painel).** Duas técnicas, e o veredito é a **pior das duas** (`decision.brightness_verdict`). A textura não entra.
 

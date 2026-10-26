@@ -47,10 +47,13 @@ MASK_ONLY_NOTE = "só máscara:\noutro pulmão no mesmo\ncontorno; não há o me
 BRIGHT_STYLE = {"escureceu": dict(facecolor="black", edgecolor="black"), "clareou": dict(facecolor="white", edgecolor="black")}
 
 
-def load(history_dir: Path, case_id: str):
+def load(history_dir: Path, case_id: str, version_names: list[str] | None = None):
     """Calibração, versões e o corte carregado em cada versão."""
     history = load_history(history_dir)
     versions = history["versions"]
+    if version_names is not None:
+        by_name = {entry["name"]: entry for entry in versions}
+        versions = [by_name[name] for name in version_names]
     return context_from_dict(history["calibration"]), versions, [load_case(entry, case_id) for entry in versions]
 
 
@@ -111,7 +114,7 @@ def _local_contrast(image: np.ndarray, mask: np.ndarray, scale) -> np.ndarray:
 
 def technique_figure(history_dir: Path, case_id: str, technique: str, rows: dict[str, dict]):
     """O que a técnica enxerga no corte, na original e em cada versão; `rows` são as linhas do placar por versão."""
-    ctx, versions, cases = load(history_dir, case_id)
+    ctx, versions, cases = load(history_dir, case_id, list(rows))
     original, mask = cases[0].original, cases[0].lung_mask
     images = [original] + [case.synthetic for case in cases]
     names = ["Original"] + [entry["name"] for entry in versions]
@@ -170,9 +173,9 @@ def technique_figure(history_dir: Path, case_id: str, technique: str, rows: dict
     return _finish(fig, axes, mask, shown, label)
 
 
-def map_figure(history_dir: Path, case_id: str, layer: str, compared: bool):
+def map_figure(history_dir: Path, case_id: str, layer: str, compared: bool, version_names: list[str] | None = None):
     """Mapa por região de um corte: cada imagem sozinha ou cada bloco comparado com o mesmo bloco da original."""
-    ctx, versions, cases = load(history_dir, case_id)
+    ctx, versions, cases = load(history_dir, case_id, version_names)
     original, mask = cases[0].original, cases[0].lung_mask
     base, lung = block_maps(original, mask, ctx.ruler, BLOCK, "haar", MIN_TISSUE)
     extent = (0, lung.shape[1] * BLOCK, lung.shape[0] * BLOCK, 0)

@@ -50,9 +50,9 @@ O IQR vem só das CTs reais e fica congelado no histórico. Um gerador ruim não
 |---|---|---|
 | **GLCM** | contraste (muda entre pixels vizinhos; cai quando a imagem suaviza) e energia (uniformidade; sobe quando fica lisa) | régua de IQR; a pior métrica decide |
 | **Wavelet** | energia em 2 px (alta frequência, textura fina), em 4 px (média frequência, textura grossa) e entropia | régua de IQR; o "tipo" (borrou, ruído, perdeu contraste) descreve a mudança, não decide |
-| **NEx** | excesso ou falta de estrutura perto do limite de resolução | fora da faixa P5–P95 das reais = revisão; nunca reprova |
+| **NEx** | excesso ou falta de estrutura perto do limite de resolução | Δ sintética − própria original acima de 1 IQR das reais **e** a margem de erro do corte não inclui zero = revisão; nunca reprova |
 
-O veredito de textura é o da técnica mais severa. O NEx não reprova por três motivos: a faixa P5–P95 deixa 10% das CTs reais de fora por definição, ele ainda não tem um segundo limite, e ainda não se sabe se a assinatura que ele detecta atrapalha o uso final das imagens.
+O veredito de textura é o da técnica mais severa. O NEx é pareado como as outras métricas: compara a sintética com a própria original, então uma cópia perfeita sempre passa (a regra antiga, por faixa P5–P95 das reais, mandava para revisão a cópia de toda original que já estivesse fora da faixa). Ele não reprova porque ainda não tem um segundo limite e ainda não se sabe se a assinatura que ele detecta atrapalha o uso final das imagens.
 
 ## Resultados atuais (37 cortes por dataset)
 
@@ -64,6 +64,26 @@ O veredito de textura é o da técnica mais severa. O NEx não reprova por três
 - O Dsr preserva o brilho, mas mexe na textura: quase tudo vai para revisão e nada é reprovado.
 - O Dgen erra nas duas frentes, como esperado para um gerador que cria um pulmão novo.
 - No Dgen, a Wavelet LL pegou 3 cortes claros demais que passavam pelo filtro da GLCM.
+
+## Avaliação de ruído por NPS
+
+O módulo `frameworks/noise_evaluator/` mede o NPS local estimado das imagens reais e sintéticas, gera gráficos por corte, curvas agregadas, CSV, dados brutos em NPZ e um perfil de referência reutilizável. Ele mantém separadas duas leituras:
+
+- **NPS local estimado:** calculado em pequenas regiões pulmonares pouco estruturadas; pode conter anatomia fina residual porque não há aquisições repetidas.
+- **Espectro do erro:** calculado sobre `sintética − real` quando a anatomia é a mesma; mede em quais escalas o gerador alterou a imagem, não ruído puro.
+
+Exemplo para um novo dataset no mesmo formato do Dsr:
+
+```bash
+.venv/bin/python -m frameworks.noise_evaluator.run_nps \
+  --data-dir dados/NOVO_DATASET \
+  --mask-dir dados/Dgen \
+  --output-dir outputs/nps_referencia \
+  --dataset-name gerador-melhor \
+  --pair-mode same-anatomy
+```
+
+O relatório fica em `outputs/nps_referencia/report/index.html`. Parâmetros, features e uso do perfil de referência estão documentados em [`frameworks/noise_evaluator/README.md`](frameworks/noise_evaluator/README.md).
 
 ## Como rodar
 
