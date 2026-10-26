@@ -53,6 +53,17 @@ INDICATOR_LABEL = {
     "nps_aprovada": "NPS · slices approved",
 }
 GROUP = {"brilho": "brightness", "textura": "texture", "ruido": "noise"}
+# unidades dos indicadores do placar (`placar.Indicator.unit`), em inglês; só as que o workbench mostra
+UNIT = {
+    "|sintética − original|": "|synthetic − original|",
+    "% dos cortes": "% of slices",
+    "% da original": "% of original",
+    "% do pulmão": "% of lung",
+    "% do ar": "% of air",
+    "razão": "ratio",
+    "correlação": "correlation",
+    "|diferença| em IQR": "|difference| in IQR",
+}
 # métricas com z que entram na mediana de brilho e textura; as do ruído têm campo próprio
 BRIGHTNESS_TEXTURE = ("brightness", "texture")
 class VersionIn(BaseModel):
@@ -60,10 +71,10 @@ class VersionIn(BaseModel):
     folder: str
 
 
-def _counts(rows: list[dict], calibration: dict, key: str) -> dict[str, int]:
+def _counts(slices: list[dict], key: str) -> dict[str, int]:
     counts = {status: 0 for status in STATUSES}  # inconclusivo: hoje só o ruído o produz; sempre no formato
-    for row in rows:
-        verdict = data.slice_json(row, calibration)[key]["verdict"]
+    for s in slices:
+        verdict = s[key]["verdict"]
         if verdict in counts:
             counts[verdict] += 1
     return counts
@@ -93,32 +104,58 @@ def _vs_baseline(baseline_rows: list[dict], rows: list[dict]) -> list[dict]:
     return out
 
 
+def indicators_json() -> list[dict]:
+    """Metadados dos indicadores que o placar mostra, na ordem de `placar.INDICATORS`."""
+    return [{"key": i.key, "label": INDICATOR_LABEL[i.key], "group": GROUP[i.group], "unit": UNIT[i.unit],
+             "ideal": float(i.ideal), "min_change": float(i.min_change)}
+            for i in placar.INDICATORS if i.key in INDICATOR_LABEL]
+
+
+# placar por (pasta do histórico, mtime de historico.json, referência): recalcular o histórico troca o mtime
+_BOARD_CACHE: dict[tuple[str, float, str], dict] = {}
+
+
 def board_json(wb: Workbench, baseline: str | None = None) -> dict:
-    """Placar com `baseline` como referência da comparação (padrão: a referência do histórico)."""
-    board = wb.board
+    """Placar com `baseline` como referência da comparação (padrão: a referência do histórico).
+
+    Reaproveita o resultado enquanto `historico.json` não muda (mesma chave de `data.load`, mais a referência).
+    """
     baseline = baseline or wb.baseline
     wb.entry(baseline)  # desconhecida: 404
+    path = Path(wb.history_dir) / placar.HISTORY_FILE
+    key = (str(path.resolve()), path.stat().st_mtime, baseline)
+    if key not in _BOARD_CACHE:
+        for old in [k for k in _BOARD_CACHE if k[0] == key[0] and k[1] != key[1]]:
+            del _BOARD_CACHE[old]
+        _BOARD_CACHE[key] = _build_board(wb, baseline)
+    return _BOARD_CACHE[key]
+
+
+def _build_board(wb: Workbench, baseline: str) -> dict:
+    board = wb.board
     rows_by_name = board["rows"]
     calibration = wb.history["calibration"]
+    # cada corte passa por `slice_json` uma vez; contagens e medianas saem dessas fatias
+    slices_by_name = {name: [data.slice_json(row, calibration) for row in rows_by_name[name]] for name in board["names"]}
     generators = []
     for name in board["names"]:
-        rows = rows_by_name[name]
-        slices = [data.slice_json(row, calibration) for row in rows]
+        slices = slices_by_name[name]
         is_baseline = name == baseline
         scores = board["scores"][name]
         generators.append({
             "name": name,
             "mode": wb.entry(name)["mode"],
+            "mode_code": data.MODE_CODE.get(wb.entry(name)["mode"]),
             "is_baseline": is_baseline,
-            "counts": {"brightness": _counts(rows, calibration, "brightness"),
-                       "texture": _counts(rows, calibration, "texture"),
-                       "noise": _counts(rows, calibration, "noise")},
+            "counts": {"brightness": _counts(slices, "brightness"),
+                       "texture": _counts(slices, "texture"),
+                       "noise": _counts(slices, "noise")},
             "median_abs_z": _median_abs_z(slices, BRIGHTNESS_TEXTURE),
             "median_abs_z_noise": _median_abs_z(slices, ("noise",)),
-            "scores": {key: placar.json_value(list(values)) for key, values in scores.items()},
-            "vs_baseline": None if is_baseline else _vs_baseline(rows_by_name[baseline], rows),
+            "scores": {key: placar.json_value(list(values)) for key, values in scores.items() if key in INDICATOR_LABEL},
+            "vs_baseline": None if is_baseline else _vs_baseline(rows_by_name[baseline], rows_by_name[name]),
         })
-    return {"baseline": baseline, "n_cases": board["n_cases"], "generators": generators}
+    return {"baseline": baseline, "n_cases": board["n_cases"], "indicators": indicators_json(), "generators": generators}
 
 
 def _png(fig) -> bytes:

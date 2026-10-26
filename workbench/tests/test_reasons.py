@@ -1,4 +1,5 @@
 """Motivos estruturados e limites compartilhados: os limites de |z| batem com `decision.metric_status`."""
+from frameworks.noise_evaluator.integration import AIR_LIMITS
 from frameworks.texture_evaluator import decision
 from workbench.api import reasons
 
@@ -27,4 +28,16 @@ def test_reason_limit_value_comes_from_shared_constants():
     assert out["brightness"][0]["limit_value"] == reasons.Z_LIMITS["reject"]
     assert out["brightness"][1]["limit_value"] == reasons.SATURATION_LIMIT
     assert out["texture"][0]["limit_value"] == reasons.Z_LIMITS["review"]
-    assert out["noise"][0]["limit_value"] is None
+    assert out["noise"][0]["limit_value"] == AIR_LIMITS[1]  # nps_air rejeitado: limite de reprovação do ar
+
+
+def test_air_limit_value_by_status():
+    review = reasons.why([_metric("nps_air", "Air", "noise", "review", None, value=1.0)])["noise"][0]
+    reject = reasons.why([_metric("nps_air", "Air", "noise", "rejected", None, value=3.0)])["noise"][0]
+    assert review["limit"] == "review" and review["limit_value"] == AIR_LIMITS[0]
+    assert reject["limit"] == "reject" and reject["limit_value"] == AIR_LIMITS[1]
+
+
+def test_air_unavailable_note():
+    entry = reasons.why([_metric("nps_air", "Air", "noise", "inconclusive", None)])["noise"][0]
+    assert entry["note"] == reasons.NOTE_AIR and entry["limit"] is None and entry["limit_value"] is None

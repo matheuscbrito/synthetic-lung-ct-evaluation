@@ -97,7 +97,7 @@ def test_cohort_nex_wilcoxon_matches_framework(cmp_client):
     p = float(wilcoxon(values).pvalue)
     assert stat["p"] == pytest.approx(p)
     assert stat["systematic"] is (p < 0.05)
-    assert stat["direction"] == ("higher" if np.median(values) > 0 else "lower")
+    assert stat["direction"] == (("higher" if np.median(values) > 0 else "lower") if stat["systematic"] else None)
 
 
 def test_cohort_wavelet_types_count_framework_rows(cmp_client):
@@ -116,3 +116,27 @@ def test_cohort_copy_runs_test_and_unknown_version_404(tmp_history):
 
 def test_cohort_unknown_dataset_404(cmp_client):
     assert cmp_client.get("/api/cohort", params={"version": "Dsr", "dataset": "Dgen"}).status_code == 404
+
+
+def test_cohort_small_n_has_no_median_or_test():
+    import dataclasses
+    wb = wb_data.load(HISTORY_DIR)
+    rows = wb.board["rows"]["Dsr"][:5]
+    small = dataclasses.replace(wb, board={**wb.board, "rows": {**wb.board["rows"], "Dsr": rows}})
+    stat = compare.cohort(small, "Dsr")["nex_test"]
+    assert stat["n"] < compare.NEX_MIN_N
+    assert stat["median_z"] is None and stat["p"] is None
+    assert stat["systematic"] is False and stat["direction"] is None
+
+
+def test_cohort_direction_only_when_systematic(cmp_client):
+    stat = cmp_client.get("/api/cohort", params={"version": "Dsr-gpbo11"}).json()["nex_test"]
+    assert stat["n"] >= compare.NEX_MIN_N and stat["median_z"] is not None
+    assert (stat["direction"] is not None) == stat["systematic"]
+
+
+def test_cohort_wavelet_type_codes(cmp_client):
+    from workbench.api.data import WAVELET_CODE
+    body = cmp_client.get("/api/cohort", params={"version": "Dsr-gpbo11"}).json()
+    expected = Counter(WAVELET_CODE[r["wavelet_verdict"]] for r in load_rows(HISTORY_DIR, "Dsr-gpbo11"))
+    assert body["wavelet_type_codes"] == dict(expected)

@@ -75,11 +75,12 @@ def test_board_counts_noise_match_framework(client):
 def test_board_scores_for_every_indicator(client):
     b = client.get("/api/board").json()
     expected = placar.build_board(HISTORY_DIR)["scores"]
-    keys = {i.key for i in placar.INDICATORS}
+    from workbench.api.board import INDICATOR_LABEL
     for g in b["generators"]:
-        assert set(g["scores"]) == keys
+        assert set(g["scores"]) == set(INDICATOR_LABEL)
         for key, (value, low, high) in expected[g["name"]].items():
-            assert g["scores"][key] == [placar.json_value(value), placar.json_value(low), placar.json_value(high)]
+            if key in INDICATOR_LABEL:
+                assert g["scores"][key] == [placar.json_value(value), placar.json_value(low), placar.json_value(high)]
 
 
 def test_board_noise_indicators_in_vs_baseline(client):
@@ -230,3 +231,67 @@ def test_error_details_are_english(tmp_history):
 def test_map_unknown_case_404(client):
     assert client.get("/api/figure/nope/map/veredito.png", params={"compared": 1}).status_code == 404
     assert client.get("/api/figure/nope/map/brilho.png", params={"compared": 0}).status_code == 404
+
+
+def test_board_indicator_metadata(client):
+    from workbench.api.board import INDICATOR_LABEL, UNIT
+    b = client.get("/api/board").json()
+    by_key = {i.key: i for i in placar.INDICATORS}
+    expected_keys = [i.key for i in placar.INDICATORS if i.key in INDICATOR_LABEL]
+    assert [m["key"] for m in b["indicators"]] == expected_keys
+    for m in b["indicators"]:
+        ind = by_key[m["key"]]
+        assert set(m) == {"key", "label", "group", "unit", "ideal", "min_change"}
+        assert m["label"] == INDICATOR_LABEL[m["key"]]
+        assert m["group"] in {"brightness", "texture", "noise"}
+        assert m["unit"] == UNIT[ind.unit]
+        assert isinstance(m["ideal"], float) and m["ideal"] == ind.ideal
+        assert m["min_change"] == ind.min_change
+    for g in b["generators"]:
+        assert set(g["scores"]) == set(expected_keys)
+
+
+def test_board_mode_code(client):
+    b = client.get("/api/board").json()
+    v = client.get("/api/versions").json()
+    assert {g["mode_code"] for g in b["generators"]} == {"same_anatomy"}
+    assert {x["mode_code"] for x in v} == {"same_anatomy"}
+
+
+def test_default_baseline_is_history_reference(tmp_history):
+    path = tmp_history / "historico.json"
+    history = json.loads(path.read_text(encoding="utf-8"))
+    history["reference"] = "Dsr-copy"
+    path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    c = TestClient(create_app(tmp_history))
+    assert c.get("/api/board").json()["baseline"] == "Dsr-copy"
+    assert c.get("/api/status").json()["baseline"] == "Dsr-copy"
+
+
+def test_default_baseline_without_reference_is_first_version(tmp_history):
+    path = tmp_history / "historico.json"
+    history = json.loads(path.read_text(encoding="utf-8"))
+    del history["reference"]
+    path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    c = TestClient(create_app(tmp_history))
+    assert c.get("/api/board").json()["baseline"] == "Dsr"
+
+
+def test_board_is_memoised_and_computes_each_row_once(monkeypatch):
+    from workbench.api import board as wb_board, data as wb_data_mod
+    wb = wb_data_mod.load(HISTORY_DIR)
+    monkeypatch.setattr(wb_board, "_BOARD_CACHE", {})
+    calls = {"n": 0}
+    real = wb_data_mod.slice_json
+
+    def counting(row, calibration):
+        calls["n"] += 1
+        return real(row, calibration)
+
+    monkeypatch.setattr(wb_data_mod, "slice_json", counting)
+    first = wb_board.board_json(wb)
+    total_rows = sum(len(rows) for rows in wb.board["rows"].values())
+    assert calls["n"] == total_rows
+    calls["n"] = 0
+    second = wb_board.board_json(wb)
+    assert second == first and calls["n"] == 0

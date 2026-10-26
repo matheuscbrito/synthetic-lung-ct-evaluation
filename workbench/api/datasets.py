@@ -64,7 +64,7 @@ def status_json(cfg: dict) -> dict:
     if history is None:
         return {"stale": False, "has_history": False, "baseline": None, "reference": None, "token": None}
     token = (history_dir / placar.HISTORY_FILE).stat().st_mtime
-    baseline, reference = history["versions"][0]["name"], history.get("reference")
+    baseline, reference = data.default_baseline(history), history.get("reference")
     if data.is_stale(history):
         # histórico desatualizado: responde antes de montar o placar, que quebraria sem as réguas novas
         return {"stale": True, "has_history": True, "baseline": baseline, "reference": reference, "token": token}

@@ -60,3 +60,8 @@ def test_reference_window_query(client):
     r = client.get(f"/api/image/Dsr/{quote(CID)}/synthetic.png", params={"window": "reference"})
     assert r.status_code == 200
     assert client.get(f"/api/image/Dsr/{quote(CID)}/synthetic.png", params={"window": "bogus"}).status_code == 422
+
+
+def test_cache_buster_param_is_ignored(client):
+    r = client.get(f"/api/image/Dsr/{quote(CID)}/real.png", params={"v": "1700000000"})
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"

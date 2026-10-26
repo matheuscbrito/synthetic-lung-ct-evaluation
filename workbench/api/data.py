@@ -20,6 +20,11 @@ STATUS = {"aprovada": "approved", "revisão": "review", "reprovada": "rejected",
 # Lista de `ui_placar.py:1147` (chaves de calibração e as duas do NPS, dentro de `nps_reference`).
 STALE_KEYS = ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr", "nps_reference")
 STALE_NPS_KEYS = ("air_tone", "air_fallback_sigma")
+# códigos em inglês da API (campos novos, ao lado dos rótulos em português que o front já usa)
+MODE_CODE = {regional.SAME_ANATOMY: "same_anatomy", regional.MASK_ONLY: "mask_only"}
+# rótulos de `wavelet_densidade.wavelet_verdict` (wavelet/src/densidade_wavelet.py) -> código
+WAVELET_CODE = {"textura preservada": "preserved", "borrou": "blurred", "ruído": "noise",
+                "perdeu contraste": "lost_contrast", "ganhou contraste": "gained_contrast", "estourou": "saturated"}
 
 
 class NotFound(Exception):
@@ -71,8 +76,15 @@ def load(history_dir: Path) -> Workbench:
         history = board["history"]
         for old in [k for k in _CACHE if k[0] == key[0]]:
             del _CACHE[old]
-        _CACHE[key] = Workbench(history=history, board=board, baseline=history["versions"][0]["name"], history_dir=Path(history_dir))
+        _CACHE[key] = Workbench(history=history, board=board, baseline=default_baseline(history), history_dir=Path(history_dir))
     return _CACHE[key]
+
+
+def default_baseline(history: dict) -> str:
+    """Referência do histórico quando existe e está nas versões; senão a primeira versão."""
+    names = [item["name"] for item in history["versions"]]
+    reference = history.get("reference")
+    return reference if reference in names else names[0]
 
 
 def is_stale(history: dict) -> bool:
@@ -117,9 +129,10 @@ def _ci(row: dict, prefix: str) -> tuple:
     return row.get(f"{prefix}_z_low"), row.get(f"{prefix}_z_high")
 
 
-def _metric(key, label, group, technique, real, synthetic, value, z, status, unit, ci=(None, None), **extra) -> dict:
+def _metric(key, label, group, technique, real, synthetic, value, z, status, unit, ci=(None, None), percent=True, **extra) -> dict:
+    """`percent=False` deixa `pct_of_original` nulo (Sat31, Δμ e manchas do ar não são percentual da original)."""
     real_f, synthetic_f = _f(real), _f(synthetic)
-    pct = None if real_f in (None, 0) or synthetic_f is None else _f(100 * synthetic_f / real_f)
+    pct = None if not percent or real_f in (None, 0) or synthetic_f is None else _f(100 * synthetic_f / real_f)
     low, high = _f(ci[0]), _f(ci[1])
     certain = None if low is None or high is None else (low > 0 or high < 0)
     return {"key": key, "label": label, "group": group, "technique": technique,
@@ -146,7 +159,7 @@ def _nps_metric(key: str, row: dict, statuses: dict) -> dict:
 
 def _air_metric(row: dict, statuses: dict) -> dict:
     return _metric("nps_air", "Air spots", "noise", "Air", row.get("nps_air_real"), row.get("nps_air_synthetic"),
-                   row.get("nps_air_synthetic"), None, _api(statuses[AIR_LABEL]), "%",
+                   row.get("nps_air_synthetic"), None, _api(statuses[AIR_LABEL]), "%", percent=False,
                    peak_sigmas=_f(row.get("nps_air_peak_sigmas")), available=_bool(row, "nps_air_available", "False"))
 
 
@@ -157,9 +170,9 @@ def slice_json(row: dict, calibration: dict) -> dict:
     noise = noise_statuses(row)
     metrics = [
         _metric("delta_mu", "GLCM Δμ", "brightness", "GLCM", None, None, delta_mu, delta_z,
-                _api(decision.metric_status(delta_z)), "IQR"),
+                _api(decision.metric_status(delta_z)), "IQR", percent=False),
         _metric("sat31", "GLCM Sat31", "brightness", "GLCM", None, None, sat31, None,
-                "rejected" if sat31 > reasons.SATURATION_LIMIT else "approved", "%"),
+                "rejected" if sat31 > reasons.SATURATION_LIMIT else "approved", "%", percent=False),
         _metric("ll", "Wavelet LL", "brightness", "Wavelet", row["wavelet_ll_real"], row["wavelet_ll_synthetic"],
                 row["wavelet_ll_z"], row["wavelet_ll_z"], _api(row["wavelet_ll_status"]), "IQR"),
         _texture_metric("glcm_contrast", "GLCM contrast", "GLCM", row, "glcm_contrast"),
@@ -179,6 +192,7 @@ def slice_json(row: dict, calibration: dict) -> dict:
         "label": slice_label(row["case_id"]),
         "patient": patient(row["case_id"]),
         "pair_mode": row["pair_mode"],
+        "mode_code": MODE_CODE.get(row["pair_mode"]),
         "mask_only": row["pair_mode"] == regional.MASK_ONLY,
         "brightness": {
             "verdict": _api(decision.brightness_verdict(row)),
@@ -200,12 +214,14 @@ def slice_json(row: dict, calibration: dict) -> dict:
         "metrics": metrics,
         "density": {"status": row["density_status"], "median_shift_iqr": _f(row["density_median_shift_iqr"])},
         "wavelet_type": row["wavelet_verdict"],
+        "wavelet_type_code": WAVELET_CODE.get(row["wavelet_verdict"]),
     }
 
 
 def versions_json(wb: Workbench) -> list[dict]:
     reference = wb.history.get("reference")
-    return [{"name": item["name"], "mode": item["mode"], "n_cases": item["n_cases"], "folder": item["folder"],
+    return [{"name": item["name"], "mode": item["mode"], "mode_code": MODE_CODE.get(item["mode"]),
+             "n_cases": item["n_cases"], "folder": item["folder"],
              "added": item["added"], "is_baseline": item["name"] == wb.baseline,
              "reference": item["name"] == reference,
              # None quando a versão é anterior ao campo: contagem desconhecida, não zero

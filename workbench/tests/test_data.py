@@ -81,3 +81,44 @@ def test_slice_mask_only_flag(client):
     slices = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"]
     assert all(isinstance(s["mask_only"], bool) for s in slices)
     assert all(s["mask_only"] == (s["pair_mode"] == "só máscara") for s in slices)
+
+
+def test_slice_english_codes_match_framework_labels(client):
+    from frameworks.texture_evaluator import regional
+    from wavelet.src.densidade_wavelet import wavelet_verdict  # noqa: F401  (fonte dos rótulos)
+    from workbench.api.data import WAVELET_CODE
+    slices = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"]
+    rows = {row["case_id"]: row for row in load_rows(HISTORY_DIR, "Dsr")}
+    for s in slices:
+        assert s["mode_code"] == ("mask_only" if s["mask_only"] else "same_anatomy")
+        assert s["wavelet_type_code"] == WAVELET_CODE[rows[s["case_id"]]["wavelet_verdict"]]
+        assert s["wavelet_type"] == rows[s["case_id"]]["wavelet_verdict"]  # campo antigo mantido
+    assert regional.SAME_ANATOMY == "mesma anatomia" and regional.MASK_ONLY == "só máscara"
+
+
+def test_wavelet_codes_cover_every_framework_label():
+    from wavelet.src.densidade_wavelet import wavelet_verdict
+    from workbench.api.data import WAVELET_CODE
+    labels = set()
+    for fine in range(0, 201, 5):
+        for coarse in range(0, 201, 5):
+            for ratio in (0.5, 0.95, 1.0, 1.05, 2.0):
+                labels.add(wavelet_verdict({"fine": fine, "coarse": coarse, "ratio": ratio}))
+    assert labels == set(WAVELET_CODE)
+    assert set(WAVELET_CODE.values()) == {"preserved", "blurred", "noise", "lost_contrast", "gained_contrast", "saturated"}
+
+
+def test_pct_of_original_is_null_for_air_sat_and_delta(client):
+    s = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"][0]
+    by_key = {m["key"]: m for m in s["metrics"]}
+    for key in ("nps_air", "sat31", "delta_mu"):
+        assert by_key[key]["pct_of_original"] is None, key
+    assert by_key["ll"]["pct_of_original"] is not None
+
+
+def test_pct_of_original_null_even_with_air_values():
+    row = dict(any_dsr_row())
+    row["nps_air_real"], row["nps_air_synthetic"] = "0.5", "1.0"
+    by_key = {m["key"]: m for m in slice_json(row, calibration())["metrics"]}
+    assert by_key["nps_air"]["real"] == 0.5 and by_key["nps_air"]["synthetic"] == 1.0
+    assert by_key["nps_air"]["pct_of_original"] is None

@@ -8,7 +8,7 @@ from collections import Counter
 import pytest
 from fastapi.testclient import TestClient
 
-from frameworks.noise_evaluator.integration import AIR_LABEL, NPS_METRICS, noise_statuses, noise_verdict
+from frameworks.noise_evaluator.integration import AIR_LABEL, AIR_LIMITS, NPS_METRICS, noise_statuses, noise_verdict
 from frameworks.texture_evaluator import decision
 from frameworks.texture_evaluator.placar import load_rows
 from workbench.api import data as wb_data
@@ -194,6 +194,8 @@ def test_reason_shape_and_limits(slices):
         assert reason["limit"] == {"review": "review", "rejected": "reject"}.get(reason["status"])
         if reason["metric"] == "sat31":
             assert reason["limit_value"] == reasons.SATURATION_LIMIT
+        elif reason["metric"] == "nps_air" and reason["limit"] is not None:
+            assert reason["limit_value"] == AIR_LIMITS[0 if reason["limit"] == "review" else 1]
         elif reason["z"] is not None and reason["limit"] is not None:
             assert reason["limit_value"] == reasons.Z_LIMITS[reason["limit"]]
         else:

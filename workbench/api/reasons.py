@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import math
 
+from frameworks.noise_evaluator.integration import AIR_LIMITS
+
 # Sat31 acima deste valor (%) rejeita o brilho: `ui_placar.py:42` (OFFICIAL_SATURATION)
 # e `run_mvp.py:88`.
 SATURATION_LIMIT = 15.0
@@ -61,9 +63,11 @@ def _note(metric: dict) -> str | None:
 
 
 def _limit_value(metric: dict, limit: str | None):
-    """Valor numérico do limite cruzado: % para Sat31, |z| para métricas com z; None quando não há."""
+    """Valor numérico do limite cruzado: % para Sat31 e para o ar (`AIR_LIMITS`), |z| para métricas com z."""
     if metric["key"] == "sat31":
         return SATURATION_LIMIT
+    if metric["key"] == "nps_air":
+        return None if limit is None else AIR_LIMITS[0 if limit == "review" else 1]
     if limit is None or _finite(metric.get("z")) is None:
         return None
     return Z_LIMITS[limit]
