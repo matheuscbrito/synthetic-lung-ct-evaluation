@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, Response
 
 from frameworks.texture_evaluator.placar import PlacarError
 from frameworks.texture_evaluator.run_mvp import context_from_dict
-from workbench.api import board, data, datasets as ds, images, notebook, tools
+from workbench.api import board, data, datasets as ds, images, notebook, optimizers, tools
 from workbench.api.data import NotFound
 from workbench.api.datasets import DATASETS, DEFAULT
 
@@ -109,6 +109,7 @@ def create_app(datasets: dict | Path = DATASETS) -> FastAPI:
 
     app.include_router(board.router(datasets))
     app.include_router(ds.router(datasets))
+    app.include_router(optimizers.router)
 
     return app
 
