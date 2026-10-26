@@ -1,0 +1,13 @@
+{
+  "run": "runs/real/baseline-full/report.json",
+  "candidate": {
+    "steps": 25,
+    "noise_level": 1,
+    "sampler": "ddim",
+    "scale_factor": 1.0,
+    "seed": 42,
+    "eta": 0.0,
+    "latent_noise_scale": 1.0,
+    "conditioning_noise_scale": 1.0
+  }
+}
