@@ -27,7 +27,7 @@ from workbench.api.data import NotFound, Workbench  # noqa: E402
 from workbench.api.datasets import DEFAULT  # noqa: E402
 
 DPI = 120
-STATUSES = ("approved", "review", "rejected")
+STATUSES = ("approved", "review", "rejected", "inconclusive")
 RESULT = {"melhorou": "improved", "piorou": "worse", "mudança pequena": "small change",
           "sem diferença clara": "no clear difference", "n/a": "n/a"}
 # indicadores do placar que o workbench mostra, com rótulo em inglês; "final", "brilho" e "textura"
@@ -44,15 +44,23 @@ INDICATOR_LABEL = {
     "glcm_energy_pct": "GLCM energy",
     "map_area_textura_alterada_pct": "Map: texture area",
     "map_corr_textura": "Map: spatial correlation",
+    "nps_abs_quantity_z": "NPS · quantity",
+    "nps_abs_grain_z": "NPS · grain size",
+    "nps_abs_low_band_z": "NPS · wide patterns",
+    "nps_abs_high_band_z": "NPS · fine grain",
+    "nps_air_synthetic": "Air spots",
+    "nps_aprovada": "NPS · slices approved",
 }
-GROUP = {"brilho": "brightness", "textura": "texture"}
+GROUP = {"brilho": "brightness", "textura": "texture", "ruido": "noise"}
+# métricas com z que entram na mediana de brilho e textura; as do ruído têm campo próprio
+BRIGHTNESS_TEXTURE = ("brightness", "texture")
 class VersionIn(BaseModel):
     name: str | None = None  # padrão: nome da pasta
     folder: str
 
 
 def _counts(rows: list[dict], calibration: dict, key: str) -> dict[str, int]:
-    counts = {status: 0 for status in STATUSES}
+    counts = {status: 0 for status in STATUSES}  # inconclusivo: hoje só o ruído o produz; sempre no formato
     for row in rows:
         verdict = data.slice_json(row, calibration)[key]["verdict"]
         if verdict in counts:
@@ -60,10 +68,12 @@ def _counts(rows: list[dict], calibration: dict, key: str) -> dict[str, int]:
     return counts
 
 
-def _median_abs_z(slices: list[dict]) -> dict[str, float | None]:
-    """Mediana de |z| por métrica; métrica sem z (sat31, NEx) sai como null."""
+def _median_abs_z(slices: list[dict], groups: tuple[str, ...]) -> dict[str, float | None]:
+    """Mediana de |z| por métrica dos grupos pedidos; métrica sem z (sat31, nps_air) sai como null."""
     out: dict[str, float | None] = {}
     for index, metric in enumerate(slices[0]["metrics"]):
+        if metric["group"] not in groups:
+            continue
         zs = [abs(s["metrics"][index]["z"]) for s in slices if s["metrics"][index]["z"] is not None]
         out[metric["key"]] = placar.json_value(float(np.median(zs))) if zs else None
     return out
@@ -82,25 +92,32 @@ def _vs_baseline(baseline_rows: list[dict], rows: list[dict]) -> list[dict]:
     return out
 
 
-def board_json(wb: Workbench) -> dict:
+def board_json(wb: Workbench, baseline: str | None = None) -> dict:
+    """Placar com `baseline` como referência da comparação (padrão: a referência do histórico)."""
     board = wb.board
+    baseline = baseline or wb.baseline
+    wb.entry(baseline)  # desconhecida: 404
     rows_by_name = board["rows"]
     calibration = wb.history["calibration"]
     generators = []
     for name in board["names"]:
         rows = rows_by_name[name]
         slices = [data.slice_json(row, calibration) for row in rows]
-        is_baseline = name == wb.baseline
+        is_baseline = name == baseline
+        scores = board["scores"][name]
         generators.append({
             "name": name,
             "mode": wb.entry(name)["mode"],
             "is_baseline": is_baseline,
             "counts": {"brightness": _counts(rows, calibration, "brightness"),
-                       "texture": _counts(rows, calibration, "texture")},
-            "median_abs_z": _median_abs_z(slices),
-            "vs_baseline": None if is_baseline else _vs_baseline(rows_by_name[wb.baseline], rows),
+                       "texture": _counts(rows, calibration, "texture"),
+                       "noise": _counts(rows, calibration, "noise")},
+            "median_abs_z": _median_abs_z(slices, BRIGHTNESS_TEXTURE),
+            "median_abs_z_noise": _median_abs_z(slices, ("noise",)),
+            "scores": {key: placar.json_value(list(values)) for key, values in scores.items()},
+            "vs_baseline": None if is_baseline else _vs_baseline(rows_by_name[baseline], rows),
         })
-    return {"baseline": wb.baseline, "n_cases": board["n_cases"], "generators": generators}
+    return {"baseline": baseline, "n_cases": board["n_cases"], "generators": generators}
 
 
 def _png(fig) -> bytes:
@@ -128,8 +145,8 @@ def router(datasets: dict) -> APIRouter:
         return ds.wb_for(dataset, datasets)
 
     @api.get("/api/board")
-    def board(dataset: str = Query(DEFAULT)):
-        return board_json(_wb(dataset))
+    def board(dataset: str = Query(DEFAULT), baseline: str | None = Query(None)):
+        return board_json(_wb(dataset), baseline)
 
     @api.get("/api/figure/{case_id}/technique/{technique}.png")
     def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT)):
