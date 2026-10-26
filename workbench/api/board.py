@@ -25,6 +25,7 @@ from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES, m
 from workbench.api import data, datasets as ds  # noqa: E402
 from workbench.api.data import NotFound, Workbench  # noqa: E402
 from workbench.api.datasets import DEFAULT  # noqa: E402
+from workbench.api.nps_figure import nps_case_png  # noqa: E402
 
 DPI = 120
 STATUSES = ("approved", "review", "rejected", "inconclusive")
@@ -127,10 +128,20 @@ def _png(fig) -> bytes:
     return buffer.getvalue()
 
 
-def _case_rows(wb: Workbench, case_id: str) -> dict[str, dict]:
-    """Linha do corte em cada versão do placar; corte fora dos cortes comuns é 404."""
+def _version_names(wb: Workbench, versions: str | None) -> list[str]:
+    """Versões pedidas (lista separada por vírgula, na ordem pedida); vazio ou ausente: todas. Desconhecida: 404."""
+    if versions is None or not versions.strip():
+        return list(wb.board["names"])
+    names = list(dict.fromkeys(item.strip() for item in versions.split(",") if item.strip()))
+    for name in names:
+        wb.entry(name)  # desconhecida: 404
+    return names or list(wb.board["names"])  # só vírgulas: como se não tivesse sido pedido
+
+
+def _case_rows(wb: Workbench, case_id: str, names: list[str] | None = None) -> dict[str, dict]:
+    """Linha do corte em cada versão pedida (padrão: todas do placar); corte fora dos cortes comuns é 404."""
     rows = {}
-    for name in wb.board["names"]:
+    for name in names if names is not None else wb.board["names"]:
         match = next((row for row in wb.board["rows"][name] if row["case_id"] == case_id), None)
         if match is None:
             raise NotFound(f"corte não encontrado: {case_id}")
@@ -149,23 +160,46 @@ def router(datasets: dict) -> APIRouter:
         return board_json(_wb(dataset), baseline)
 
     @api.get("/api/figure/{case_id}/technique/{technique}.png")
-    def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT)):
+    def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
         if technique not in TECHNIQUE_FIGURES:
             raise NotFound(f"técnica desconhecida: {technique}")
         wb = _wb(dataset)
-        fig = technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id))
+        names = _version_names(wb, versions)
+        fig = technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id, names))
         return _response(fig)
 
     @api.get("/api/figure/{case_id}/map/{layer}.png")
-    def map_png(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT)):
+    def map_png(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT),
+                versions: str | None = Query(None)):
         if layer not in MAP_LAYERS:
             raise NotFound(f"camada desconhecida: {layer}")
         if layer == "veredito" and not compared:
             raise HTTPException(400, "a camada de veredito só existe comparada com a original")
         wb = _wb(dataset)  # histórico ausente: 404
-        _case_rows(wb, case_id)  # corte desconhecido: 404
-        fig = map_figure(wb.history_dir, case_id, layer, compared)
+        names = _version_names(wb, versions)
+        _case_rows(wb, case_id, names)  # corte desconhecido: 404
+        fig = map_figure(wb.history_dir, case_id, layer, compared, version_names=names)
         return _response(fig)
+
+    @api.get("/api/figure/{case_id}/nps.png")
+    def nps(case_id: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
+        """NPS e teste do ar: `versions` tem uma ou duas versões; a primeira é a referência e a última a comparada.
+
+        Uma versão compara a referência (padrão: a da linha de base) com ela; sem `versions`, a referência
+        contra a última versão do histórico.
+        """
+        wb = _wb(dataset)
+        requested = [item.strip() for item in (versions or "").split(",") if item.strip()]
+        for name in requested:
+            wb.entry(name)  # desconhecida: 404
+        if len(requested) > 2:
+            raise HTTPException(400, "a figura de NPS compara no máximo duas versões: referência e comparada")
+        if not requested:
+            names = [wb.baseline, wb.history["versions"][-1]["name"]]
+        else:
+            names = [wb.baseline, requested[0]] if len(requested) == 1 else requested
+        _case_rows(wb, case_id, names)  # corte desconhecido: 404
+        return Response(nps_case_png(wb.history, case_id, names[0], names[1]), media_type="image/png")
 
     @api.post("/api/versions")
     def add_version(body: VersionIn, dataset: str = Query(DEFAULT)):
