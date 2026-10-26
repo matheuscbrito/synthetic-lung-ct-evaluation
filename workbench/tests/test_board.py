@@ -47,8 +47,10 @@ def test_board_vs_itself(tmp_history):
 def test_board_median_z_keys_and_nulls(client):
     g = client.get("/api/board").json()["generators"][0]
     assert set(g["median_abs_z"]) == {"delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
-                                      "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex"}
-    assert g["median_abs_z"]["sat31"] is None and g["median_abs_z"]["nex"] is None
+                                      "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
+                                      "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nps_air"}
+    assert g["median_abs_z"]["sat31"] is None and g["median_abs_z"]["nps_air"] is None
+    assert isinstance(g["median_abs_z"]["nex"], float)
     assert all(isinstance(v, float) for k, v in g["median_abs_z"].items() if v is not None)
 
 

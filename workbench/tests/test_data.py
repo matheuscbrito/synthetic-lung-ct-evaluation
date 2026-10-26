@@ -32,7 +32,8 @@ def test_counts_match_framework(client):
 def test_slice_schema(client):
     s = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"][0]
     assert [m["key"] for m in s["metrics"]] == ["delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
-                                                "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex"]
+                                                "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
+                                                "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nps_air"]
     assert set(s["texture"]["techniques"]) == {"GLCM", "Wavelet", "NEx"}
     assert s["patient"] in {"100", "105", "117"}
 
@@ -43,8 +44,9 @@ def test_label_and_patient():
 
 
 def test_nan_becomes_null():
-    row = {**any_dsr_row(), "nex_delta": "nan"}
-    assert slice_json(row, calibration())["metrics"][-1]["value"] is None
+    row = {**any_dsr_row(), "nex_z": "nan"}
+    nex = next(m for m in slice_json(row, calibration())["metrics"] if m["key"] == "nex")
+    assert nex["value"] is None and nex["z"] is None
 
 
 def test_unknown_version_404(client):
@@ -57,7 +59,7 @@ def test_versions_and_status(client):
     assert [item["name"] for item in v] == [item["name"] for item in history["versions"]]
     assert v[0]["name"] == "Dsr" and v[0]["is_baseline"] is True
     assert [item["reference"] for item in v] == [item["name"] == history["reference"] for item in v]
-    assert all(item["n_common"] == 37 for item in v)
+    assert all(item["n_common"] == len(history["originals"]) for item in v)
     assert all(isinstance(item["suspicious_pairs"], int) for item in v)
     status = client.get("/api/status").json()
     assert status["stale"] is False and status["has_history"] is True and status["baseline"] == "Dsr"

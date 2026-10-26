@@ -30,7 +30,7 @@ DATASETS = {
              "history": ROOT / "outputs" / "placar_dgen", "mode": "mask only"},
 }
 DEFAULT = "Dsr"
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+NAME_PATTERN = re.compile(r"[A-Za-z0-9._-]+")  # uso com fullmatch: sem âncoras, `$` aceitaria "\n" no fim
 ADMIN_LOCK = threading.Lock()  # uma escrita no histórico por vez (compartilhada com board.py)
 
 

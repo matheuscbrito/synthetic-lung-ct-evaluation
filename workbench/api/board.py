@@ -158,7 +158,7 @@ def router(datasets: dict) -> APIRouter:
         if not folder.is_dir():
             raise HTTPException(400, f"pasta de versão não encontrada: {folder}")
         name = (body.name or "").strip() or folder.resolve().name
-        if not ds.NAME_PATTERN.match(name):
+        if not ds.NAME_PATTERN.fullmatch(name):
             raise HTTPException(400, "nome inválido: use só letras, números, ponto, hífen e sublinhado")
         with ds.ADMIN_LOCK:
             history = placar.load_history(history_dir)

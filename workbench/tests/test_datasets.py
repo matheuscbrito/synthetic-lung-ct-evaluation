@@ -168,7 +168,8 @@ def test_add_version_missing_slices_400(tmp_history, tmp_path):
     cases = all_reference_cases()[:-1]
     folder = write_report(tmp_path / "incomplete", cases)
     r = TestClient(create_app(tmp_history)).post("/api/versions", json={"folder": str(folder)})
-    assert r.status_code == 400 and r.json()["detail"] == "missing 1 of 37 slices"
+    n = len(load_history(HISTORY_DIR)["originals"])
+    assert r.status_code == 400 and r.json()["detail"] == f"missing 1 of {n} slices"
 
 
 def test_add_version_extra_slices_400(tmp_history, tmp_path):
@@ -194,3 +195,44 @@ def test_board_reads_dataset_history(two_datasets):
     c = TestClient(create_app(two_datasets))
     assert c.get("/api/board", params={"dataset": "Dsr"}).json()["baseline"] == "Dsr"
     assert c.get("/api/figure/" + quote(CID) + "/technique/delta_mu.png", params={"dataset": "Dgen"}).status_code == 404
+
+
+def _two_history_dirs(tmp_path):
+    """Dsr com duas versões (cópia reduzida do real) e Dgen com o histórico real copiado para tmp."""
+    dsr_dir = tmp_path / "placar"
+    (dsr_dir / "versoes").mkdir(parents=True)
+    history = json.loads((HISTORY_DIR / "historico.json").read_text(encoding="utf-8"))
+    history["versions"] = [v for v in history["versions"] if v["name"] in {"Dsr", "Dsr-baseline"}]
+    (dsr_dir / "historico.json").write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    for name in ("Dsr", "Dsr-baseline"):
+        shutil.copy(HISTORY_DIR / "versoes" / f"{name}.csv", dsr_dir / "versoes" / f"{name}.csv")
+    dgen_dir = tmp_path / "placar_dgen"
+    shutil.copytree(ROOT / "outputs" / "placar_dgen", dgen_dir)
+    return dsr_dir, dgen_dir
+
+
+def test_two_histories_are_isolated(tmp_path):
+    dsr_dir, dgen_dir = _two_history_dirs(tmp_path)
+    datasets = {"Dsr": {**ds.DATASETS["Dsr"], "history": dsr_dir}, "Dgen": {**ds.DATASETS["Dgen"], "history": dgen_dir}}
+    c = TestClient(create_app(datasets))
+    dsr_versions = [v["name"] for v in c.get("/api/versions", params={"dataset": "Dsr"}).json()]
+    dgen_versions = [v["name"] for v in c.get("/api/versions", params={"dataset": "Dgen"}).json()]
+    assert dsr_versions == ["Dsr", "Dsr-baseline"] and dgen_versions == ["Dgen"]
+    # a versão de um dataset não existe no outro
+    assert c.get("/api/slices", params={"version": "Dgen", "dataset": "Dsr"}).status_code == 404
+    assert c.get("/api/slices", params={"version": "Dsr", "dataset": "Dgen"}).status_code == 404
+    dsr_slices = c.get("/api/slices", params={"version": "Dsr", "dataset": "Dsr"}).json()["slices"]
+    dgen_slices = c.get("/api/slices", params={"version": "Dgen", "dataset": "Dgen"}).json()["slices"]
+    assert dsr_slices != dgen_slices
+    dsr_metrics = {s["case_id"]: s["metrics"] for s in dsr_slices}
+    assert any(dsr_metrics[s["case_id"]] != s["metrics"] for s in dgen_slices)
+    dsr_img = c.get(f"/api/image/Dsr/{quote(CID)}/synthetic.png", params={"dataset": "Dsr"})
+    dgen_img = c.get(f"/api/image/Dgen/{quote(CID)}/synthetic.png", params={"dataset": "Dgen"})
+    assert dsr_img.status_code == 200 and dgen_img.status_code == 200
+    assert dsr_img.content != dgen_img.content
+
+
+def test_name_pattern_uses_fullmatch():
+    assert ds.NAME_PATTERN.fullmatch("Versao_1.2-a")
+    assert not ds.NAME_PATTERN.fullmatch("Versao\n")
+    assert ds.NAME_PATTERN.match("Versao\n")  # por isso a validação usa fullmatch
