@@ -43,7 +43,7 @@ def normalise(datasets) -> dict:
 
 def config(datasets: dict, name: str) -> dict:
     if name not in datasets:
-        raise NotFound(f"dataset desconhecido: {name}")
+        raise NotFound(f"unknown dataset: {name}")
     return datasets[name]
 
 
@@ -130,7 +130,7 @@ def init_dataset(name: str, cfg: dict) -> dict:
     history_dir = Path(cfg["history"])
     with ADMIN_LOCK:
         if (history_dir / placar.HISTORY_FILE).exists():
-            raise HTTPException(409, f"{name} já tem histórico; use as versões existentes")
+            raise HTTPException(409, f"{name} already has history; use the existing versions")
         try:
             message = placar.add_version(history_dir, name, Path(cfg["folder"]), Path(cfg["masks"]))
             placar.write_outputs(history_dir, placar.build_board(history_dir))

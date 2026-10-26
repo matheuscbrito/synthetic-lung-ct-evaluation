@@ -181,14 +181,14 @@ def test_add_version_extra_slices_400(tmp_history, tmp_path):
 
 def test_add_version_duplicate_folder_400(tmp_history):
     r = TestClient(create_app(tmp_history)).post("/api/versions", json={"folder": str(ROOT / "dados" / "Dsr-baseline")})
-    assert r.status_code == 400 and "já está no histórico" in r.json()["detail"]
+    assert r.status_code == 400 and "already in the history" in r.json()["detail"]
 
 
 def test_add_version_default_name_is_folder_name(tmp_history, tmp_path):
     folder = tmp_path / "bad name"
     folder.mkdir()
     r = TestClient(create_app(tmp_history)).post("/api/versions", json={"folder": str(folder)})
-    assert r.status_code == 400 and "nome inválido" in r.json()["detail"]
+    assert r.status_code == 400 and "invalid name" in r.json()["detail"]
 
 
 def test_board_reads_dataset_history(two_datasets):

@@ -108,7 +108,7 @@ def glcm_matrix(img: np.ndarray, mask: np.ndarray, scale: RobustScale) -> list[l
         total += matrix / matrix.sum()
         used += 1
     if used == 0:
-        raise ValueError("ROI não contém pares vizinhos válidos")
+        raise ValueError("ROI has no valid neighbour pairs")
     return (total / used).tolist()
 
 

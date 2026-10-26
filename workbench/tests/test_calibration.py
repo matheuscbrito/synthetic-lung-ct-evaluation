@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from frameworks.noise_evaluator import integration
 from frameworks.texture_evaluator import placar, regional, visual
-from workbench.api import calibration
+from workbench.api import calibration, reasons
 from workbench.api import datasets as ds
 from workbench.tests.conftest import DATA_OK, HISTORY_DIR
 
@@ -31,8 +31,8 @@ def test_calibration_matches_history_and_framework_constants(tmp_history):
     assert body["n_cases"] == len(history["originals"])
     assert body["mean_iqr"] == pytest.approx(mean_iqr)
     assert body["delta_mu"] == {"review": pytest.approx(mean_iqr), "reject": pytest.approx(2 * mean_iqr)}
-    assert body["sat31_limit"] == 15
-    assert body["z_limits"] == {"review": 1, "reject": 2}
+    assert body["sat31_limit"] == reasons.SATURATION_LIMIT
+    assert body["z_limits"] == reasons.Z_LIMITS
     nex = history["calibration"]["nex_reference"]
     assert body["nex"] == {"iqr": pytest.approx(nex["iqr"]), "repeatability_iqr": pytest.approx(nex["repeatability_iqr"])}
     metrics = history["calibration"]["nps_reference"]["metrics"]

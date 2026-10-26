@@ -12,6 +12,7 @@ from frameworks.noise_evaluator.integration import AIR_LABEL, NPS_METRICS, noise
 from frameworks.texture_evaluator import decision
 from frameworks.texture_evaluator.placar import load_rows
 from workbench.api import data as wb_data
+from workbench.api import reasons
 from workbench.api.app import create_app
 from workbench.api.data import slice_json
 from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero
@@ -187,10 +188,16 @@ def test_reasons_cover_framework_non_approved_techniques(dsr_rows, slices):
 def test_reason_shape_and_limits(slices):
     seen = [r for body in slices for group in body["why"].values() for r in group]
     assert seen, "o Dsr real tem ao menos um motivo"
-    keys = {"technique", "metric", "status", "value", "z", "z_low", "z_high", "limit", "direction", "note"}
+    keys = {"technique", "metric", "status", "value", "z", "z_low", "z_high", "limit", "limit_value", "direction", "note"}
     for reason in seen:
         assert set(reason) == keys
         assert reason["limit"] == {"review": "review", "rejected": "reject"}.get(reason["status"])
+        if reason["metric"] == "sat31":
+            assert reason["limit_value"] == reasons.SATURATION_LIMIT
+        elif reason["z"] is not None and reason["limit"] is not None:
+            assert reason["limit_value"] == reasons.Z_LIMITS[reason["limit"]]
+        else:
+            assert reason["limit_value"] is None
         assert reason["note"] in {None, "few_windows", "lung_not_measured", "air_unavailable", "ci_includes_zero"}
 
 

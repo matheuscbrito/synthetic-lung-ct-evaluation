@@ -37,19 +37,19 @@ class Workbench:
         for item in self.history["versions"]:
             if item["name"] == version:
                 return item
-        raise NotFound(f"versão não encontrada: {version}")
+        raise NotFound(f"version not found: {version}")
 
     def rows(self, version: str) -> list[dict]:
         self.entry(version)
         if not placar.rows_path(self.history_dir, version).exists():
-            raise NotFound(f"CSV da versão não encontrado: {version}")
+            raise NotFound(f"CSV of version not found: {version}")
         return placar.load_rows(self.history_dir, version)
 
     def row(self, version: str, case_id: str) -> dict:
         for row in self.rows(version):
             if row["case_id"] == case_id:
                 return row
-        raise NotFound(f"corte não encontrado em {version}: {case_id}")
+        raise NotFound(f"slice not found in {version}: {case_id}")
 
 
 _CACHE: dict[tuple[str, float], Workbench] = {}
@@ -62,12 +62,12 @@ def load(history_dir: Path) -> Workbench:
     """
     path = Path(history_dir) / placar.HISTORY_FILE
     if not path.exists():
-        raise NotFound(f"histórico não encontrado em {history_dir}")
+        raise NotFound(f"history not found in {history_dir}")
     key = (str(path.resolve()), path.stat().st_mtime)
     if key not in _CACHE:
         board = placar.build_board(Path(history_dir))
         if board is None:
-            raise NotFound(f"histórico vazio em {history_dir}")
+            raise NotFound(f"history is empty in {history_dir}")
         history = board["history"]
         for old in [k for k in _CACHE if k[0] == key[0]]:
             del _CACHE[old]

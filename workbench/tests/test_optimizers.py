@@ -191,3 +191,8 @@ def test_notebook_alias_delegates_to_notebook_module(monkeypatch, tmp_path):
     response = TestClient(app).get("/api/optimizers/notebook")
     assert response.status_code == 200
     assert response.json() == notebook.read_caderno(tmp_path)
+
+
+def test_unreadable_log_is_counted_as_skipped(tmp_path):
+    events, skipped = optimizers._read_log(tmp_path / "ausente-log.jsonl")
+    assert events == [] and skipped == 1

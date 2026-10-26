@@ -18,6 +18,9 @@ import math
 # Sat31 acima deste valor (%) rejeita o brilho: `ui_placar.py:42` (OFFICIAL_SATURATION)
 # e `run_mvp.py:88`.
 SATURATION_LIMIT = 15.0
+# |z| (em IQR) que separa revisão de reprovação: `decision.metric_status` (|z| > 1 revisão, > 2 reprovada).
+# Única definição do workbench; `calibration.py` e os motivos leem daqui.
+Z_LIMITS = {"review": 1, "reject": 2}
 
 LIMIT = {"review": "review", "rejected": "reject"}
 GROUPS = ("brightness", "texture", "noise")
@@ -57,8 +60,18 @@ def _note(metric: dict) -> str | None:
     return None
 
 
+def _limit_value(metric: dict, limit: str | None):
+    """Valor numérico do limite cruzado: % para Sat31, |z| para métricas com z; None quando não há."""
+    if metric["key"] == "sat31":
+        return SATURATION_LIMIT
+    if limit is None or _finite(metric.get("z")) is None:
+        return None
+    return Z_LIMITS[limit]
+
+
 def entry(metric: dict) -> dict:
     """Um motivo: a métrica como o corte a mediu e o limite que ela cruzou."""
+    limit = LIMIT.get(metric["status"])
     return {
         "technique": metric["technique"],
         "metric": metric["key"],
@@ -67,7 +80,8 @@ def entry(metric: dict) -> dict:
         "z": metric["z"],
         "z_low": metric.get("z_low"),
         "z_high": metric.get("z_high"),
-        "limit": LIMIT.get(metric["status"]),
+        "limit": limit,
+        "limit_value": _limit_value(metric, limit),
         "direction": _direction(metric),
         "note": _note(metric),
     }

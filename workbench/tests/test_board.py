@@ -202,10 +202,29 @@ def test_add_version_rejects_csv_collision(tmp_history):
     assert r.status_code == 400 and "detail" in r.json()
 
 
-def test_refresh_errors_are_400(tmp_path):
+def test_refresh_without_history_is_404(tmp_path):
     c = TestClient(create_app(tmp_path / "vazio"))
     r = c.post("/api/refresh")
-    assert r.status_code == 400 and "detail" in r.json()
+    assert r.status_code == 404 and r.json()["detail"] == "dataset has no history: Dsr"
+
+
+def test_refresh_unknown_dataset_is_404(tmp_history):
+    r = TestClient(create_app(tmp_history)).post("/api/refresh", params={"dataset": "Nope"})
+    assert r.status_code == 404 and r.json()["detail"] == "unknown dataset: Nope"
+
+
+def test_error_details_are_english(tmp_history):
+    c = TestClient(create_app(tmp_history))
+    assert c.get("/api/board", params={"baseline": "bogus"}).json()["detail"] == "version not found: bogus"
+    assert c.get("/api/status", params={"dataset": "Nope"}).json()["detail"] == "unknown dataset: Nope"
+    assert c.get(f"/api/figure/{quote(CID)}/technique/bogus.png").json()["detail"] == "unknown technique: bogus"
+    assert c.get(f"/api/figure/{quote(CID)}/map/bogus.png").json()["detail"] == "unknown layer: bogus"
+    assert c.get(f"/api/image/Dsr/{quote(CID)}/bogus.png").json()["detail"] == "unknown image kind: bogus"
+    assert c.get(f"/api/figure/{quote(CID)}/map/veredito.png").json()["detail"] == \
+        "the verdict layer exists only compared with the original"
+    assert c.post("/api/versions", json={"folder": "/nao/existe"}).json()["detail"] == \
+        "version folder not found: /nao/existe"
+    assert c.delete("/api/versions/Dsr").json()["detail"] == "the reference version cannot be removed"
 
 
 def test_map_unknown_case_404(client):

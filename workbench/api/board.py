@@ -144,7 +144,7 @@ def _case_rows(wb: Workbench, case_id: str, names: list[str] | None = None) -> d
     for name in names if names is not None else wb.board["names"]:
         match = next((row for row in wb.board["rows"][name] if row["case_id"] == case_id), None)
         if match is None:
-            raise NotFound(f"corte não encontrado: {case_id}")
+            raise NotFound(f"slice not found: {case_id}")
         rows[name] = match
     return rows
 
@@ -162,7 +162,7 @@ def router(datasets: dict) -> APIRouter:
     @api.get("/api/figure/{case_id}/technique/{technique}.png")
     def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
         if technique not in TECHNIQUE_FIGURES:
-            raise NotFound(f"técnica desconhecida: {technique}")
+            raise NotFound(f"unknown technique: {technique}")
         wb = _wb(dataset)
         names = _version_names(wb, versions)
         fig = technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id, names))
@@ -172,9 +172,9 @@ def router(datasets: dict) -> APIRouter:
     def map_png(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT),
                 versions: str | None = Query(None)):
         if layer not in MAP_LAYERS:
-            raise NotFound(f"camada desconhecida: {layer}")
+            raise NotFound(f"unknown layer: {layer}")
         if layer == "veredito" and not compared:
-            raise HTTPException(400, "a camada de veredito só existe comparada com a original")
+            raise HTTPException(400, "the verdict layer exists only compared with the original")
         wb = _wb(dataset)  # histórico ausente: 404
         names = _version_names(wb, versions)
         _case_rows(wb, case_id, names)  # corte desconhecido: 404
@@ -183,23 +183,33 @@ def router(datasets: dict) -> APIRouter:
 
     @api.get("/api/figure/{case_id}/nps.png")
     def nps(case_id: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
-        """NPS e teste do ar: `versions` tem uma ou duas versões; a primeira é a referência e a última a comparada.
+        """NPS e teste do ar de um corte.
 
-        Uma versão compara a referência (padrão: a da linha de base) com ela; sem `versions`, a referência
-        contra a última versão do histórico.
+        `versions` tem uma ou duas versões, sem repetir nomes: a primeira é a referência e a última a comparada.
+        Clientes devem sempre passar `versions=<referência>,<comparada>`: sem isso a figura compara a referência
+        da linha de base com a última versão do histórico, e a figura muda quando uma versão entra ou sai.
+        Respostas: 400 para nomes repetidos ou mais de duas versões; 404 para versão ou corte desconhecido e
+        para corte que não pode ser carregado.
         """
         wb = _wb(dataset)
         requested = [item.strip() for item in (versions or "").split(",") if item.strip()]
+        repeated = sorted({name for name in requested if requested.count(name) > 1})
+        if repeated:
+            raise HTTPException(400, f"duplicate version in versions=: {', '.join(repeated)}")
         for name in requested:
             wb.entry(name)  # desconhecida: 404
         if len(requested) > 2:
-            raise HTTPException(400, "a figura de NPS compara no máximo duas versões: referência e comparada")
+            raise HTTPException(400, "the NPS figure compares at most two versions: reference and compared")
         if not requested:
             names = [wb.baseline, wb.history["versions"][-1]["name"]]
         else:
             names = [wb.baseline, requested[0]] if len(requested) == 1 else requested
         _case_rows(wb, case_id, names)  # corte desconhecido: 404
-        return Response(nps_case_png(wb.history, case_id, names[0], names[1]), media_type="image/png")
+        try:
+            png = nps_case_png(wb.history, case_id, names[0], names[1])
+        except placar.PlacarError as exc:  # corte que não pode ser carregado nas versões pedidas
+            raise HTTPException(404, f"slice could not be loaded: {case_id}") from exc
+        return Response(png, media_type="image/png")
 
     @api.post("/api/versions")
     def add_version(body: VersionIn, dataset: str = Query(DEFAULT)):
@@ -207,20 +217,20 @@ def router(datasets: dict) -> APIRouter:
         history_dir = Path(cfg["history"])
         folder = Path(body.folder).expanduser()
         if not folder.is_dir():
-            raise HTTPException(400, f"pasta de versão não encontrada: {folder}")
+            raise HTTPException(400, f"version folder not found: {folder}")
         name = (body.name or "").strip() or folder.resolve().name
         if not ds.NAME_PATTERN.fullmatch(name):
-            raise HTTPException(400, "nome inválido: use só letras, números, ponto, hífen e sublinhado")
+            raise HTTPException(400, "invalid name: use only letters, digits, dot, hyphen and underscore")
         with ds.ADMIN_LOCK:
             history = placar.load_history(history_dir)
             if history is None or not history.get("versions"):
-                raise HTTPException(400, f"{dataset} ainda não foi avaliado: use POST /api/datasets/{dataset}/init")
+                raise HTTPException(400, f"{dataset} has not been evaluated yet: use POST /api/datasets/{dataset}/init")
             resolved = folder.resolve()
             if any(Path(item["folder"]).resolve() == resolved for item in history["versions"]):
-                raise HTTPException(400, f"essa execução já está no histórico: {folder.name}")
+                raise HTTPException(400, f"this run is already in the history: {folder.name}")
             target = placar.rows_path(history_dir, name)
             if any(placar.rows_path(history_dir, item["name"]) == target for item in history["versions"]):
-                raise HTTPException(400, f"o nome {name!r} usaria o mesmo arquivo de outra versão")
+                raise HTTPException(400, f"the name {name!r} would use the same file as another version")
             try:
                 ds.validate_complete_version(folder, history)
                 message = placar.add_version(history_dir, name, folder, Path(cfg["masks"]))
@@ -235,18 +245,20 @@ def router(datasets: dict) -> APIRouter:
         wb = _wb(dataset)
         wb.entry(name)  # desconhecida: 404
         if name == wb.baseline:
-            raise HTTPException(400, "a versão de referência não pode ser removida")
+            raise HTTPException(400, "the reference version cannot be removed")
         with ds.ADMIN_LOCK:
             try:
                 placar.remove_version(Path(cfg["history"]), name)
                 placar.write_outputs(Path(cfg["history"]), placar.build_board(Path(cfg["history"])))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
-        return {"message": f"versão removida: {name}"}
+        return {"message": f"version removed: {name}"}
 
     @api.post("/api/refresh")
     def refresh(dataset: str = Query(DEFAULT)):
         history_dir = Path(ds.config(datasets, dataset)["history"])
+        if ds.load_state(history_dir) is None:  # sem histórico não há versão para recalcular: 404, não 400
+            raise HTTPException(404, f"dataset has no history: {dataset}")
         with ds.ADMIN_LOCK:
             try:
                 message = placar.refresh_history(history_dir)

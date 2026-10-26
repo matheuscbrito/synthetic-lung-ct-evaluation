@@ -104,3 +104,38 @@ def test_versions_only_commas_means_all(client):
     """Lista vazia depois de limpar (só vírgulas) vale como não pedida, sem quebrar a NPS."""
     assert width(client.get(f"/api/figure/{quote(CID)}/nps.png", params={"versions": ","})) >= 200
     assert width(client.get(f"/api/figure/{quote(CID)}/technique/delta_mu.png", params={"versions": ","})) > 0
+
+
+def test_nps_figure_duplicate_versions_400(client):
+    names = real_names()
+    r = client.get(f"/api/figure/{quote(CID)}/nps.png", params={"versions": f"{names[0]},{names[0]}"})
+    assert r.status_code == 400 and "duplicate" in r.json()["detail"]
+
+
+def test_nps_figure_unloadable_case_is_404(client, monkeypatch):
+    from frameworks.texture_evaluator.placar import PlacarError
+    from workbench.api import nps_figure
+
+    def broken(entry, case_id):
+        raise PlacarError("arquivo corrompido")
+
+    monkeypatch.setattr(nps_figure, "load_case", broken)
+    r = client.get(f"/api/figure/{quote(CID)}/nps.png")
+    assert r.status_code == 404 and r.json()["detail"] == f"slice could not be loaded: {CID}"
+
+
+def test_nps_figure_closes_figure_on_any_error(monkeypatch):
+    import matplotlib.pyplot as plt
+    from workbench.api import nps_figure
+
+    names = real_names()
+    history = load_history(HISTORY_DIR)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("falha no desenho")
+
+    monkeypatch.setattr(nps_figure.plt, "Rectangle", boom)
+    before = set(plt.get_fignums())
+    with pytest.raises(RuntimeError):
+        nps_figure.nps_case_png(history, CID, names[0], names[-1])
+    assert set(plt.get_fignums()) == before

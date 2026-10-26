@@ -63,7 +63,7 @@ def _contour(mask: np.ndarray) -> np.ndarray:
 
 def render(case: placar.ValidCase, kind: str, size: int | None, reference: bool = False) -> bytes:
     if kind not in KINDS:
-        raise NotFound(f"tipo de imagem desconhecido: {kind}")
+        raise NotFound(f"unknown image kind: {kind}")
     low, high = window(case, reference)
     if kind == "real":
         image = Image.fromarray(_gray(case.original, low, high))

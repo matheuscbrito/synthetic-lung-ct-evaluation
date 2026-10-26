@@ -35,9 +35,16 @@ router = APIRouter()
 
 
 def _read_log(path: Path) -> tuple[list[dict], int]:
-    """Eventos do JSONL e quantas linhas não viraram objeto JSON (linhas em branco não contam)."""
+    """Eventos do JSONL e quantas linhas não viraram objeto JSON (linhas em branco não contam).
+
+    Arquivo que não pode ser lido conta como uma linha pulada, como `_summary` trata o resumo.
+    """
+    try:
+        raw_lines = path.read_bytes().splitlines()
+    except OSError:
+        return [], 1
     events, skipped = [], 0
-    for raw in path.read_bytes().splitlines():
+    for raw in raw_lines:
         if not raw.strip():
             continue
         try:
