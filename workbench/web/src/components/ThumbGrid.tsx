@@ -1,90 +1,105 @@
-import { useMemo, type CSSProperties } from "react";
-import type { Slice, Verdict } from "../api";
+import { useMemo, type CSSProperties, type MouseEvent } from "react";
 import { imageUrl } from "../api";
-import { COLOR, SEVERITY } from "../status";
+import type { Item, Schema } from "../contract/types";
+import { statusColor } from "../dataset/strip";
 
 interface Props {
+  schema: Schema;
   version: string;
-  slices: Slice[];
-  verdict: Verdict;
-  hovered: string | null;
+  /** Items already filtered and sorted; grouping keeps this order inside each group. */
+  items: Item[];
+  axis: string;
+  /** Flat-grid caption (e.g. the sort in use). */
+  caption: string;
   selected: Set<string>;
-  onHover: (id: string | null) => void;
   onOpen: (id: string) => void;
   onToggleSelect: (id: string) => void;
 }
 
-// Grupos por paciente, na ordem do pior tile de cada grupo; empate pelo id do paciente.
-function groupByPatient(slices: Slice[], verdict: Verdict) {
-  const map = new Map<string, Slice[]>();
-  for (const slice of slices) {
-    const list = map.get(slice.patient) ?? [];
-    list.push(slice);
-    map.set(slice.patient, list);
-  }
-  return [...map.entries()]
-    .map(([patient, items]) => ({
-      patient,
-      items,
-      worst: Math.max(...items.map(s => SEVERITY[s[verdict].verdict])),
-    }))
-    .sort((a, b) => b.worst - a.worst || (a.patient < b.patient ? -1 : a.patient > b.patient ? 1 : 0));
+// Acima disso o navegador pula a pintura de tiles fora da tela (content-visibility), em vez de renderizar todos.
+const VIRTUALISE_ABOVE = 150;
+
+interface Group {
+  key: string;
+  items: Item[];
+  worst: number;
 }
 
-// Um tile por corte: miniatura, rótulo e ponto da cor do status; entra em cascata pelo índice.
-export function ThumbGrid({ version, slices, verdict, hovered, selected, onHover, onOpen, onToggleSelect }: Props) {
-  const groups = useMemo(() => groupByPatient(slices, verdict), [slices, verdict]);
+// Grupos por `group_by`, na ordem do pior status de cada grupo; empate pela chave do grupo.
+function grouped(items: Item[], axis: string, schema: Schema): Group[] {
+  const sev = new Map(schema.statuses.map(s => [s.key, s.severity]));
+  const map = new Map<string, Item[]>();
+  for (const it of items) {
+    const key = it.group ?? "";
+    const list = map.get(key) ?? [];
+    list.push(it);
+    map.set(key, list);
+  }
+  return [...map.entries()]
+    .map(([key, list]) => ({ key, items: list, worst: Math.max(...list.map(i => sev.get(i.verdicts[axis]) ?? 0)) }))
+    .sort((a, b) => b.worst - a.worst || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+}
+
+// Grade de miniaturas da versão: agrupada por `group_by` quando existe, plana caso contrário.
+// Clique abre o item; shift/cmd-clique seleciona para comparar.
+export function ThumbGrid({ schema, version, items, axis, caption, selected, onOpen, onToggleSelect }: Props) {
+  const groupBy = schema.dataset.group_by;
+  const noun = schema.dataset.item;
+  const statusLabel = new Map(schema.statuses.map(s => [s.key, s.label]));
+  const groups = useMemo(() => (groupBy ? grouped(items, axis, schema) : null), [groupBy, items, axis, schema]);
+  const lazy = items.length > VIRTUALISE_ABOVE;
 
   let index = 0;
+  const tile = (it: Item) => {
+    const status = it.verdicts[axis];
+    const i = index++;
+    const isSelected = selected.has(it.id);
+    return (
+      <button
+        key={it.id}
+        type="button"
+        data-id={it.id}
+        className={`ov-tile${isSelected ? " selected" : ""}${lazy ? " lazy" : ""}`}
+        title={`${it.label} · ${statusLabel.get(status) ?? status}`}
+        aria-pressed={isSelected}
+        style={{ "--i": Math.min(i, 60) } as CSSProperties}
+        onClick={(e: MouseEvent) => {
+          if (e.shiftKey || e.metaKey || e.ctrlKey) onToggleSelect(it.id);
+          else onOpen(it.id);
+        }}
+      >
+        <img src={imageUrl(version, it.id, "synthetic", 128)} alt="" width={96} height={96} loading="lazy" />
+        <span className="meta">
+          <span className="mono">{it.label}</span>
+          <span className="dot" style={{ background: statusColor(schema, status) }} aria-hidden="true" />
+        </span>
+      </button>
+    );
+  };
+
+  if (items.length === 0) return <p className="sub ov-empty">No {noun.plural} match these filters.</p>;
+
+  if (!groups) {
+    return (
+      <div className="ov-scroll">
+        <div className="ov-flat">
+          <span className="eyebrow ink">All {noun.plural}</span>
+          <span className="sub">{caption}</span>
+        </div>
+        <div className="ov-grid">{items.map(tile)}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="thumbs">
-      {groups.map(group => (
-        <section key={group.patient}>
-          <div className="group">
-            <span className="eyebrow ink">{`Patient ${group.patient}`}</span>
-            <span className="sub">{group.items.length === 1 ? "1 slice" : `${group.items.length} slices`}</span>
+    <div className="ov-scroll">
+      {groups.map(g => (
+        <section key={g.key}>
+          <div className="ov-group">
+            <span className="eyebrow ink">{g.key ? `${groupBy!.label} ${g.key}` : `No ${groupBy!.label.toLowerCase()}`}</span>
+            <span className="sub">{`${g.items.length} ${g.items.length === 1 ? noun.singular : noun.plural}`}</span>
           </div>
-          <div className="grid">
-            {group.items.map(slice => {
-              const status = slice[verdict].verdict;
-              const i = index++;
-              const classes = [
-                "tile",
-                hovered === slice.case_id ? "hovered" : "",
-                selected.has(slice.case_id) ? "selected" : "",
-              ].join(" ").trim();
-              return (
-                <button
-                  key={slice.case_id}
-                  type="button"
-                  className={classes}
-                  title={`${slice.label} · ${status}`}
-                  aria-pressed={selected.has(slice.case_id)}
-                  style={{ "--i": i } as CSSProperties}
-                  onMouseEnter={() => onHover(slice.case_id)}
-                  onMouseLeave={() => onHover(null)}
-                  onFocus={() => onHover(slice.case_id)}
-                  onBlur={() => onHover(null)}
-                  onClick={e => {
-                    if (e.shiftKey || e.metaKey) onToggleSelect(slice.case_id);
-                    else onOpen(slice.case_id);
-                  }}
-                >
-                  <img
-                    src={imageUrl(version, slice.case_id, "synthetic", 128)}
-                    alt=""
-                    width={96}
-                    height={96}
-                    loading="lazy"
-                  />
-                  <span className="meta">
-                    <span className="mono">{slice.label}</span>
-                    <span className="dot" style={{ background: COLOR[status] }} aria-hidden="true" />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <div className="ov-grid">{g.items.map(tile)}</div>
         </section>
       ))}
     </div>

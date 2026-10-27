@@ -22,6 +22,8 @@ export interface Noun {
 export interface GroupBy {
   key: string;
   label: string;
+  /** Caption shown with the grouped grid (e.g. members of a group are not independent). */
+  note?: string | null;
 }
 
 export interface DatasetDesc {

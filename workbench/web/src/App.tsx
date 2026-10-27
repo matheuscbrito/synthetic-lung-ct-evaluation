@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, get, post, type ServerStatus } from "./api";
 import { clearContractCache, setContractToken, useContract } from "./contract/client";
 import type { Schema } from "./contract/types";
+import { DatasetOverview } from "./dataset/Overview";
 import { useRoute, type Route, type Section } from "./route";
 import { Shell } from "./shell/Shell";
 import { Rail } from "./shell/Rail";
@@ -82,7 +83,11 @@ function Gate({ status, route, onRoute, onChanged }: GateProps) {
 
   return (
     <Shell rail={<Rail active={route.section} onNavigate={section => onRoute({ section, tab: "overview" })} />}>
-      <Placeholder route={route} />
+      {route.section === "dataset" && route.tab === "overview" ? (
+        <DatasetOverview schema={schema.data} route={route} onRoute={onRoute} />
+      ) : (
+        <Placeholder route={route} />
+      )}
     </Shell>
   );
 }

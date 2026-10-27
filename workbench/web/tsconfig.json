@@ -15,7 +15,6 @@
   "include": ["src", "vite.config.ts"],
   "exclude": [
     "src/views/CompareView.tsx",
-    "src/views/DatasetView.tsx",
     "src/views/GeneratorsView.tsx",
     "src/views/SliceView.tsx"
   ]
