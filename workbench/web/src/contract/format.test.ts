@@ -32,13 +32,15 @@ describe("metricText", () => {
 
   test("z display shows signed z, unit and CI", () => {
     const m = metric("nex");
+    let checked = 0;
     for (const it of items) {
       const mv = it.metrics.nex;
       if (mv?.available && mv.z !== null && mv.ci) {
         expect(metricText(m, mv)).toMatch(/^[+−]\d\.\d\d IQR \[[+−]/);
+        checked++;
       }
     }
-    expect(items.some((it) => it.metrics.nex?.ci)).toBe(true);
+    expect(checked).toBeGreaterThan(0);
   });
 
   test("value display glues % and spaces other units", () => {
@@ -46,7 +48,22 @@ describe("metricText", () => {
     expect(metricText(sat, { ...items[0].metrics.sat31, value: 1.68 })).toBe("1.7%");
     const dmu = metric("delta_mu");
     expect(metricText(dmu, { ...items[0].metrics.delta_mu, value: -0.5 })).toBe("-0.50 IQR");
-    expect(metricText(dmu, { ...items[0].metrics.delta_mu, value: null })).toBe("–");
+  });
+
+  test("available reading with no finite value or z prints n/a (real fixture)", () => {
+    const byKey = new Map(realBundle.schema.metrics.map((m) => [m.key, m]));
+    let checked = 0;
+    for (const list of Object.values(realBundle.items)) {
+      for (const it of list) {
+        for (const [key, mv] of Object.entries(it.metrics)) {
+          if (mv.available && mv.value === null && mv.z === null) {
+            expect(metricText(byKey.get(key)!, mv)).toBe("n/a");
+            checked++;
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 });
 

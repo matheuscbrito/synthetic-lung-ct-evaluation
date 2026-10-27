@@ -33,7 +33,7 @@ export function metricText(desc: MetricDesc, v: MetricValue | undefined): string
     if (v.ci && finite(v.ci[0]) && finite(v.ci[1])) t += ` [${signed(v.ci[0], d)}, ${signed(v.ci[1], d)}]`;
     return t;
   }
-  if (!finite(v.value)) return DASH;
+  if (!finite(v.value)) return "n/a";
   return `${v.value.toFixed(d)}${unitSuffix(desc.unit)}`;
 }
 
