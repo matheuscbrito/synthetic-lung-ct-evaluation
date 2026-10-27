@@ -152,9 +152,13 @@ def inspectors() -> list[dict]:
 
 
 def indicators() -> list[dict]:
-    """Indicadores do benchmark (`board.indicators_json`), sem os do mapa regional."""
+    """Indicadores do benchmark (`board.indicators_json`), sem os do mapa regional.
+
+    Contagens de aprovados (`*aprovada*`) melhoram quando sobem; ideal 0 melhora quando desce.
+    """
     return [{"key": item["key"], "label": item["label"], "axis": item["group"], "unit": item["unit"],
-             "better": "lower" if item["ideal"] == 0 else "closer", "ideal": item["ideal"],
+             "better": "higher" if "aprovada" in item["key"] else "lower" if item["ideal"] == 0 else "closer",
+             "ideal": item["ideal"],
              "min_change": item["min_change"]}
             for item in board.indicators_json() if not item["key"].startswith("map_")]
 
@@ -163,8 +167,8 @@ def _limits(key: str, cal: dict) -> dict:
     """Régua de cada métrica: Δμ em valor absoluto, Sat31 e ar acima de um %, o resto em |z|."""
     if key == "delta_mu":
         return {"kind": "abs_value", "review": cal["delta_mu"]["review"], "reject": cal["delta_mu"]["reject"]}
-    if key == "sat31":  # rejeição direta acima do limite; a revisão é o mesmo limite (contrato §3)
-        return {"kind": "above", "review": reasons.SATURATION_LIMIT, "reject": None}
+    if key == "sat31":  # o juiz rejeita direto acima do limite: não há faixa de revisão
+        return {"kind": "above", "review": None, "reject": reasons.SATURATION_LIMIT}
     if key == "nps_air":
         return {"kind": "above", "review": AIR_LIMITS[0], "reject": AIR_LIMITS[1]}
     return {"kind": "abs_z", "review": reasons.Z_LIMITS["review"], "reject": reasons.Z_LIMITS["reject"]}
@@ -197,7 +201,9 @@ def metric_descriptors(calibration_body: dict, slices: list[dict]) -> list[dict]
             "key": key, "label": metric["label"], "axis": metric["group"],
             "technique": metric["technique"].lower(),
             "display": "z" if has_z and key != "delta_mu" else "value",
-            "unit": metric["unit"], "decimals": 1 if metric["unit"] == "%" else 2,
+            # Δμ é diferença crua de tom (régua de 32 tons): o rótulo "IQR" de data.py não vale para ele
+            "unit": "" if key == "delta_mu" else metric["unit"],
+            "decimals": 1 if metric["unit"] == "%" else 2,
             "limits": _limits(key, calibration_body),
             "repeatability": _repeatability(key, calibration_body),
             "description": METRIC_DESCRIPTION.get(key),
@@ -240,27 +246,30 @@ def schema_json(datasets: dict, dataset: str) -> dict:
     history = ds.load_state(Path(cfg["history"]))
     slices = _reference_slices(cfg, history) if history else []
     cal = calibration.calibration_json(history) if history else {}
-    return placar.json_value({
-        "datasets": [{"key": item["name"], "label": DATASET_LABEL.get(item["mode"], item["name"]),
+    # `json_value` troca "" por null; as métricas ficam fora porque a unidade vazia de Δμ precisa chegar
+    # como "" (os números delas já vêm saneados de `calibration_json` ou são constantes)
+    clean = placar.json_value
+    return {
+        "datasets": clean([{"key": item["name"], "label": DATASET_LABEL.get(item["mode"], item["name"]),
                       "mode_label": item["mode"], "has_history": item["has_history"]}
-                     for item in ds.datasets_json(datasets)],
-        "dataset": {
+                     for item in ds.datasets_json(datasets)]),
+        "dataset": clean({
             "key": dataset, "label": DATASET_LABEL.get(cfg["mode"], dataset), "mode_label": cfg["mode"],
             "item": dict(ITEM), "group_by": dict(GROUP_BY),
             "reference_version": history.get("reference") if history else None,
             "default_baseline": data.default_baseline(history) if history else None,
             "has_history": history is not None,
             "stale": data.is_stale(history) if history else False,
-        },
+        }),
         "statuses": [dict(status) for status in STATUSES],
         "axes": [{"key": key, "label": label, "guide": AXIS_GUIDE[key]} for key, label in AXES],
         "techniques": techniques(slices),
         "metrics": metric_descriptors(cal, slices),
         "inspectors": inspectors(),
-        "indicators": indicators(),
+        "indicators": clean(indicators()),
         "cohort_tests": [dict(test) for test in COHORT_TESTS],
         "addons": addons(),
-    })
+    }
 
 
 def router(datasets: dict) -> APIRouter:

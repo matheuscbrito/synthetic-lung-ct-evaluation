@@ -46,13 +46,15 @@ def test_metric_limits_from_calibration(client):
         descriptor = by_key[metric["key"]]
         assert descriptor["label"] == metric["label"]
         assert descriptor["axis"] == metric["group"]
-        assert descriptor["unit"] == metric["unit"]
+        if metric["key"] != "delta_mu":
+            assert descriptor["unit"] == metric["unit"]
         assert descriptor["decimals"] == (1 if metric["unit"] == "%" else 2)
         assert descriptor["description"]
     assert by_key["delta_mu"]["limits"] == {"kind": "abs_value", "review": cal["delta_mu"]["review"],
                                             "reject": cal["delta_mu"]["reject"]}
     assert by_key["delta_mu"]["display"] == "value"
-    assert by_key["sat31"]["limits"] == {"kind": "above", "review": 15, "reject": None}
+    assert by_key["delta_mu"]["unit"] == ""
+    assert by_key["sat31"]["limits"] == {"kind": "above", "review": None, "reject": reasons.SATURATION_LIMIT}
     assert by_key["nps_air"]["limits"] == {"kind": "above", "review": AIR_LIMITS[0], "reject": AIR_LIMITS[1]}
     for key in ("ll", "glcm_contrast", "glcm_energy", "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
                 "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band"):
@@ -113,8 +115,10 @@ def test_dataset_labels_and_item_nouns(client):
     indicators = body["indicators"]
     assert indicators and not any(item["key"].startswith("map_") for item in indicators)
     for item in indicators:
-        assert item["better"] == ("lower" if item["ideal"] == 0 else "closer")
+        expected = "higher" if "aprovada" in item["key"] else "lower" if item["ideal"] == 0 else "closer"
+        assert item["better"] == expected
         assert item["axis"] in {key for key, _ in AXES}
+    assert any("aprovada" in item["key"] and item["better"] == "higher" for item in indicators)
 
 
 def test_unknown_dataset_is_404(client):
@@ -151,3 +155,7 @@ def test_schema_with_stale_history(stale_dir):
     body = _schema(TestClient(create_app(datasets)))
     assert body["dataset"]["has_history"] is True
     assert body["dataset"]["stale"] is True
+    assert isinstance(body["metrics"], list)
+    assert all("limits" in metric for metric in body["metrics"])
+    assert [axis["key"] for axis in body["axes"]] == ["texture", "brightness", "noise"]
+    assert [status["key"] for status in body["statuses"]] == ["approved", "inconclusive", "review", "rejected"]
