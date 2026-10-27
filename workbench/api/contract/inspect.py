@@ -17,14 +17,16 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from frameworks.texture_evaluator.run_mvp import context_from_dict
-from workbench.api import board, data, datasets as ds, images, tools
+from workbench.api import board, data, datasets as ds, images, reasons, tools
 from workbench.api.contract import schema, versions
 from workbench.api.contract.items import item_json
 from workbench.api.data import Workbench
 
 NYQUIST = 0.5
-# faixas do intervalo NEx em IQR (régua de `reasons.Z_LIMITS` espelhada; extremos só para desenhar)
-NEX_BANDS = [(-4, -2, "rejected"), (-2, -1, "review"), (-1, 1, "approved"), (1, 2, "review"), (2, 4, "rejected")]
+# faixas do intervalo NEx em IQR: NEx sozinho nunca rejeita (revisão quando |z| > 1 e o IC exclui 0), então só
+# há revisão além de ±`reasons.Z_LIMITS["review"]`; os extremos ±4 só delimitam o desenho
+_NEX_REVIEW = reasons.Z_LIMITS["review"]
+NEX_BANDS = [(-4, -_NEX_REVIEW, "review"), (-_NEX_REVIEW, _NEX_REVIEW, "approved"), (_NEX_REVIEW, 4, "review")]
 DATA_KEYS = ("spectrum", "glcm", "nex", "nex_windows", "wavelet")
 IMAGE_KEYS = ("figure", "map", "noise_figure")
 
@@ -157,6 +159,19 @@ def png(wb: Workbench, key: str, item: str, names: list[str], options: dict) -> 
     return board.nps_png(wb, item, names)
 
 
+def _data(wb: Workbench, key: str, item: str, version: str, compare: str | None) -> dict:
+    label = _labeller(wb)
+    if key == "spectrum":
+        return spectrum(wb, item, _compare(wb, version, compare), label)
+    if key == "glcm":
+        return glcm(wb, item, version, label)
+    if key == "nex":
+        return nex(wb, item, version)
+    if key == "nex_windows":
+        return nex_windows(wb, item, version, label)
+    return wavelet(wb, item, version)
+
+
 def router(datasets: dict) -> APIRouter:
     api = APIRouter()
 
@@ -180,15 +195,10 @@ def router(datasets: dict) -> APIRouter:
         if key in IMAGE_KEYS:
             wb.row(version, item)  # corte desconhecido: 404 já no JSON, não só no PNG
             return image(descriptor, dataset, version, item, compare, options)
-        label = _labeller(wb)
-        if key == "spectrum":
-            return spectrum(wb, item, _compare(wb, version, compare), label)
-        if key == "glcm":
-            return glcm(wb, item, version, label)
-        if key == "nex":
-            return nex(wb, item, version)
-        if key == "nex_windows":
-            return nex_windows(wb, item, version, label)
-        return wavelet(wb, item, version)
+        try:
+            return _data(wb, key, item, version, compare)
+        except ValueError as exc:  # pulmão vazio ou pequeno demais para a medida (ex.: GLCM sem pares vizinhos)
+            raise HTTPException(422, f"{descriptor['label']} cannot be measured on this slice: {exc}") from exc
 
     return api
+

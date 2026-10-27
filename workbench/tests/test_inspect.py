@@ -76,8 +76,8 @@ def test_nex_interval(client, wb, cid):
     assert body["value"] == item["metrics"]["nex"]["z"]
     assert body["ci"] == item["metrics"]["nex"]["ci"]
     edges = [b["from"] for b in body["bands"]] + [body["bands"][-1]["to"]]
-    assert edges == [-4, -2, -1, 1, 2, 4]
-    assert [b["status"] for b in body["bands"]] == ["rejected", "review", "approved", "review", "rejected"]
+    assert edges == [-4, -1, 1, 4]  # NEx sozinho nunca rejeita: só revisão além de ±1 IQR
+    assert [b["status"] for b in body["bands"]] == ["review", "approved", "review"]
 
 
 def test_nex_windows_matrix(client, wb, cid):
@@ -134,3 +134,14 @@ def test_errors(client, cid):
     assert client.get("/api/inspect/unknown.png", params={"version": "Dsr", "item": cid}).status_code == 404
     assert _get(client, "spectrum", version="Versao-inexistente", item=cid).status_code == 404
     assert _get(client, "glcm", version="Dsr", item="nope").status_code == 404
+
+
+@pytest.mark.parametrize("key, function", [("glcm", "glcm_matrix"), ("spectrum", "radial_spectrum")])
+def test_tiny_lung_is_422(client, cid, monkeypatch, key, function):
+    def broken(*args, **kwargs):
+        raise ValueError("ROI has no valid neighbour pairs")
+
+    monkeypatch.setattr(tools, function, broken)
+    response = _get(client, key, version="Dsr", item=cid)
+    assert response.status_code == 422
+    assert "ROI has no valid neighbour pairs" in response.json()["detail"]
