@@ -184,7 +184,7 @@ export function GeneratorBoard({ board, onRoute }: Props) {
           <button
             type="button"
             className="dark"
-            onClick={() => onRoute({ view: "dataset", version: openGen.name })}
+            onClick={() => onRoute({ section: "dataset", tab: "overview", version: openGen.name })}
           >
             {`Open ${openGen.name}`}
           </button>

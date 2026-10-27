@@ -1,99 +1,61 @@
-import { forwardRef, type ReactNode } from "react";
-import type { View } from "../route";
+import type { ReactNode } from "react";
+import type { Section } from "../route";
 import { Logo } from "./Logo";
 
 interface Props {
-  active: View;
-  // coluna do agente visível; na tela do agente o item fica selecionado mesmo sem coluna
-  agentOpen: boolean;
-  onNavigate: (view: View) => void;
-  onToggleAgent: () => void;
+  active: Section;
+  onNavigate: (section: Section) => void;
 }
 
-const ICON = {
+// Ícones do mockup v3 (docs/planning/mockups-v3/render_v3.py, NAV). Caminhos com fill:none ficam vazados mesmo selecionados.
+const ICON: Record<Section, ReactNode> = {
   dataset: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="3" width="7" height="7" rx="2" />
-      <rect x="14" y="3" width="7" height="7" rx="2" />
-      <rect x="3" y="14" width="7" height="7" rx="2" />
-      <rect x="14" y="14" width="7" height="7" rx="2" />
-    </svg>
-  ),
-  slice: (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="icon-slice">
-      {/* corpo com furos (evenodd): selecionado, só a área fora dos dois círculos escurece */}
-      <path
-        fillRule="evenodd"
-        d="M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zM6 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0zM12 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0z"
-      />
-      {/* contorno dos círculos à parte, para ficar branco quando selecionado */}
-      <circle className="ring" cx="9" cy="12" r="3" />
-      <circle className="ring" cx="15" cy="12" r="3" />
+      <rect x="3" y="8" width="13" height="13" rx="2" />
+      <path style={{ fill: "none" }} d="M6.5 5.5H17a1.5 1.5 0 0 1 1.5 1.5v10.5" />
+      <path style={{ fill: "none" }} d="M10 3h9.5A1.5 1.5 0 0 1 21 4.5V15" />
     </svg>
   ),
   generators: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
-    </svg>
-  ),
-  compare: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="5" width="8" height="14" rx="2" />
-      <rect x="13" y="5" width="8" height="14" rx="2" />
+      <path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z" />
+      <path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
     </svg>
   ),
   versions: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3v18M5 8h14M5 16h14" />
-    </svg>
-  ),
-  agent: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+      <path style={{ fill: "none" }} d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6" />
+      <path style={{ fill: "none" }} d="M4 4.5v4.1h4.1" />
+      <path style={{ fill: "none" }} d="M12 8v4.2l2.8 1.8" />
     </svg>
   ),
 };
 
-const ITEMS: { view: View; label: string; icon: ReactNode }[] = [
-  { view: "dataset", label: "Dataset", icon: ICON.dataset },
-  { view: "slice", label: "Slice", icon: ICON.slice },
-  { view: "generators", label: "Generators", icon: ICON.generators },
-  { view: "compare", label: "Compare", icon: ICON.compare },
-  { view: "versions", label: "Versions", icon: ICON.versions },
+const ITEMS: { section: Section; label: string }[] = [
+  { section: "dataset", label: "Dataset" },
+  { section: "generators", label: "Generators" },
+  { section: "versions", label: "Versions" },
 ];
 
-// ref no item Agent: quem recolhe a coluna devolve o foco para cá
-export const Rail = forwardRef<HTMLButtonElement, Props>(function Rail({ active, agentOpen, onNavigate, onToggleAgent }, toggleRef) {
-  const agentSelected = agentOpen || active === "agent";
+export function Rail({ active, onNavigate }: Props) {
   return (
     <nav className="rail" aria-label="Main">
       <Logo />
       {ITEMS.map(item => {
-        const on = active === item.view;
+        const on = active === item.section;
         return (
           <button
-            key={item.view}
+            key={item.section}
             type="button"
             className={on ? "nav on" : "nav"}
             aria-current={on ? "page" : undefined}
-            onClick={() => onNavigate(item.view)}
+            onClick={() => onNavigate(item.section)}
           >
-            <span className="ib">{item.icon}</span>
+            <span className="ib">{ICON[item.section]}</span>
             {item.label}
           </button>
         );
       })}
-      <div className="sp" />
-      <button
-        type="button"
-        ref={toggleRef}
-        className={agentSelected ? "nav agent-toggle on" : "nav agent-toggle"}
-        aria-pressed={agentSelected}
-        onClick={onToggleAgent}
-      >
-        <span className="ib">{ICON.agent}</span>
-        Agent
-      </button>
     </nav>
   );
-});
+}

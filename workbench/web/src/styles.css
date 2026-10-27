@@ -1,3 +1,24 @@
+/* Casca em tela cheia (mockup v3, slide 'win' sem moldura): sem margem externa, raio nem sombra; só o trilho à esquerda. */
+.app-stage {
+  padding: 0;
+}
+
+.win,
+.win.agent-open {
+  grid-template-columns: 76px 1fr;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.shell-foot {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--ink2);
+  font-size: 13px;
+}
+
 main {
   padding: 16px;
 }

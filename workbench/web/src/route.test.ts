@@ -2,27 +2,41 @@ import { describe, expect, test } from "vitest";
 import { parseHash, toHash, type Route } from "./route";
 
 describe("route hash", () => {
-  test("hash round trip keeps spaces in case id", () => {
-    const r = { view: "slice", version: "Dsr", caseId: "1.0-P4P100 Gated 0.0A-1-058", verdict: "texture" } as Route;
+  test("round trip keeps spaces and dots in the item id", () => {
+    const r: Route = {
+      section: "dataset",
+      tab: "item",
+      dataset: "Same anatomy",
+      item: "1.000000-P4P117S302I00009 Gated 60.0A-40067-1-047",
+    };
     expect(parseHash(toHash(r))).toEqual(r);
   });
 
-  test("empty hash gives the default route", () => {
-    expect(parseHash("")).toEqual({ view: "dataset", verdict: "texture" });
+  test("round trip keeps three item ids in order", () => {
+    const ids = [
+      "1.000000-P4P117S302I00009 Gated 60.0A-40067-1-047",
+      "1.000000-P4P117S302I00010 Gated 60.0A-40067-1-048",
+      "0.5-P4P100 Gated 0.0A-1-058",
+    ];
+    const r: Route = { section: "dataset", tab: "compare", items: ids, axis: "texture" };
+    expect(parseHash(toHash(r))).toEqual(r);
   });
 
-  test("agent view is routable", () => {
-    expect(parseHash("#/agent").view).toBe("agent");
-    expect(toHash({ view: "agent", verdict: "texture" })).toBe("#/agent?verdict=texture");
+  test("empty hash gives dataset/overview", () => {
+    expect(parseHash("")).toEqual({ section: "dataset", tab: "overview" });
+    expect(toHash({ section: "dataset", tab: "overview" })).toBe("#/dataset/overview");
   });
 
-  test("unknown view falls back to dataset", () => {
-    expect(parseHash("#/nope").view).toBe("dataset");
+  test("unknown section falls back to dataset/overview", () => {
+    expect(parseHash("#/nope/whatever")).toEqual({ section: "dataset", tab: "overview" });
   });
 
-  test("experiment id round trips through the agent hash", () => {
-    const r = { view: "agent", verdict: "texture", exp: "M12" } as Route;
-    expect(toHash(r)).toBe("#/agent?verdict=texture&exp=M12");
-    expect(parseHash("#/agent?exp=L9").exp).toBe("L9");
+  test("axis accepts any string", () => {
+    expect(parseHash("#/generators/bench?axis=GLCM-contrast").axis).toBe("GLCM-contrast");
+  });
+
+  test("generators and versions sections are routable", () => {
+    expect(parseHash("#/generators/runs").section).toBe("generators");
+    expect(parseHash("#/versions/overview").section).toBe("versions");
   });
 });

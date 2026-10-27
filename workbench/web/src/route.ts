@@ -1,53 +1,55 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Verdict } from "./api";
 
-export type View = "dataset" | "slice" | "generators" | "compare" | "versions" | "agent";
+// Seções e abas do workbench: a rota é #/<seção>/<aba>?…; ids com espaço e ponto passam por URLSearchParams.
+export type Section = "dataset" | "generators" | "versions";
+export type Tab = "overview" | "item" | "compare" | "bench" | "runs" | "exp";
 
 export type Route = {
-  view: View;
+  section: Section;
+  tab: Tab;
+  dataset?: string;
   version?: string;
-  caseId?: string;
-  cases?: string[];
-  verdict?: Verdict;
+  baseline?: string;
+  item?: string;
+  items?: string[];
+  axis?: string;
   sort?: string;
   exp?: string;
+  run?: string;
 };
 
-const VIEWS: View[] = ["dataset", "slice", "generators", "compare", "versions", "agent"];
-const DEFAULT: Route = { view: "dataset", verdict: "texture" };
+const SECTIONS: Section[] = ["dataset", "generators", "versions"];
+const TABS: Tab[] = ["overview", "item", "compare", "bench", "runs", "exp"];
+const DEFAULT: Route = { section: "dataset", tab: "overview" };
 
-// Hash: #/view?version=…&case=…&cases=…&verdict=…&sort=…&exp=…; ids com espaço e ponto passam por URLSearchParams.
+const SCALARS = ["dataset", "version", "baseline", "item", "axis", "sort", "exp", "run"] as const;
+
 export function parseHash(hash: string): Route {
   const text = hash.startsWith("#") ? hash.slice(1) : hash;
   const [path, search = ""] = text.split("?", 2);
-  const view = path.replace(/^\/+/, "") as View;
+  const [sectionPart = "", tabPart = ""] = path.split("/").filter(Boolean);
+  const section = SECTIONS.includes(sectionPart as Section) ? (sectionPart as Section) : DEFAULT.section;
+  const tab = TABS.includes(tabPart as Tab) ? (tabPart as Tab) : DEFAULT.tab;
+  const route: Route = { section, tab };
   const params = new URLSearchParams(search);
-  const route: Route = { view: VIEWS.includes(view) ? view : DEFAULT.view, verdict: DEFAULT.verdict };
-  const version = params.get("version");
-  const caseId = params.get("case");
-  const cases = params.getAll("cases");
-  const verdict = params.get("verdict");
-  const sort = params.get("sort");
-  const exp = params.get("exp");
-  if (version !== null) route.version = version;
-  if (caseId !== null) route.caseId = caseId;
-  if (cases.length > 0) route.cases = cases;
-  if (verdict === "brightness" || verdict === "texture") route.verdict = verdict;
-  if (sort !== null) route.sort = sort;
-  if (exp !== null) route.exp = exp;
+  for (const key of SCALARS) {
+    const value = params.get(key);
+    if (value !== null) route[key] = value;
+  }
+  const items = params.getAll("items");
+  if (items.length > 0) route.items = items;
   return route;
 }
 
 export function toHash(r: Route): string {
   const params = new URLSearchParams();
-  if (r.version !== undefined) params.set("version", r.version);
-  if (r.caseId !== undefined) params.set("case", r.caseId);
-  for (const id of r.cases ?? []) params.append("cases", id);
-  if (r.verdict !== undefined) params.set("verdict", r.verdict);
-  if (r.sort !== undefined) params.set("sort", r.sort);
-  if (r.exp !== undefined) params.set("exp", r.exp);
+  for (const key of SCALARS) {
+    const value = r[key];
+    if (value !== undefined) params.set(key, value);
+  }
+  for (const id of r.items ?? []) params.append("items", id);
   const search = params.toString();
-  return `#/${r.view}${search ? `?${search}` : ""}`;
+  return `#/${r.section}/${r.tab}${search ? `?${search}` : ""}`;
 }
 
 function currentRoute(): Route {
