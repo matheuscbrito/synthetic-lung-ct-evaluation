@@ -49,7 +49,7 @@ Figura: `figuras/status_por_maquina.png`.
 
 Figura: `figuras/sigma_verdadeiro_vs_medido.png`.
 
-| Máquina | σ verdadeiro | Erro do σ (T1 tecido mole) v2 | v1 |
+| Máquina | σ verdadeiro | Erro do σ (T1 tecido mole) v2 = v3 | v1 |
 |---|---|---|---|
 | ramp · baixa / média / alta | 0,056 / 0,028 / 0,014 | +5% / +16% / +62% | +5% / +16% / +63% |
 | shepp-logan · baixa / média / alta | 0,045 / 0,023 / 0,011 | +5% / +19% / +73% | +5% / +18% / +75% |

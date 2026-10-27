@@ -64,7 +64,7 @@ EIXOS = {
 # (metodo.md §8): t1_soft_f_avg e t3_lung_corr_index (repetibilidade par × ímpar
 # ≥ 0,6 nas reais) e t1_soft_shape_dist (spread par × ímpar 2× o dos vizinhos).
 # v3 (metodo.md §9): t1_soft_acf_len (grão sem passar pelo Wiener) foi testada
-# para ruído correlacionado e pega só ~19%: fica como diagnóstico.
+# para ruído correlacionado e pega só ~14%: fica como diagnóstico.
 EIXO_LABELS = {"quantidade": "quantidade (dose)", "grão": "grão (kernel)", "espectro": "espectro do resíduo", "distribuição": "distribuição no corte"}
 DECISION_METRICS = tuple(key for keys in EIXOS.values() for key in keys)
 SAME_ANATOMY_ONLY = {"t1_soft_sigma_ratio"}          # só decide com as mesmas ROIs nos dois lados

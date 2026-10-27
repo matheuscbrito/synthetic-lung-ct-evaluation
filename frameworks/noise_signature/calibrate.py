@@ -10,6 +10,7 @@ Gera o conteúdo de `calibracao.json`:
   do mesmo paciente (índice do corte e fase mais próximos); corte sozinho na série fica de fora;
 - `metrics`: para cada métrica, a escala da régua v2
   `scale = max(IQR do Δ entre vizinhos, 2 × IQR da diferença metade par × ímpar)`
+  (o "IQR do Δ" é estimado como 2 × mediana|Δ|; em `shape_dist`, o IQR de fato)
   (mais a resolução de 1 bin para f_pico), e, como diagnóstico, P25/mediana/P75/IQR
   entre cortes e a repetibilidade (IQR par × ímpar ÷ IQR entre cortes). Para
   `shape_dist` (um lado só) também a `reference` = mediana da distância entre vizinhos;

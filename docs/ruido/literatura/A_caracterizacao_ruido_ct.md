@@ -128,8 +128,8 @@ Legenda: **[INTEGRAL]** = texto completo lido; **[PARCIAL]** = parte do texto co
 - **Resultados:** o NPS de FBP e o de verossimilhança penalizada (PL) são **anisotrópicos** e dependem do caminho no objeto. O ruído de PL é mais uniforme no espaço que o de FBP. Na teoria, estimar a covariância empírica exige cerca de 10·n² realizações.
 - **Para nós:** reforça que reconstrução não linear muda a textura **e** a distribuição espacial. E que a covariância completa é inviável: o NPS local é o compromisso prático.
 
-### 2.9 Roychowdhury, Hollcraft & Alessio 2016, arXiv [INTEGRAL, 4 p.]
-- **Ref.:** Roychowdhury S, Hollcraft N, Alessio AM. *Blind analysis of CT image noise using residual denoised images.* arXiv:1605.07650, 2016 (IEEE NSS/MIC 2015). https://arxiv.org/abs/1605.07650
+### 2.9 Roychowdhury, Hollraft & Alessio 2016, arXiv [INTEGRAL, 4 p.]
+- **Ref.:** Roychowdhury S, Hollraft N, Alessio AM. *Blind analysis of CT image noise using residual denoised images.* arXiv:1605.07650, 2016 (IEEE NSS/MIC 2015). https://arxiv.org/abs/1605.07650
 - **Método:**
   - Imagem residual `I_r = I_o − I_f` (original menos filtrada), com 6 filtros: matched filter, bilateral, difusão anisotrópica (AD), wavelet complexa dual-tree, Fourier/Wiener e NLM.
   - Ruído = variância do residual numa ROI uniforme (paraespinhal).
@@ -325,7 +325,7 @@ Leitura integral (ou quase):
 6. Gomez-Cardona D, et al. Med Phys 43(8):4495–4506, 2016. https://pmc.ncbi.nlm.nih.gov/articles/PMC4947048
 7. Zeng R, et al. Med Phys 46(4):1634–1647, 2019. https://pmc.ncbi.nlm.nih.gov/articles/PMC6484447
 8. Gang GJ, Stayman JW, Zbijewski W, Siewerdsen JH. Med Phys 41(8):081902, 2014. https://pmc.ncbi.nlm.nih.gov/articles/PMC4115652 (parcial)
-9. Roychowdhury S, Hollcraft N, Alessio AM. arXiv:1605.07650, 2016. https://arxiv.org/abs/1605.07650
+9. Roychowdhury S, Hollraft N, Alessio AM. arXiv:1605.07650, 2016. https://arxiv.org/abs/1605.07650
 10. Chun M, et al. PLoS One 17(7):e0271724, 2022. https://pmc.ncbi.nlm.nih.gov/articles/PMC9299323/
 11. Ria F, Setiawan H, Abadi E, Samei E. *Accuracy of noise magnitude measurements from patient CT images*, 2023. https://dukespace.lib.duke.edu/items/29cc2150-6b9c-4e0b-944c-49efde8e5921
 12. Greffier J, et al. Eur Radiol Exp 10:9, 2026. https://pmc.ncbi.nlm.nih.gov/articles/PMC12834881/

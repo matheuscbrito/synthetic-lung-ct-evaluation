@@ -40,7 +40,7 @@ As regiões são **definidas na real e aplicadas igualmente à sintética** (mes
 Mesma ideia da textura: várias técnicas independentes, cada uma com poucas métricas. Na v2 (§8) as técnicas são a estrutura de medida; só 6 métricas (mais a regra do `map_rho`), agrupadas em 4 eixos, decidem. As demais ficam como diagnóstico.
 
 ### T1 — NPS (espectro do ruído) · TG-233, Friedman 2013, Dolly 2016
-- ROIs de 32×32 px, passo 8, sobreposição ≤ 50%, ≥ 90% dentro da região; mínimo de 8 ROIs por região, máximo de 64.
+- ROIs de 32×32 px no pulmão e 16×16 px no tecido mole (passo s/4: 8 e 4 px), sobreposição ≤ 50%, ≥ 90% dentro da região; mínimo de 8 ROIs por região, máximo de 64.
 - Cada ROI: subtrai um plano (1ª ordem), aplica janela de Hann normalizada por ⟨w²⟩, faz |DFT|² e tira a média → NPS 2D; perfil radial em ciclos/pixel; ignora DC e o 1º bin.
 - Métricas por região: `sigma` (√∫NPS), `f_peak`, `f_avg`, `anisotropy` (energia nos setores ±45° de fx ÷ ±45° de fy), `leak` (fração de ROIs cujo NPS cresce no 1º bin útil, só como diagnóstico).
 - Métrica de forma do par: `shape_dist` = ∫|nNPS_sint − nNPS_real| (Oostveen 2024), com NPS normalizado por área. De um lado só (v2): z = max(0, (d − mediana dos vizinhos reais)/(k·escala)). Diagnóstico na v2.
@@ -50,7 +50,7 @@ Mesma ideia da textura: várias técnicas independentes, cada uma com poucas mé
 
 ### T2 — Impressão do resíduo · Lukáš 2006, Chen 2008, Corvi 2023
 - Resíduo W = I − F(I), em que F é o filtro wavelet-Wiener (db4, 4 níveis, janelas {3,5,7,9}) com **σ0 fixo**, calibrado uma vez nas reais (mediana do MAD-HH1). Assim o filtro não "se adapta" à sintética. Controle: mediana 3×3. Uma conclusão só vale se os dois filtros concordarem.
-- Métricas na região `lung ∪ soft`:
+- Métricas nas ROIs de 32 px do pulmão (`acf_len`, `acf_neg`, `lsd`, `grid_peak`); `kurtosis` nos pixels sem estrutura de pulmão ∪ tecido mole; `soft_acf_len` nas ROIs de 16 px do tecido mole:
   - `acf_len`: raio em que a autocorrelação 2D do resíduo cai abaixo de 1/e (tamanho do grão);
   - `acf_neg`: profundidade do lobo negativo (kernels afiados criam lobo negativo);
   - `kurtosis` do resíduo (ruído de CT ≈ gaussiano, 0);
@@ -75,7 +75,7 @@ Atenção (C §2): todos esses estimadores supõem ruído branco. Em ruído de C
 
 ## 5. Decisão (v3; o que mudou está nos §8–§9)
 
-1. **Calibração só nas reais** (`calibrate.calibrate`). Para cada original, o vizinho do mesmo paciente **na mesma série** (v3; corte sozinho na série fica de fora), com menor |Δ índice do corte| e menor |Δ fase|. Para cada métrica, escala = max(IQR do Δ entre vizinhos, 2 × IQR da diferença metade par × ímpar das ROIs) (f_pico: no mínimo 1 bin). Grava em `calibracao.json` com σ0, impressão de referência, pares, k e a validação deixando um paciente fora.
+1. **Calibração só nas reais** (`calibrate.calibrate`). Para cada original, o vizinho do mesmo paciente **na mesma série** (v3; corte sozinho na série fica de fora), com menor |Δ índice do corte| e menor |Δ fase|. Para cada métrica, escala = max(IQR do Δ entre vizinhos, 2 × IQR da diferença metade par × ímpar das ROIs) (f_pico: no mínimo 1 bin). No código o "IQR do Δ" é estimado como 2 × mediana|Δ| (igual ao IQR para um Δ simétrico em torno de zero, como o de pares sem ordem); para `shape_dist` (≥ 0, um lado só) é o IQR de fato. Grava em `calibracao.json` com σ0, impressão de referência, pares, k e a validação deixando um paciente fora.
 2. **Por métrica:** d = sintética − real (ou a métrica do par); z = d/(k·escala). |z| ≤ 1 é `aprovada`; 1–2 é `revisão`; > 2 é `reprovada`. `shape_dist` só de um lado.
 3. **Margem de erro:** IC 95% de d por bootstrap das mesmas ROIs/blocos nas duas imagens (300 sorteios). A diferença só pesa se o IC exclui zero (`certain_status`).
 4. **Por eixo** (quantidade, grão, espectro, distribuição): a pior métrica de decisão. **Final:** reprovada se algum eixo reprova; revisão se algum pede revisão; aprovada caso contrário. Eixo sem métrica conclusiva = `inconclusivo`, que não aprova (vira revisão). O status por técnica (T1–T4, só métricas de decisão) é relatado, não decide.

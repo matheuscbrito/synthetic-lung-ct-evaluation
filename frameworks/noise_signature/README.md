@@ -73,6 +73,7 @@ Sem `--calibration`, calibra nas originais válidas do próprio dataset e grava 
 
 1. **Régua por métrica**: escala = max(IQR do Δ entre cada real e o corte adjacente **da mesma série** (controle (a);
    índice e fase mais próximos; corte sozinho na série fica de fora), 2 × IQR da diferença metade par × ímpar das ROIs).
+   O "IQR do Δ" é estimado como 2 × mediana|Δ| (= IQR de um Δ simétrico em torno de zero); em `shape_dist`, o IQR de fato.
 2. z = d / (k · escala). |z| ≤ 1 aprovada, 1–2 revisão, > 2 reprovada; só pesa se o IC 95% exclui zero.
 3. Por eixo, a pior métrica de decisão; final: reprovada se algum eixo reprova, revisão se algum pede revisão, aprovada
    caso contrário. Eixo sem nenhuma métrica conclusiva = `inconclusivo`, que não aprova (vira revisão).
