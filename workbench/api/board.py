@@ -24,6 +24,7 @@ from frameworks.texture_evaluator import placar  # noqa: E402
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES, map_figure, technique_figure  # noqa: E402
 from workbench.api import data, datasets as ds  # noqa: E402
 from workbench.api.data import NotFound, Workbench  # noqa: E402
+from workbench.api.contract import versions as contract_versions  # noqa: E402
 from workbench.api.datasets import DEFAULT  # noqa: E402
 from workbench.api.nps_figure import nps_case_png  # noqa: E402
 
@@ -69,6 +70,8 @@ BRIGHTNESS_TEXTURE = ("brightness", "texture")
 class VersionIn(BaseModel):
     name: str | None = None  # padrão: nome da pasta
     folder: str
+    label: str | None = None  # rótulo de exibição (§4.6); padrão: o rótulo automático
+    provenance: dict | None = None  # origem; sem ela, vem do report.json (optimizer e step) quando houver
 
 
 def _counts(slices: list[dict], key: str) -> dict[str, int]:
@@ -258,6 +261,7 @@ def router(datasets: dict) -> APIRouter:
         name = (body.name or "").strip() or folder.resolve().name
         if not ds.NAME_PATTERN.fullmatch(name):
             raise HTTPException(400, "invalid name: use only letters, digits, dot, hyphen and underscore")
+        contract_versions.check_label(body.label)
         with ds.ADMIN_LOCK:
             history = placar.load_history(history_dir)
             if history is None or not history.get("versions"):
@@ -274,6 +278,9 @@ def router(datasets: dict) -> APIRouter:
                 placar.write_outputs(history_dir, placar.build_board(history_dir))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
+        # fora do lock: save_meta toma o próprio ADMIN_LOCK (threading.Lock não é reentrante)
+        provenance = body.provenance or contract_versions.detected_provenance(folder)
+        contract_versions.save_meta(history_dir, name, body.label, provenance)
         return {"message": message, "name": name}
 
     @api.delete("/api/versions/{name}")
@@ -289,6 +296,7 @@ def router(datasets: dict) -> APIRouter:
                 placar.write_outputs(Path(cfg["history"]), placar.build_board(Path(cfg["history"])))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
+        contract_versions.drop_meta(Path(cfg["history"]), name)  # fora do lock, como em add_version
         return {"message": f"version removed: {name}"}
 
     @api.post("/api/refresh")
