@@ -1,7 +1,8 @@
 """T1 — NPS (espectro do ruído) em ROIs quadradas · TG-233, Friedman 2013, Dolly 2016.
 
 Cada ROI: subtrai um plano, aplica janela de Hann normalizada por ⟨w²⟩ e tira
-|DFT|². O NPS da região é a média das ROIs. Para o bootstrap ficar barato,
+|DFT|². O NPS da região é a média das ROIs. Também guarda a autocovariância
+radial de cada ROI sem o plano (v3, para o `acf_len` da T1). Para o bootstrap ficar barato,
 cada ROI vira um vetor de grandezas lineares (perfil radial, potência total,
 energia nos setores de fx e fy): a média desses vetores reproduz exatamente as
 grandezas do NPS médio, então reamostrar ROIs é só reamostrar linhas.
@@ -20,6 +21,7 @@ MAX_OVERLAP = 0.5
 MIN_ROIS, MAX_ROIS = 8, 64
 SKIP_BINS = 2                         # ignora o DC e o 1º bin (vazamento do DC pela janela)
 LEAK_FACTOR = 1.0                     # NPS com máximo no 1º bin útil (sobe para o DC) = anatomia na ROI
+ACF_LAGS = 10
 
 
 @dataclass
@@ -161,8 +163,10 @@ def select_rois(host: np.ndarray, strict: np.ndarray, size: int) -> RoiSet:
 def roi_features(image: np.ndarray, rois: RoiSet) -> dict:
     """Grandezas lineares por ROI: perfil radial, potência total e energia nos setores de fx e fy."""
     if not len(rois):
-        return {"profile": np.zeros((0, rois.size // 2 + 1)), "total": np.zeros(0), "sectors": np.zeros((0, 2)), "leak": np.zeros(0, bool)}
-    power = spectra(detrend(patches(image, rois)))
+        return {"profile": np.zeros((0, rois.size // 2 + 1)), "total": np.zeros(0), "sectors": np.zeros((0, 2)), "leak": np.zeros(0, bool),
+                "acf": np.zeros((0, ACF_LAGS + 1))}
+    flat = detrend(patches(image, rois))
+    power = spectra(flat)
     fy, fx, radius = frequency_grid(rois.size)
     useful = (radius >= SKIP_BINS) & (radius <= rois.size // 2)
     along_x, along_y = useful & (np.abs(fx) > np.abs(fy)), useful & (np.abs(fy) > np.abs(fx))
@@ -172,7 +176,44 @@ def roi_features(image: np.ndarray, rois: RoiSet) -> dict:
         "total": power.sum(axis=(1, 2)) / rois.size ** 2,
         "sectors": np.stack([power[:, along_x].sum(axis=1), power[:, along_y].sum(axis=1)], axis=1),
         "leak": leak_flags(profiles),
+        "acf": roi_acf(flat),
     }
+
+
+@lru_cache(maxsize=None)
+def _acf_radial(size: int) -> tuple[np.ndarray, np.ndarray]:
+    """Pesos para tirar a autocovariância radial (lags 0..10) de uma FFT com zero-padding 2×."""
+    lag = np.fft.fftfreq(2 * size, d=1.0 / (2 * size)).astype(int)
+    ly, lx = np.meshgrid(lag, lag, indexing="ij")
+    overlap = np.clip(size - np.abs(ly), 0, None) * np.clip(size - np.abs(lx), 0, None)
+    radius = np.rint(np.hypot(lx, ly)).astype(int)
+    matrix = np.zeros(((2 * size) ** 2, ACF_LAGS + 1))
+    flat = radius.ravel()
+    inside = (flat <= ACF_LAGS) & (overlap.ravel() > 0)
+    matrix[np.flatnonzero(inside), flat[inside]] = 1.0 / overlap.ravel()[inside]
+    return matrix / np.maximum((matrix > 0).sum(axis=0), 1), overlap
+
+
+def roi_acf(stack: np.ndarray) -> np.ndarray:
+    """Autocovariância radial não enviesada (n, 11) de cada recorte, sem janela."""
+    n, size, _ = stack.shape
+    centred = stack - stack.mean(axis=(1, 2), keepdims=True)
+    power = np.abs(np.fft.fft2(centred, s=(2 * size, 2 * size))) ** 2
+    acov = np.real(np.fft.ifft2(power))
+    with np.errstate(all="ignore"):
+        return acov.reshape(n, -1) @ _acf_radial(size)[0]
+
+
+def acf_shape(acf: np.ndarray) -> tuple[float, float]:
+    """(raio em que ρ cai abaixo de 1/e, profundidade do lobo negativo)."""
+    rho = acf / max(float(acf[0]), 1e-30)
+    below = np.flatnonzero(rho < np.exp(-1))
+    if not below.size:
+        length = float(ACF_LAGS)
+    else:
+        r = int(below[0])
+        length = float(r - 1 + (rho[r - 1] - np.exp(-1)) / (rho[r - 1] - rho[r]))
+    return length, float(max(0.0, -rho[1:].min()))
 
 
 def shape(profile: np.ndarray) -> np.ndarray:
@@ -182,7 +223,12 @@ def shape(profile: np.ndarray) -> np.ndarray:
 
 
 def t1_metrics(units: dict, size: int) -> dict:
-    """σ, f_pico, f_média e anisotropia a partir das ROIs (já reamostradas)."""
+    """σ, f_pico, f_média, anisotropia e comprimento de correlação a partir das ROIs (já reamostradas).
+
+    `acf_len` (v3): raio em que a autocorrelação média (ensemble das ROIs sem o
+    plano, sem filtro de ruído) cai abaixo de 1/e. Diferente do `acf_len` da T2,
+    não passa pelo Wiener, então enxerga ruído correlacionado de baixa frequência.
+    """
     profile = units["profile"].mean(axis=0)
     freqs = frequencies(size)[SKIP_BINS:]
     useful = profile[SKIP_BINS:]
@@ -192,6 +238,7 @@ def t1_metrics(units: dict, size: int) -> dict:
         "f_peak": float(freqs[int(np.argmax(useful))]),
         "f_avg": float(np.sum(freqs * useful) / max(useful.sum(), 1e-30)),
         "anisotropy": float(sectors[0] / max(sectors[1], 1e-30)),
+        "acf_len": acf_shape(units["acf"].mean(axis=0))[0],
     }
 
 

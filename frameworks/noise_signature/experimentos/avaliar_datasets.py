@@ -286,7 +286,8 @@ def main() -> None:
     plt.close(fig)
 
     summary = {"data": DATE, "calibracao": {"dataset": "dados/Dsr", "n_originais": len(ref_valid), "sigma0": calib["sigma0"],
-                                            "versao": calib["version"], "k": calib["k"], "lopo": calib["lopo"]["pooled_out_of_sample"]},
+                                            "versao": calib["version"], "k": calib["k"], "lopo": calib["lopo"]["pooled_out_of_sample"],
+                                            "lopo_controle_b": calib["lopo"].get("pooled_out_of_sample_controls")},
                "metricas_decisao": {e: list(ks) for e, ks in EIXOS.items()},
                "protocolo": protocol, "status": status_summary, "baseline_vs_gpbo11": {"n_pares": len(common), "testes": cmp_rows,
                                                                                          "ct": ct_bg},

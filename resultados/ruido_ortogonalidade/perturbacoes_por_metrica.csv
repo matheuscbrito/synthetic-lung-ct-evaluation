@@ -3,12 +3,14 @@ identidade,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.0,0.0
+identidade,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.0,0.0
 identidade,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.0,0.0
 identidade,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 identidade,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.0,0.0
 identidade,t1_soft_anisotropy,diagnóstico,35,0.0,0.0,0.0,0.0
+identidade,t1_soft_acf_len,diagnóstico,35,0.0,0.0,0.0,0.0
 identidade,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
 identidade,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.0,0.0
 identidade,t2_wiener_acf_len,decisão,37,0.0,0.0,0.0,0.0
@@ -34,237 +36,253 @@ ruído branco +25%,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.0011177098134374439,0
 ruído branco +25%,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +25%,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.005250494036479803,0.0
 ruído branco +25%,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.0009705104577679379,0.0
+ruído branco +25%,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.002485879971975307,0.0
 ruído branco +25%,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +25%,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.0009985178913938242,0.0
 ruído branco +25%,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.07588914150557227,0.0
 ruído branco +25%,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 ruído branco +25%,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.07535965679647094,0.0
 ruído branco +25%,t1_soft_anisotropy,diagnóstico,35,0.0,0.0,0.02501403271307862,0.0
+ruído branco +25%,t1_soft_acf_len,diagnóstico,35,0.0,0.0,0.18593914095530495,0.0
 ruído branco +25%,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-ruído branco +25%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.08528889631188635,0.0
-ruído branco +25%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.34903978499216176,0.0
-ruído branco +25%,t2_wiener_acf_neg,diagnóstico,37,21.62162162162162,0.0,0.7994108895838403,21.62162162162162
-ruído branco +25%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.14308656310531354,0.0
-ruído branco +25%,t2_wiener_lsd,decisão,37,0.0,0.0,0.13058604460359674,0.0
+ruído branco +25%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.08046807951518382,0.0
+ruído branco +25%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.30609540783164596,0.0
+ruído branco +25%,t2_wiener_acf_neg,diagnóstico,37,29.72972972972973,0.0,0.8526224529948244,29.72972972972973
+ruído branco +25%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.13476490480929762,0.0
+ruído branco +25%,t2_wiener_lsd,decisão,37,0.0,0.0,0.12811392608842828,0.0
 ruído branco +25%,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.0879329514436721,0.0
-ruído branco +25%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.24541848446617812,0.0
-ruído branco +25%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.21529153925861896,0.0
+ruído branco +25%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.2439959667428745,0.0
+ruído branco +25%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.21529192031798616,0.0
 ruído branco +25%,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.3553698836898598,0.0
-ruído branco +25%,t3_lung_immerkaer,diagnóstico,37,35.13513513513514,0.0,0.8367489025358679,35.13513513513514
+ruído branco +25%,t3_lung_immerkaer,diagnóstico,37,48.648648648648646,2.7027027027027026,0.9762046098076361,48.64864864864865
 ruído branco +25%,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.06765162349163034,0.0
 ruído branco +25%,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.0442001686843992,0.0
-ruído branco +25%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.36486238750450545,0.0
+ruído branco +25%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.4256752677829435,0.0
 ruído branco +25%,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.32699422020689434,0.0
-ruído branco +25%,t3_soft_immerkaer,decisão,35,8.571428571428571,0.0,0.6800283719558284,8.571428571428571
+ruído branco +25%,t3_soft_immerkaer,decisão,35,11.428571428571429,0.0,0.7019439731631367,11.428571428571429
 ruído branco +25%,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.12062731538536092,0.0
-ruído branco +25%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.09736049637116731,0.0
-ruído branco +25%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.18047040442341755,0.0
+ruído branco +25%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.10816728204356117,0.0
+ruído branco +25%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.17818830950859688,0.0
 ruído branco +25%,t4_cv_map,diagnóstico,37,0.0,0.0,0.15048456484695938,0.0
 ruído branco +25%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.07280184707397029,0.0
 ruído branco +50%,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.0023149169244235336,0.0
 ruído branco +50%,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +50%,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.009421330084552525,0.0
 ruído branco +50%,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.0018433081593121766,0.0
+ruído branco +50%,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.004299886413810247,0.0
 ruído branco +50%,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +50%,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.001887777817718896,0.0
 ruído branco +50%,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.14058187337274913,0.0
 ruído branco +50%,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 ruído branco +50%,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.13879342283748883,0.0
 ruído branco +50%,t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.03962540224319186,2.857142857142857
+ruído branco +50%,t1_soft_acf_len,diagnóstico,35,2.857142857142857,0.0,0.3296474498045286,2.857142857142857
 ruído branco +50%,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-ruído branco +50%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.17411722199298232,0.0
-ruído branco +50%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.5443438004623448,0.0
-ruído branco +50%,t2_wiener_acf_neg,diagnóstico,37,56.75675675675676,0.0,1.1925301719377464,56.75675675675676
-ruído branco +50%,t2_wiener_kurtosis,diagnóstico,37,2.7027027027027026,0.0,0.2899747918166498,2.7027027027027026
-ruído branco +50%,t2_wiener_lsd,decisão,37,0.0,0.0,0.25564138010708914,0.0
+ruído branco +50%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.1642755278841799,0.0
+ruído branco +50%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.4773700442397742,0.0
+ruído branco +50%,t2_wiener_acf_neg,diagnóstico,37,67.56756756756756,0.0,1.2719091192230547,67.56756756756756
+ruído branco +50%,t2_wiener_kurtosis,diagnóstico,37,2.7027027027027026,0.0,0.2731103771603242,2.7027027027027026
+ruído branco +50%,t2_wiener_lsd,decisão,37,0.0,0.0,0.250801844681046,0.0
 ruído branco +50%,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.1407637837179111,0.0
-ruído branco +50%,t2_wiener_soft_acf_len,decisão,35,8.571428571428571,0.0,0.3618244750767276,8.571428571428571
-ruído branco +50%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.41779967281747854,0.0
+ruído branco +50%,t2_wiener_soft_acf_len,decisão,35,8.571428571428571,0.0,0.3597272339922134,8.571428571428571
+ruído branco +50%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.4178004123099801,0.0
 ruído branco +50%,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.6285712667284833,0.0
-ruído branco +50%,t3_lung_immerkaer,diagnóstico,37,72.97297297297297,27.027027027027028,1.4807741886997827,72.97297297297297
+ruído branco +50%,t3_lung_immerkaer,diagnóstico,37,86.48648648648648,35.13513513513514,1.7275655632317082,86.48648648648648
 ruído branco +50%,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.05203140643933297,0.0
 ruído branco +50%,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.07084932393828103,0.0
-ruído branco +50%,t3_soft_mad1,diagnóstico,35,2.857142857142857,0.0,0.6148645400338427,2.857142857142857
+ruído branco +50%,t3_soft_mad1,diagnóstico,35,14.285714285714286,0.0,0.717346146637026,14.285714285714285
 ruído branco +50%,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.5436104769161366,0.0
-ruído branco +50%,t3_soft_immerkaer,decisão,35,57.142857142857146,2.857142857142857,1.0298994275359705,57.14285714285714
+ruído branco +50%,t3_soft_immerkaer,decisão,35,62.857142857142854,2.857142857142857,1.0630904914214336,62.857142857142854
 ruído branco +50%,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.16693125669032863,0.0
-ruído branco +50%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.0973129674907984,0.0
-ruído branco +50%,t4_lung_soft_ratio,decisão,35,2.857142857142857,0.0,0.2527657122891608,2.857142857142857
+ruído branco +50%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.10811447756947058,0.0
+ruído branco +50%,t4_lung_soft_ratio,decisão,35,2.857142857142857,0.0,0.24956942451832634,2.857142857142857
 ruído branco +50%,t4_cv_map,diagnóstico,37,0.0,0.0,0.2389278340962953,0.0
 ruído branco +50%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.07411870993812698,0.0
 ruído branco +100%,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.004993552578718979,0.0
 ruído branco +100%,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +100%,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.01714803037824078,0.0
 ruído branco +100%,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.002581709752107602,0.0
+ruído branco +100%,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.007499858167874788,0.0
 ruído branco +100%,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído branco +100%,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.004484133613892074,0.0
 ruído branco +100%,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.28005350268286855,0.0
 ruído branco +100%,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 ruído branco +100%,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.2948491135658086,0.0
 ruído branco +100%,t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.07088500537723044,2.857142857142857
+ruído branco +100%,t1_soft_acf_len,diagnóstico,35,8.571428571428571,2.857142857142857,0.5410281861373675,8.571428571428571
 ruído branco +100%,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.08883462513554083,0.0
-ruído branco +100%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.29993616982524873,0.0
-ruído branco +100%,t2_wiener_acf_len,decisão,37,35.13513513513514,0.0,0.8334001760322516,35.13513513513514
-ruído branco +100%,t2_wiener_acf_neg,diagnóstico,37,94.5945945945946,18.91891891891892,1.6306907071038783,94.5945945945946
-ruído branco +100%,t2_wiener_kurtosis,diagnóstico,37,18.91891891891892,0.0,0.4292241930163866,18.91891891891892
-ruído branco +100%,t2_wiener_lsd,decisão,37,8.108108108108109,0.0,0.4130615261915137,8.108108108108109
+ruído branco +100%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.2829827633683913,0.0
+ruído branco +100%,t2_wiener_acf_len,decisão,37,16.216216216216218,0.0,0.7308621473488653,16.216216216216218
+ruído branco +100%,t2_wiener_acf_neg,diagnóstico,37,94.5945945945946,24.324324324324323,1.7392351403801531,94.5945945945946
+ruído branco +100%,t2_wiener_kurtosis,diagnóstico,37,13.513513513513514,0.0,0.4042612825295604,13.513513513513514
+ruído branco +100%,t2_wiener_lsd,decisão,37,5.405405405405405,0.0,0.4052418770865766,5.405405405405405
 ruído branco +100%,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.11684120174612737,0.0
-ruído branco +100%,t2_wiener_soft_acf_len,decisão,35,20.0,0.0,0.5048558742895859,20.0
-ruído branco +100%,t3_lung_mad1,diagnóstico,37,32.432432432432435,0.0,0.7977551431714324,32.432432432432435
+ruído branco +100%,t2_wiener_soft_acf_len,decisão,35,20.0,0.0,0.5019295811440104,20.0
+ruído branco +100%,t3_lung_mad1,diagnóstico,37,32.432432432432435,0.0,0.7977565551733674,32.432432432432435
 ruído branco +100%,t3_lung_corr_index,diagnóstico,37,40.54054054054054,0.0,0.9702492200721394,40.54054054054054
-ruído branco +100%,t3_lung_immerkaer,diagnóstico,37,100.0,59.45945945945946,2.532667622787016,100.0
+ruído branco +100%,t3_lung_immerkaer,diagnóstico,37,100.0,70.27027027027027,2.954771498333995,100.0
 ruído branco +100%,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.0948489307537241,0.0
 ruído branco +100%,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.10783847708481058,0.0
-ruído branco +100%,t3_soft_mad1,diagnóstico,35,57.142857142857146,0.0,1.165738197418622,57.14285714285714
+ruído branco +100%,t3_soft_mad1,diagnóstico,35,74.28571428571429,8.571428571428571,1.3600358281513745,74.28571428571429
 ruído branco +100%,t3_soft_corr_index,diagnóstico,35,5.714285714285714,0.0,0.7183410809201596,5.714285714285714
-ruído branco +100%,t3_soft_immerkaer,decisão,35,94.28571428571429,40.0,1.9288932894215405,94.28571428571428
+ruído branco +100%,t3_soft_immerkaer,decisão,35,94.28571428571429,48.57142857142857,1.9910566606068258,94.28571428571428
 ruído branco +100%,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.28962883819053975,0.0
-ruído branco +100%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.06961307061767258,0.0
-ruído branco +100%,t4_lung_soft_ratio,decisão,35,11.428571428571429,0.0,0.31724204623563895,11.428571428571429
+ruído branco +100%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.07733995741675419,0.0
+ruído branco +100%,t4_lung_soft_ratio,decisão,35,11.428571428571429,0.0,0.3132304385551737,11.428571428571429
 ruído branco +100%,t4_cv_map,diagnóstico,37,0.0,0.0,0.35111789391273335,0.0
 ruído branco +100%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.15584048556894603,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.0036211097658086027,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.006477688586057285,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.0038331794287247574,0.0
+ruído correlacionado (σ=1) +50%,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.003055560289969395,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído correlacionado (σ=1) +50%,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.0029544549245096724,0.0
 ruído correlacionado (σ=1) +50%,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.1338555782836189,0.0
 ruído correlacionado (σ=1) +50%,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 ruído correlacionado (σ=1) +50%,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.19899865581178644,0.0
 ruído correlacionado (σ=1) +50%,t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.030585862676005833,2.857142857142857
+ruído correlacionado (σ=1) +50%,t1_soft_acf_len,diagnóstico,35,14.285714285714286,0.0,0.4097783711563914,14.285714285714285
 ruído correlacionado (σ=1) +50%,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.06993848942362113,0.0
-ruído correlacionado (σ=1) +50%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.14699452899449503,0.0
-ruído correlacionado (σ=1) +50%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.011055617349249591,0.0
-ruído correlacionado (σ=1) +50%,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.0132593795850404,0.0
-ruído correlacionado (σ=1) +50%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.08658020454192607,0.0
-ruído correlacionado (σ=1) +50%,t2_wiener_lsd,decisão,37,0.0,0.0,0.016019665427201134,0.0
+ruído correlacionado (σ=1) +50%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.13868590120068833,0.0
+ruído correlacionado (σ=1) +50%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.009695381004847826,0.0
+ruído correlacionado (σ=1) +50%,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.014141969910957756,0.0
+ruído correlacionado (σ=1) +50%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.0815448548783327,0.0
+ruído correlacionado (σ=1) +50%,t2_wiener_lsd,decisão,37,0.0,0.0,0.015716397864196187,0.0
 ruído correlacionado (σ=1) +50%,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.009943769472630721,0.0
-ruído correlacionado (σ=1) +50%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.022549331578889446,0.0
-ruído correlacionado (σ=1) +50%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.02236904670621351,0.0
+ruído correlacionado (σ=1) +50%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.022418629020402897,0.0
+ruído correlacionado (σ=1) +50%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.02236908629873448,0.0
 ruído correlacionado (σ=1) +50%,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.06631607946542467,0.0
-ruído correlacionado (σ=1) +50%,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.020956972394079905,0.0
+ruído correlacionado (σ=1) +50%,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.024449739935972267,0.0
 ruído correlacionado (σ=1) +50%,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.05714401429333447,0.0
 ruído correlacionado (σ=1) +50%,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.050218189228246814,0.0
-ruído correlacionado (σ=1) +50%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.06159487533094358,0.0
+ruído correlacionado (σ=1) +50%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.07186110695017217,0.0
 ruído correlacionado (σ=1) +50%,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.14245927035486336,0.0
-ruído correlacionado (σ=1) +50%,t3_soft_immerkaer,decisão,35,0.0,0.0,0.015568636106667639,0.0
+ruído correlacionado (σ=1) +50%,t3_soft_immerkaer,decisão,35,0.0,0.0,0.016070374025740214,0.0
 ruído correlacionado (σ=1) +50%,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.19000000298090333,0.0
-ruído correlacionado (σ=1) +50%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.06132628213282379,0.0
-ruído correlacionado (σ=1) +50%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.07861661245710025,0.0
+ruído correlacionado (σ=1) +50%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.06813335493746132,0.0
+ruído correlacionado (σ=1) +50%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.07762248507049649,0.0
 ruído correlacionado (σ=1) +50%,t4_cv_map,diagnóstico,37,0.0,0.0,0.0273073624370441,0.0
 ruído correlacionado (σ=1) +50%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.028343394467996316,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.004901518300655455,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.00758305366586351,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.007043111425152836,0.0
+ruído correlacionado (σ=1) +100%,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.006760152935597192,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 ruído correlacionado (σ=1) +100%,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.005202099131522435,0.0
 ruído correlacionado (σ=1) +100%,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.24372851088457778,0.0
 ruído correlacionado (σ=1) +100%,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.25,0.0
 ruído correlacionado (σ=1) +100%,t1_soft_f_avg,diagnóstico,35,2.857142857142857,0.0,0.32927368372052146,2.857142857142857
 ruído correlacionado (σ=1) +100%,t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.06070576551549162,2.857142857142857
+ruído correlacionado (σ=1) +100%,t1_soft_acf_len,diagnóstico,35,37.142857142857146,17.142857142857142,0.814669063249493,37.142857142857146
 ruído correlacionado (σ=1) +100%,t1_soft_shape_dist,diagnóstico,35,2.857142857142857,0.0,0.22221646378933807,2.857142857142857
-ruído correlacionado (σ=1) +100%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.28524487992545394,0.0
-ruído correlacionado (σ=1) +100%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.015113337337133456,0.0
-ruído correlacionado (σ=1) +100%,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.01932999870669494,0.0
-ruído correlacionado (σ=1) +100%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.08817042320780058,0.0
-ruído correlacionado (σ=1) +100%,t2_wiener_lsd,decisão,37,0.0,0.0,0.0327727815160315,0.0
+ruído correlacionado (σ=1) +100%,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.2691218748476361,0.0
+ruído correlacionado (σ=1) +100%,t2_wiener_acf_len,decisão,37,0.0,0.0,0.013253856307558163,0.0
+ruído correlacionado (σ=1) +100%,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.020616670511292196,0.0
+ruído correlacionado (σ=1) +100%,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.08304258927408315,0.0
+ruído correlacionado (σ=1) +100%,t2_wiener_lsd,decisão,37,0.0,0.0,0.03215236146865746,0.0
 ruído correlacionado (σ=1) +100%,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.01372882419009597,0.0
-ruído correlacionado (σ=1) +100%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.036774075522431775,0.0
-ruído correlacionado (σ=1) +100%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.054199327959258435,0.0
+ruído correlacionado (σ=1) +100%,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.03656092216398548,0.0
+ruído correlacionado (σ=1) +100%,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.054199423890392964,0.0
 ruído correlacionado (σ=1) +100%,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.06890150888112101,0.0
-ruído correlacionado (σ=1) +100%,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.029521222425583204,0.0
+ruído correlacionado (σ=1) +100%,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.03444133996671188,0.0
 ruído correlacionado (σ=1) +100%,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.08971283579008676,0.0
 ruído correlacionado (σ=1) +100%,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.06399951913982131,0.0
-ruído correlacionado (σ=1) +100%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.09691464541895102,0.0
+ruído correlacionado (σ=1) +100%,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.11306774568615015,0.0
 ruído correlacionado (σ=1) +100%,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.1978389943175676,0.0
-ruído correlacionado (σ=1) +100%,t3_soft_immerkaer,decisão,35,0.0,0.0,0.03305763329401669,0.0
+ruído correlacionado (σ=1) +100%,t3_soft_immerkaer,decisão,35,0.0,0.0,0.03412299753175494,0.0
 ruído correlacionado (σ=1) +100%,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.2050993398641797,0.0
-ruído correlacionado (σ=1) +100%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.11774809799841437,0.0
-ruído correlacionado (σ=1) +100%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.07760445292322346,0.0
+ruído correlacionado (σ=1) +100%,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.13081785940913915,0.0
+ruído correlacionado (σ=1) +100%,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.0766231245555648,0.0
 ruído correlacionado (σ=1) +100%,t4_cv_map,diagnóstico,37,0.0,0.0,0.03593557093333668,0.0
 ruído correlacionado (σ=1) +100%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.021672897541386058,0.0
 "resíduo × 0,5",t1_lung_sigma,diagnóstico,37,0.0,0.0,0.006270945256154342,0.0
 "resíduo × 0,5",t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 "resíduo × 0,5",t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.02328420265468649,0.0
 "resíduo × 0,5",t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.0011830571351755797,0.0
+"resíduo × 0,5",t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.011415788415638601,0.0
 "resíduo × 0,5",t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 "resíduo × 0,5",t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.005433842342021232,0.0
 "resíduo × 0,5",t1_soft_sigma,diagnóstico,35,0.0,0.0,0.21358736737401074,0.0
 "resíduo × 0,5",t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 "resíduo × 0,5",t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.2068877939686049,0.0
 "resíduo × 0,5",t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.048349246169192436,2.857142857142857
+"resíduo × 0,5",t1_soft_acf_len,diagnóstico,35,31.428571428571427,14.285714285714286,0.4414063245513432,31.428571428571427
 "resíduo × 0,5",t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.057491908743214595,0.0
-"resíduo × 0,5",t1_soft_sigma_ratio,decisão,35,14.285714285714286,0.0,0.2968617372684212,14.285714285714285
-"resíduo × 0,5",t2_wiener_acf_len,decisão,37,0.0,0.0,0.7618487410534669,0.0
-"resíduo × 0,5",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.7088450198095764,0.0
-"resíduo × 0,5",t2_wiener_kurtosis,diagnóstico,37,40.54054054054054,24.324324324324323,0.7828309919624601,40.54054054054054
-"resíduo × 0,5",t2_wiener_lsd,decisão,37,13.513513513513514,0.0,0.5600009628025117,13.513513513513514
+"resíduo × 0,5",t1_soft_sigma_ratio,decisão,35,14.285714285714286,0.0,0.2800821081348871,14.285714285714285
+"resíduo × 0,5",t2_wiener_acf_len,decisão,37,0.0,0.0,0.668114097950249,0.0
+"resíduo × 0,5",t2_wiener_acf_neg,diagnóstico,37,5.405405405405405,0.0,0.7560282045918018,5.405405405405405
+"resíduo × 0,5",t2_wiener_kurtosis,diagnóstico,37,37.83783783783784,21.62162162162162,0.7373029432256403,37.83783783783784
+"resíduo × 0,5",t2_wiener_lsd,decisão,37,8.108108108108109,0.0,0.5493996098565772,8.108108108108109
 "resíduo × 0,5",t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.05694020963806063,0.0
-"resíduo × 0,5",t2_wiener_soft_acf_len,decisão,35,8.571428571428571,0.0,0.3267136635864461,8.571428571428571
-"resíduo × 0,5",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.24786140217245758,0.0
+"resíduo × 0,5",t2_wiener_soft_acf_len,decisão,35,8.571428571428571,0.0,0.32481993509281576,8.571428571428571
+"resíduo × 0,5",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.24786184087947502,0.0
 "resíduo × 0,5",t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.3667057177284906,0.0
-"resíduo × 0,5",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.428645152810526,0.0
+"resíduo × 0,5",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.5000847600483075,0.0
 "resíduo × 0,5",t3_lung_coherence,diagnóstico,37,0.0,0.0,0.02998787750433655,0.0
 "resíduo × 0,5",t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.03951889430274634,0.0
-"resíduo × 0,5",t3_soft_mad1,diagnóstico,35,0.0,0.0,0.4428824664233544,0.0
+"resíduo × 0,5",t3_soft_mad1,diagnóstico,35,0.0,0.0,0.516699224002101,0.0
 "resíduo × 0,5",t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.29698326259709656,0.0
-"resíduo × 0,5",t3_soft_immerkaer,decisão,35,0.0,0.0,0.38501810821724863,0.0
+"resíduo × 0,5",t3_soft_immerkaer,decisão,35,0.0,0.0,0.3974262718546175,0.0
 "resíduo × 0,5",t3_soft_coherence,diagnóstico,35,0.0,0.0,0.2733511651480149,0.0
-"resíduo × 0,5",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.07579892329447069,0.0
-"resíduo × 0,5",t4_lung_soft_ratio,decisão,35,25.714285714285715,0.0,0.4210501420402397,25.71428571428571
+"resíduo × 0,5",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.0842124251640457,0.0
+"resíduo × 0,5",t4_lung_soft_ratio,decisão,35,25.714285714285715,0.0,0.41572585415434266,25.71428571428571
 "resíduo × 0,5",t4_cv_map,diagnóstico,37,0.0,0.0,0.2773922955796399,0.0
 "resíduo × 0,5",t4_nlf_slope,diagnóstico,37,0.0,0.0,0.11200447995110956,0.0
 "resíduo borrado (σ=0,7)",t1_lung_sigma,diagnóstico,37,0.0,0.0,0.005272793344397222,0.0
 "resíduo borrado (σ=0,7)",t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 "resíduo borrado (σ=0,7)",t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.023144136569523157,0.0
 "resíduo borrado (σ=0,7)",t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.000983113451280601,0.0
+"resíduo borrado (σ=0,7)",t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.009284216881459192,0.0
 "resíduo borrado (σ=0,7)",t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 "resíduo borrado (σ=0,7)",t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.004483113140727512,0.0
 "resíduo borrado (σ=0,7)",t1_soft_sigma,diagnóstico,35,0.0,0.0,0.2286384481199978,0.0
 "resíduo borrado (σ=0,7)",t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 "resíduo borrado (σ=0,7)",t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.31668148565853954,0.0
 "resíduo borrado (σ=0,7)",t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.04876270274946067,2.857142857142857
+"resíduo borrado (σ=0,7)",t1_soft_acf_len,diagnóstico,35,45.714285714285715,34.285714285714285,0.90352455327527,45.714285714285715
 "resíduo borrado (σ=0,7)",t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.1709853026465432,0.0
-"resíduo borrado (σ=0,7)",t1_soft_sigma_ratio,decisão,35,14.285714285714286,0.0,0.31420266816202064,14.285714285714285
-"resíduo borrado (σ=0,7)",t2_wiener_acf_len,decisão,37,81.08108108108108,0.0,1.4019914057896763,81.08108108108108
-"resíduo borrado (σ=0,7)",t2_wiener_acf_neg,diagnóstico,37,89.1891891891892,0.0,1.291222773042628,89.1891891891892
-"resíduo borrado (σ=0,7)",t2_wiener_kurtosis,diagnóstico,37,62.16216216216216,32.432432432432435,1.2149297106906733,62.16216216216216
-"resíduo borrado (σ=0,7)",t2_wiener_lsd,decisão,37,62.16216216216216,0.0,1.3784632562557908,62.16216216216216
+"resíduo borrado (σ=0,7)",t1_soft_sigma_ratio,decisão,35,14.285714285714286,0.0,0.2964428709815626,14.285714285714285
+"resíduo borrado (σ=0,7)",t2_wiener_acf_len,decisão,37,75.67567567567568,0.0,1.2294963198573214,75.67567567567568
+"resíduo borrado (σ=0,7)",t2_wiener_acf_neg,diagnóstico,37,91.89189189189189,0.0,1.3771710424003705,91.8918918918919
+"resíduo borrado (σ=0,7)",t2_wiener_kurtosis,diagnóstico,37,59.45945945945946,32.432432432432435,1.1442715741988212,59.45945945945946
+"resíduo borrado (σ=0,7)",t2_wiener_lsd,decisão,37,62.16216216216216,0.0,1.3523676305814414,62.16216216216216
 "resíduo borrado (σ=0,7)",t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.10430299454791118,0.0
-"resíduo borrado (σ=0,7)",t2_wiener_soft_acf_len,decisão,35,40.0,28.571428571428573,0.6934695758691071,40.0
-"resíduo borrado (σ=0,7)",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.32777451077737496,0.0
+"resíduo borrado (σ=0,7)",t2_wiener_soft_acf_len,decisão,35,40.0,28.571428571428573,0.6894500222303851,40.0
+"resíduo borrado (σ=0,7)",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.3277750909281235,0.0
 "resíduo borrado (σ=0,7)",t3_lung_corr_index,diagnóstico,37,13.513513513513514,0.0,0.5161514619904467,13.513513513513514
-"resíduo borrado (σ=0,7)",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.5279061561200887,0.0
+"resíduo borrado (σ=0,7)",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.6158889740858305,0.0
 "resíduo borrado (σ=0,7)",t3_lung_coherence,diagnóstico,37,0.0,0.0,0.04171845402419499,0.0
 "resíduo borrado (σ=0,7)",t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.06177578402658233,0.0
-"resíduo borrado (σ=0,7)",t3_soft_mad1,diagnóstico,35,5.714285714285714,0.0,0.6062714730122799,5.714285714285714
+"resíduo borrado (σ=0,7)",t3_soft_mad1,diagnóstico,35,5.714285714285714,0.0,0.707320843315139,5.714285714285714
 "resíduo borrado (σ=0,7)",t3_soft_corr_index,diagnóstico,35,51.42857142857143,0.0,1.0048807684708032,51.42857142857142
-"resíduo borrado (σ=0,7)",t3_soft_immerkaer,decisão,35,0.0,0.0,0.5223327650824714,0.0
+"resíduo borrado (σ=0,7)",t3_soft_immerkaer,decisão,35,0.0,0.0,0.5391662341686725,0.0
 "resíduo borrado (σ=0,7)",t3_soft_coherence,diagnóstico,35,0.0,0.0,0.36269352633441526,0.0
-"resíduo borrado (σ=0,7)",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.10581064012822364,0.0
-"resíduo borrado (σ=0,7)",t4_lung_soft_ratio,decisão,35,40.0,28.571428571428573,0.846001857271564,40.0
+"resíduo borrado (σ=0,7)",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.11755537184533865,0.0
+"resíduo borrado (σ=0,7)",t4_lung_soft_ratio,decisão,35,40.0,28.571428571428573,0.8353039450982273,40.0
 "resíduo borrado (σ=0,7)",t4_cv_map,diagnóstico,37,10.81081081081081,0.0,0.43396293316476225,10.81081081081081
 "resíduo borrado (σ=0,7)",t4_nlf_slope,diagnóstico,37,0.0,0.0,0.17839606263007052,0.0
 "brilho +0,1",t1_lung_sigma,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_lung_anisotropy,diagnóstico,37,0.0,0.0,9.80767913805404e-17,0.0
+"brilho +0,1",t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_soft_sigma,diagnóstico,35,0.0,0.0,1.0559028493260386e-15,0.0
 "brilho +0,1",t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 "brilho +0,1",t1_soft_f_avg,diagnóstico,35,0.0,0.0,1.0236268229200337e-15,0.0
 "brilho +0,1",t1_soft_anisotropy,diagnóstico,35,0.0,0.0,8.098521967189522e-16,0.0
+"brilho +0,1",t1_soft_acf_len,diagnóstico,35,0.0,0.0,2.316667321350268e-15,0.0
 "brilho +0,1",t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-"brilho +0,1",t1_soft_sigma_ratio,decisão,35,0.0,0.0,9.557234834885301e-16,0.0
-"brilho +0,1",t2_wiener_acf_len,decisão,37,0.0,0.0,3.937746457533677e-15,0.0
-"brilho +0,1",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,1.8088370382284663e-15,0.0
-"brilho +0,1",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,8.995519504295436e-15,0.0
-"brilho +0,1",t2_wiener_lsd,decisão,37,0.0,0.0,7.991967759699646e-15,0.0
+"brilho +0,1",t1_soft_sigma_ratio,decisão,35,0.0,0.0,9.017027607281343e-16,0.0
+"brilho +0,1",t2_wiener_acf_len,decisão,37,0.0,0.0,3.453262807514787e-15,0.0
+"brilho +0,1",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,1.9292395096157867e-15,0.0
+"brilho +0,1",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,8.472356197515911e-15,0.0
+"brilho +0,1",t2_wiener_lsd,decisão,37,0.0,0.0,7.840672178832969e-15,0.0
 "brilho +0,1",t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,1.1186840041329477e-15,0.0
-"brilho +0,1",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,3.0035502206224152e-15,0.0
+"brilho +0,1",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,2.9861407600801032e-15,0.0
 "brilho +0,1",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,1",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.0,0.0
@@ -282,20 +300,22 @@ ruído correlacionado (σ=1) +100%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.021672
 "brilho +0,2",t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t1_lung_f_avg,diagnóstico,37,0.0,0.0,4.191799701234183e-16,0.0
 "brilho +0,2",t1_lung_anisotropy,diagnóstico,37,0.0,0.0,9.80767913805404e-17,0.0
+"brilho +0,2",t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t1_soft_sigma,diagnóstico,35,0.0,0.0,5.279514246630193e-16,0.0
 "brilho +0,2",t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 "brilho +0,2",t1_soft_f_avg,diagnóstico,35,0.0,0.0,1.0236268229200337e-15,0.0
 "brilho +0,2",t1_soft_anisotropy,diagnóstico,35,0.0,0.0,7.086206721290832e-16,0.0
+"brilho +0,2",t1_soft_acf_len,diagnóstico,35,0.0,0.0,1.5444448809001787e-15,0.0
 "brilho +0,2",t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-"brilho +0,2",t1_soft_sigma_ratio,decisão,35,0.0,0.0,1.1946543543606633e-15,0.0
+"brilho +0,2",t1_soft_sigma_ratio,decisão,35,0.0,0.0,1.1271284509101687e-15,0.0
 "brilho +0,2",t2_wiener_acf_len,decisão,37,0.0,0.0,0.0,0.0
-"brilho +0,2",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,2.411782717637955e-15,0.0
-"brilho +0,2",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,9.89507145472498e-15,0.0
-"brilho +0,2",t2_wiener_lsd,decisão,37,0.0,0.0,5.0425510864771575e-15,0.0
+"brilho +0,2",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,2.5723193461543824e-15,0.0
+"brilho +0,2",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,9.319591817267502e-15,0.0
+"brilho +0,2",t2_wiener_lsd,decisão,37,0.0,0.0,4.9470907795017534e-15,0.0
 "brilho +0,2",t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,2.060733691823851e-15,0.0
-"brilho +0,2",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,6.0071004412448304e-15,0.0
+"brilho +0,2",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,5.9722815201602064e-15,0.0
 "brilho +0,2",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.0,0.0
 "brilho +0,2",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.0,0.0
@@ -313,92 +333,98 @@ ruído correlacionado (σ=1) +100%,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.021672
 "ganho ×1,1 na estrutura",t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 "ganho ×1,1 na estrutura",t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.004519138550686461,0.0
 "ganho ×1,1 na estrutura",t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.00023567994887670502,0.0
+"ganho ×1,1 na estrutura",t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.002166007228643002,0.0
 "ganho ×1,1 na estrutura",t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 "ganho ×1,1 na estrutura",t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.08242772535370121,0.0
 "ganho ×1,1 na estrutura",t1_soft_sigma,diagnóstico,35,0.0,0.0,0.13099801694944463,0.0
 "ganho ×1,1 na estrutura",t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 "ganho ×1,1 na estrutura",t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.029730674557825958,0.0
 "ganho ×1,1 na estrutura",t1_soft_anisotropy,diagnóstico,35,0.0,0.0,0.007970305660375194,0.0
+"ganho ×1,1 na estrutura",t1_soft_acf_len,diagnóstico,35,0.0,0.0,0.07198431933451163,0.0
 "ganho ×1,1 na estrutura",t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-"ganho ×1,1 na estrutura",t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.15016681068412457,0.0
-"ganho ×1,1 na estrutura",t2_wiener_acf_len,decisão,37,0.0,0.0,0.08925994627838517,0.0
-"ganho ×1,1 na estrutura",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.0667845131693576,0.0
-"ganho ×1,1 na estrutura",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.02004553820349143,0.0
-"ganho ×1,1 na estrutura",t2_wiener_lsd,decisão,37,0.0,0.0,0.18904127397902418,0.0
+"ganho ×1,1 na estrutura",t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.14167887480316294,0.0
+"ganho ×1,1 na estrutura",t2_wiener_acf_len,decisão,37,0.0,0.0,0.07827778045338495,0.0
+"ganho ×1,1 na estrutura",t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.0712299221620134,0.0
+"ganho ×1,1 na estrutura",t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.018879725595591885,0.0
+"ganho ×1,1 na estrutura",t2_wiener_lsd,decisão,37,0.0,0.0,0.18546254215547286,0.0
 "ganho ×1,1 na estrutura",t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.004512326319689103,0.0
-"ganho ×1,1 na estrutura",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.03991754971329627,0.0
-"ganho ×1,1 na estrutura",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.14881164774127167,0.0
+"ganho ×1,1 na estrutura",t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.039686175853818936,0.0
+"ganho ×1,1 na estrutura",t3_lung_mad1,diagnóstico,37,0.0,0.0,0.1488119111332866,0.0
 "ganho ×1,1 na estrutura",t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.05993956069161599,0.0
-"ganho ×1,1 na estrutura",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.1419878580371913,0.0
+"ganho ×1,1 na estrutura",t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.16565208646530227,0.0
 "ganho ×1,1 na estrutura",t3_lung_coherence,diagnóstico,37,0.0,0.0,0.010447672181233022,0.0
 "ganho ×1,1 na estrutura",t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.018060964486823466,0.0
-"ganho ×1,1 na estrutura",t3_soft_mad1,diagnóstico,35,0.0,0.0,0.06320089067571638,0.0
+"ganho ×1,1 na estrutura",t3_soft_mad1,diagnóstico,35,0.0,0.0,0.07373480244568617,0.0
 "ganho ×1,1 na estrutura",t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.04585310607397106,0.0
-"ganho ×1,1 na estrutura",t3_soft_immerkaer,decisão,35,0.0,0.0,0.05256657697869774,0.0
+"ganho ×1,1 na estrutura",t3_soft_immerkaer,decisão,35,0.0,0.0,0.05426066532178417,0.0
 "ganho ×1,1 na estrutura",t3_soft_coherence,diagnóstico,35,0.0,0.0,0.03807672710686661,0.0
-"ganho ×1,1 na estrutura",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.03973200696918023,0.0
-"ganho ×1,1 na estrutura",t4_lung_soft_ratio,decisão,35,0.0,0.0,0.05688961779037308,0.0
+"ganho ×1,1 na estrutura",t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.04414216611640852,0.0
+"ganho ×1,1 na estrutura",t4_lung_soft_ratio,decisão,35,0.0,0.0,0.05617023386767237,0.0
 "ganho ×1,1 na estrutura",t4_cv_map,diagnóstico,37,0.0,0.0,0.051751129035413124,0.0
 "ganho ×1,1 na estrutura",t4_nlf_slope,diagnóstico,37,0.0,0.0,0.02262392684785811,0.0
 unsharp na estrutura,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.29795996143355696,0.0
 unsharp na estrutura,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 unsharp na estrutura,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.23030474692462805,0.0
 unsharp na estrutura,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.008405330366925827,0.0
+unsharp na estrutura,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.24365534996736396,0.0
 unsharp na estrutura,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 unsharp na estrutura,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.21449680615258648,0.0
 unsharp na estrutura,t1_soft_sigma,diagnóstico,35,34.285714285714285,0.0,0.6042295603995257,34.285714285714285
 unsharp na estrutura,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 unsharp na estrutura,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.06458621094013753,0.0
 unsharp na estrutura,t1_soft_anisotropy,diagnóstico,35,0.0,0.0,0.030330958234633602,0.0
+unsharp na estrutura,t1_soft_acf_len,diagnóstico,35,0.0,0.0,0.07731806695530236,0.0
 unsharp na estrutura,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.0,0.0
-unsharp na estrutura,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.6191328775141214,0.0
-unsharp na estrutura,t2_wiener_acf_len,decisão,37,0.0,0.0,0.3220596163263955,0.0
-unsharp na estrutura,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.28367472735563953,0.0
-unsharp na estrutura,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.09409253072458741,0.0
-unsharp na estrutura,t2_wiener_lsd,decisão,37,32.432432432432435,0.0,0.6944733307989486,32.432432432432435
+unsharp na estrutura,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.584137393876999,0.0
+unsharp na estrutura,t2_wiener_acf_len,decisão,37,0.0,0.0,0.2824347648728504,0.0
+unsharp na estrutura,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.3025571017884376,0.0
+unsharp na estrutura,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.08862027762195965,0.0
+unsharp na estrutura,t2_wiener_lsd,decisão,37,32.432432432432435,0.0,0.6813262875251413,32.432432432432435
 unsharp na estrutura,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.020435763700535965,0.0
-unsharp na estrutura,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.14415036018261057,0.0
-unsharp na estrutura,t3_lung_mad1,diagnóstico,37,35.13513513513514,0.0,0.7430075883106483,35.13513513513514
+unsharp na estrutura,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.14331482229463774,0.0
+unsharp na estrutura,t3_lung_mad1,diagnóstico,37,35.13513513513514,0.0,0.7430089034111043,35.13513513513514
 unsharp na estrutura,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.13496151545340668,0.0
-unsharp na estrutura,t3_lung_immerkaer,diagnóstico,37,35.13513513513514,0.0,0.7449962586938297,35.13513513513514
+unsharp na estrutura,t3_lung_immerkaer,diagnóstico,37,43.24324324324324,0.0,0.8691601265592145,43.24324324324324
 unsharp na estrutura,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.13701974573821532,0.0
 unsharp na estrutura,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.04633711385848691,0.0
-unsharp na estrutura,t3_soft_mad1,diagnóstico,35,5.714285714285714,0.0,0.3693700169639478,5.714285714285714
+unsharp na estrutura,t3_soft_mad1,diagnóstico,35,11.428571428571429,0.0,0.43093419948686074,11.428571428571429
 unsharp na estrutura,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.14393783277305736,0.0
-unsharp na estrutura,t3_soft_immerkaer,decisão,35,2.857142857142857,0.0,0.21493480812580193,2.857142857142857
+unsharp na estrutura,t3_soft_immerkaer,decisão,35,2.857142857142857,0.0,0.22186161549842193,2.857142857142857
 unsharp na estrutura,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.0949798939994653,0.0
-unsharp na estrutura,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.0540911995516437,0.0
-unsharp na estrutura,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.2436777369530909,0.0
+unsharp na estrutura,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.06009519523885563,0.0
+unsharp na estrutura,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.24059636897958675,0.0
 unsharp na estrutura,t4_cv_map,diagnóstico,37,0.0,0.0,0.1536271834032691,0.0
 unsharp na estrutura,t4_nlf_slope,diagnóstico,37,8.108108108108109,2.7027027027027026,0.4221141885644874,8.108108108108109
 estrutura deslocada 2 px,t1_lung_sigma,diagnóstico,37,0.0,0.0,0.017535295760132144,0.0
 estrutura deslocada 2 px,t1_lung_f_peak,diagnóstico,37,0.0,0.0,0.0,0.0
 estrutura deslocada 2 px,t1_lung_f_avg,diagnóstico,37,0.0,0.0,0.05313482814955815,0.0
 estrutura deslocada 2 px,t1_lung_anisotropy,diagnóstico,37,0.0,0.0,0.02647360070428575,0.0
+estrutura deslocada 2 px,t1_lung_acf_len,diagnóstico,37,0.0,0.0,0.0562536879209235,0.0
 estrutura deslocada 2 px,t1_lung_shape_dist,diagnóstico,37,0.0,0.0,0.0,0.0
 estrutura deslocada 2 px,t1_lung_sigma_ratio,diagnóstico,37,0.0,0.0,0.013875689175225274,0.0
 estrutura deslocada 2 px,t1_soft_sigma,diagnóstico,35,0.0,0.0,0.23838093120501946,0.0
 estrutura deslocada 2 px,t1_soft_f_peak,diagnóstico,35,0.0,0.0,0.0,0.0
 estrutura deslocada 2 px,t1_soft_f_avg,diagnóstico,35,0.0,0.0,0.12459186123840657,0.0
 estrutura deslocada 2 px,t1_soft_anisotropy,diagnóstico,35,2.857142857142857,0.0,0.12816013683083752,2.857142857142857
+estrutura deslocada 2 px,t1_soft_acf_len,diagnóstico,35,0.0,0.0,0.34417813773061595,2.857142857142857
 estrutura deslocada 2 px,t1_soft_shape_dist,diagnóstico,35,0.0,0.0,0.06269001616251936,0.0
-estrutura deslocada 2 px,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.23298394445812703,0.0
-estrutura deslocada 2 px,t2_wiener_acf_len,decisão,37,0.0,0.0,0.42965099575835325,0.0
-estrutura deslocada 2 px,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.5475836423424045,0.0
-estrutura deslocada 2 px,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.257280245895435,0.0
-estrutura deslocada 2 px,t2_wiener_lsd,decisão,37,0.0,0.0,0.08992333443775843,0.0
+estrutura deslocada 2 px,t1_soft_sigma_ratio,decisão,35,0.0,0.0,0.21981490415657942,0.0
+estrutura deslocada 2 px,t2_wiener_acf_len,decisão,37,0.0,0.0,0.37678855656778293,0.0
+estrutura deslocada 2 px,t2_wiener_acf_neg,diagnóstico,37,0.0,0.0,0.5840327101334238,0.0
+estrutura deslocada 2 px,t2_wiener_kurtosis,diagnóstico,37,0.0,0.0,0.24231728748625891,0.0
+estrutura deslocada 2 px,t2_wiener_lsd,decisão,37,0.0,0.0,0.08822099985304778,0.0
 estrutura deslocada 2 px,t2_wiener_grid_peak,diagnóstico,37,0.0,0.0,0.04145242972984084,0.0
-estrutura deslocada 2 px,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.11290673375051814,0.0
-estrutura deslocada 2 px,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.09650160435033239,0.0
+estrutura deslocada 2 px,t2_wiener_soft_acf_len,decisão,35,0.0,0.0,0.11225229311133894,0.0
+estrutura deslocada 2 px,t3_lung_mad1,diagnóstico,37,0.0,0.0,0.09650177515518805,0.0
 estrutura deslocada 2 px,t3_lung_corr_index,diagnóstico,37,0.0,0.0,0.14438064276090895,0.0
-estrutura deslocada 2 px,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.08508762806364684,0.0
+estrutura deslocada 2 px,t3_lung_immerkaer,diagnóstico,37,0.0,0.0,0.09926865096756918,0.0
 estrutura deslocada 2 px,t3_lung_coherence,diagnóstico,37,0.0,0.0,0.09430792813198212,0.0
 estrutura deslocada 2 px,t3_lung_hv_ratio,diagnóstico,37,0.0,0.0,0.05730946632149411,0.0
-estrutura deslocada 2 px,t3_soft_mad1,diagnóstico,35,0.0,0.0,0.26288589314587585,0.0
+estrutura deslocada 2 px,t3_soft_mad1,diagnóstico,35,8.571428571428571,0.0,0.3067019972286048,8.571428571428571
 estrutura deslocada 2 px,t3_soft_corr_index,diagnóstico,35,0.0,0.0,0.15645815518084819,0.0
-estrutura deslocada 2 px,t3_soft_immerkaer,decisão,35,0.0,0.0,0.09575608058002091,0.0
+estrutura deslocada 2 px,t3_soft_immerkaer,decisão,35,0.0,0.0,0.0988420578152515,0.0
 estrutura deslocada 2 px,t3_soft_coherence,diagnóstico,35,0.0,0.0,0.17042797215692448,0.0
-estrutura deslocada 2 px,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.14992373912440832,0.0
-estrutura deslocada 2 px,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.23461661851228288,0.0
+estrutura deslocada 2 px,t3_soft_hv_ratio,diagnóstico,35,0.0,0.0,0.1665649208799399,0.0
+estrutura deslocada 2 px,t4_lung_soft_ratio,decisão,35,0.0,0.0,0.23164983072372608,0.0
 estrutura deslocada 2 px,t4_cv_map,diagnóstico,37,0.0,0.0,0.1376825981541214,0.0
 estrutura deslocada 2 px,t4_nlf_slope,diagnóstico,37,0.0,0.0,0.08911931621952712,0.0

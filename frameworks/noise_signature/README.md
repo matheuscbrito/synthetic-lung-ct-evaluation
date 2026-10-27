@@ -3,9 +3,9 @@
 Pergunta: **a sintética carrega o mesmo ruído da máquina que tirou a CT real?**
 Desenho completo em [`docs/ruido/metodo.md`](../../docs/ruido/metodo.md); literatura em `docs/ruido/literatura/`.
 
-## O que mede (v2)
+## O que mede (v2/v3)
 
-Quatro técnicas de medida (T1–T4). Só **7 métricas de decisão**, agrupadas pelo que a máquina controla (eixos),
+Quatro técnicas de medida (T1–T4). Só **6 métricas de decisão** (mais a regra do `map_rho`), agrupadas pelo que a máquina controla (eixos),
 decidem o veredito; as outras ~30 são **diagnóstico** (têm z e status no CSV, nunca mudam o veredito).
 
 | Eixo | Métricas de decisão | Técnica |
@@ -21,7 +21,7 @@ Cada métrica de decisão passou por dois testes nas 37 reais do Dsr (`resultado
 
 | Técnica | Onde | Métricas (★ = decisão) |
 |---|---|---|
-| **T1 NPS** (espectro do ruído) | ROIs no pulmão (32 px) e no tecido mole (16 px) | `sigma`, `f_peak`, `f_avg`, `anisotropy`, `shape_dist` (um lado só), `sigma_ratio` ★ (tecido mole) |
+| **T1 NPS** (espectro do ruído) | ROIs no pulmão (32 px) e no tecido mole (16 px) | `sigma`, `f_peak`, `f_avg`, `anisotropy`, `acf_len` (v3: autocorrelação das ROIs sem plano, sem filtro), `shape_dist` (um lado só), `sigma_ratio` ★ (tecido mole) |
 | **T2 resíduo** (impressão) | resíduo I − F(I), F = wavelet-Wiener com σ0 fixo (controle: mediana 3×3) | `acf_len` ★, `soft_acf_len` ★, `acf_neg`, `kurtosis`, `lsd` ★, `grid_peak` |
 | **T3 nível de ruído** | pixels sem estrutura, pulmão e tecido mole separados | `mad1`, `corr_index`, `immerkaer` ★ (tecido mole), `coherence`, `hv_ratio` |
 | **T4 distribuição** | mapa de σ local em blocos 64×64 | `lung_soft_ratio` ★, `cv_map`, `nlf_slope`; `map_rho` ★ |
@@ -69,16 +69,20 @@ Sem `--calibration`, calibra nas originais válidas do próprio dataset e grava 
 - `protocolo.json`: modo, casos rejeitados, configuração, contagens e tempo.
 - `figuras/`: NPS radial real × sintética de alguns cortes e o boxplot do z de cada métrica na coorte.
 
-## Regra de decisão (v2)
+## Regra de decisão (v3)
 
-1. **Régua por métrica**: escala = max(IQR do Δ entre cada real e o seu vizinho do mesmo paciente — mesma série, índice
-   e fase mais próximos —, 2 × IQR da diferença metade par × ímpar das ROIs). Captura a variação natural entre cortes.
+1. **Régua por métrica**: escala = max(IQR do Δ entre cada real e o corte adjacente **da mesma série** (controle (a);
+   índice e fase mais próximos; corte sozinho na série fica de fora), 2 × IQR da diferença metade par × ímpar das ROIs).
 2. z = d / (k · escala). |z| ≤ 1 aprovada, 1–2 revisão, > 2 reprovada; só pesa se o IC 95% exclui zero.
 3. Por eixo, a pior métrica de decisão; final: reprovada se algum eixo reprova, revisão se algum pede revisão, aprovada
    caso contrário. Eixo sem nenhuma métrica conclusiva = `inconclusivo`, que não aprova (vira revisão).
-4. **k** (um só, global) é o menor valor em 1,0–2,0 que leva os pares vizinhos reais a ≥ 85% aprovada e ≤ 5% reprovada.
-   Se nenhum chega, fica o melhor (máx. aprovada − reprovada; empate → maior k). O falso alarme fora da amostra
-   (réguas e k num paciente, teste no outro) fica em `calibracao.json["lopo"]`.
+4. **k** (um só, global) é o menor valor em 1,0–2,0 que cumpre ao mesmo tempo: controle (a) ≥ 85% aprovada e ≤ 5%
+   reprovada; controle (b) ≥ 95% aprovada. O controle (b) é a mesma real com uma nova realização do ruído:
+   D + resíduo do Wiener deslocado por região (`controls.residual_shift_control`), avaliado na mesma anatomia.
+   Se nenhum k cumpre, fica o melhor (máx. da soma aprovada − reprovada nos dois; empate → maior k). O desempenho fora
+   da amostra (réguas e k num paciente, teste no outro) fica em `calibracao.json["lopo"]`.
+5. Séries diferentes do mesmo paciente (controle (c)) **não** são controle de "mesma máquina": são outra aquisição,
+   com até 2,6× de diferença no ruído fino do tecido mole. São relatadas como controle positivo.
 
 ## Desvios do desenho (e por quê)
 
@@ -93,7 +97,7 @@ Sem `--calibration`, calibra nas originais válidas do próprio dataset e grava 
 - **`f_peak`**: régua mínima de um bin de frequência (a escala pode ser 0).
 - **Vazamento com fallback (v2)**: se o teste de vazamento deixaria a região com < 8 ROIs mas ela tem ≥ 8, ficam as
   metades que menos vazam (no mínimo 8) e a região é marcada (`leak_fallback`). Mais leituras T1, com mais anatomia.
-- **Vizinho = mesma série primeiro (v2)**: no P4P117 cortes de séries diferentes no mesmo índice chegam a ter 2,6× o
+- **Vizinho = só a mesma série (v3)**: no P4P117 cortes de séries diferentes no mesmo índice chegam a ter 2,6× o
   ruído fino do tecido mole (outra aquisição, outra dose). Isso não é variação natural entre cortes vizinhos.
 - **`grid_peak`** contra o fundo local 5×5; nas reais ele não é ~0 (há estrutura nessas frequências), a régua absorve.
 - **T2**: a decisão usa o Wiener; a discordância da mediana vira coluna e motivo, sem mudar o status.
@@ -103,9 +107,12 @@ Sem `--calibration`, calibra nas originais válidas do próprio dataset e grava 
 Ver `metodo.md` §7 e §8: um tomógrafo e 3 pacientes (só 2 formam pares vizinhos); frequências em ciclos/pixel;
 normalização das imagens pode mudar razões de σ.
 
-- **Meta de falso alarme não atingida:** com k = 2,0 os vizinhos reais aprovam 81% dentro da amostra e 64% fora dela
-  (meta 85%). Cortes sem tecido mole nunca aprovam (eixo quantidade inconclusivo).
-- **Sensibilidade menor que a v1:** ruído branco +50% é pego em 65% dos cortes; ruído correlacionado de baixa frequência não é detectado.
-- No pulmão quase toda ROI tem anatomia. Com o fallback a T1 do pulmão fica conclusiva, mas medindo parte de
-  anatomia: por isso só diagnóstico.
+- **Metas de controle não atingidas por pouco ou com folga:**
+  - controle (a), vizinhos da mesma série: 80% dentro da amostra e 63% fora (meta 85%);
+  - controle (b), nova realização do ruído: 94,6% (meta 95%; 100% dos conclusivos);
+  - k = 2,0 é o teto da grade.
+- **Cobertura:** 2/37 cortes sem tecido mole nunca aprovam (eixo quantidade inconclusivo).
+- **Ruído correlacionado de baixa frequência não é detectado** (5%). A métrica sem Wiener `t1_soft_acf_len` chega a 14%
+  e fica como diagnóstico, embora detecte com força o defeito de grão do Dsr no tecido mole (z +2,3).
+- No pulmão quase toda ROI tem anatomia; a T1 do pulmão é só diagnóstico.
 - `t2_wiener_soft_acf_len` e `t3_soft_immerkaer` andam juntos nas reais (ρ = −0,95), apesar de estarem em eixos diferentes.

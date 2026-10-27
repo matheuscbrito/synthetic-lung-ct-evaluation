@@ -1,15 +1,17 @@
-# Assinatura de ruído v2: controles reais, ortogonalidade e redundância
+# Assinatura de ruído v3: controles reais, ortogonalidade e redundância
 
-**Data:** 26/10/2026 · **Versão:** `noise_signature 0.2` (v2)
-**Dataset:** originais válidas do `dados/Dsr` (37 cortes; máscaras do `dados/Dgen`). Calibração única nas 37 reais (σ0 = 0,027), gravada em `calibracao.json`.
-**Código:** `frameworks/noise_signature/experimentos/ortogonalidade.py` (usa `noise_signature` e `texture_evaluator.run_mvp`).
+**Data:** 26/10/2026 · **Versão:** `noise_signature 0.3` (v3)
+**Dataset:** originais válidas do `dados/Dsr` (37 cortes; máscaras do `dados/Dgen`). Calibração única nas 37 reais (σ0 = 0,027, k = 2,0), em `calibracao.json`.
+**Código:** `frameworks/noise_signature/experimentos/ortogonalidade.py`.
 
-## O que mudou na v2 (resumo; detalhes em `docs/ruido/metodo.md` §8)
+## O que mudou na v3 (detalhes em `docs/ruido/metodo.md` §9)
 
-- **Só 7 métricas decidem**, em 4 eixos: quantidade (`t3_soft_immerkaer`, `t1_soft_sigma_ratio` só na mesma anatomia), grão (`t2_wiener_acf_len`, `t2_wiener_soft_acf_len`), espectro (`t2_wiener_lsd`), distribuição (`t4_lung_soft_ratio` + regra do `map_rho`). As outras ~30 viram diagnóstico.
-- **Régua nova:** escala = max(IQR do Δ entre cada real e o vizinho do mesmo paciente, 2 × IQR metade par × ímpar). Vizinho = mesma série primeiro, depois índice e fase mais próximos.
-- **Um multiplicador k global**, calibrado nos pares vizinhos: z = d/(k · escala). Procurado em 1,0–2,0.
-- Bug do `shape_dist` corrigido (um lado só). Vazamento com fallback (metade que menos vaza).
+- **Controles redefinidos.** Cortes de séries diferentes do mesmo paciente são **outra aquisição**: no P4P117, até 2,6× de diferença no ruído fino do tecido mole. Por isso deixam de ser controle de "mesma máquina". Agora há três controles:
+  - **(a) mesma série, corte adjacente** (mesma máquina e protocolo, outra anatomia; só máscara). A régua vem deles.
+  - **(b) nova realização do ruído na mesma anatomia:** real = D + R (Wiener); controle = D + R deslocado (96, 64) px, ou (48, 32) px onde aquele não cabe, **só dentro da mesma região** (pulmão, faixa de tecido mole, resto do corpo). Avaliado na mesma anatomia.
+  - **(c) séries diferentes do mesmo paciente:** controle **positivo**, porque deve ser sinalizado.
+- **k recalibrado** contra (a) ≥ 85% e (b) ≥ 95%.
+- **Nova métrica de grão sem Wiener:** `t1_{lung,soft}_acf_len`, o comprimento de correlação da autocorrelação média das ROIs sem plano.
 
 ## Como reproduzir
 
@@ -17,112 +19,99 @@
 .venv/bin/python -m frameworks.noise_signature.experimentos.ortogonalidade --output-dir resultados/ruido_ortogonalidade
 ```
 
-Sementes fixas (20261026). Leva ~14 min. Saídas novas: `verificacao_metricas.csv` (teste de cada métrica), `perturbacoes_por_metrica.csv`, `calibracao.json`, `figuras/k_calibracao.png`.
+~15 min, sementes fixas. Saídas novas: `controles_residuo_deslocado.csv` (b), `controles_series_diferentes.csv` (c); `controles_todos_pares.csv` saiu, substituído por (c).
 
-## 1. Verificação das métricas de decisão
+## 1. Controles e k
 
-Regra: |ρ| < 0,9 com a textura (GLCM contraste/energia, Wavelet fina/grossa/entropia, NEx) nas reais **e** nos deltas do Dsr, e repetibilidade metade par × ímpar < 0,6 (IQR par×ímpar ÷ IQR entre cortes; para métricas do par, ÷ IQR dos vizinhos). Tabela completa: `verificacao_metricas.csv`.
-
-| Métrica de decisão | Eixo | \|ρ\| textura (reais) | \|ρ\| textura (deltas Dsr) | Repetibilidade | Escala vem de |
-|---|---|---|---|---|---|
-| `t3_soft_immerkaer` | quantidade | 0,89 | 0,75 | 0,09 | vizinhos |
-| `t1_soft_sigma_ratio` | quantidade | — | 0,70 | 0,29 (vizinhos) | vizinhos |
-| `t2_wiener_acf_len` | grão | 0,85 | 0,75 | 0,09 | vizinhos |
-| `t2_wiener_soft_acf_len` (nova) | grão | 0,84 | 0,58 | 0,11 | vizinhos |
-| `t2_wiener_lsd` | espectro | 0,22 | 0,36 | 0,36 | vizinhos |
-| `t4_lung_soft_ratio` | distribuição | 0,58 | 0,31 | 0,29 | vizinhos |
-
-**Propostas que falharam e viraram diagnóstico:**
-
-| Métrica | Por que saiu | Troca |
-|---|---|---|
-| `t1_soft_f_avg` | repetibilidade 1,12 (a diferença entre metades é maior que a diferença entre cortes) | `t2_wiener_soft_acf_len` (grão no tecido mole, repetibilidade 0,11) |
-| `t3_lung_corr_index` | repetibilidade 0,71 | nenhuma (o eixo grão fica com os dois `acf_len`) |
-| `t1_soft_shape_dist` (já de um lado só) | spread metade par × ímpar 2,0× o dos vizinhos | nenhuma |
-
-- `t3_soft_immerkaer` passa por pouco (0,89). As únicas métricas acima de 0,9 com a textura continuam sendo `t3_lung_mad1` e `t3_lung_immerkaer`, agora só diagnóstico.
-- **Redundância dentro da decisão:** `t2_wiener_soft_acf_len` × `t3_soft_immerkaer` têm ρ = −0,95 nas reais. Ficam em eixos diferentes (grão × quantidade), e na simulação respondem a coisas diferentes (kernel × dose). Mas num corte real de ruído baixo os dois podem acusar juntos.
-
-## 2. Controles real × real (falso alarme)
-
-Figuras: `figuras/controles_status.png`, `figuras/k_calibracao.png`, `figuras/falso_alarme_por_metrica.png`.
-
-**Calibração do k.** Nenhum k ≤ 2 leva os pares vizinhos a 85% aprovados. O melhor é k = 2,0: 81% aprovada, 19% revisão, 0% reprovada (dentro da amostra). Seria preciso k ≈ 2,4.
-
-**Fora da amostra (réguas e k num paciente, teste no outro).** P4P100 tem 1 corte só e não forma par, então são 2 dobras:
-
-| Paciente de fora | Treino | k | Teste: aprovada / revisão / reprovada |
-|---|---|---|---|
-| P4P105 (11 pares) | P4P117 + P4P100 | 2,0 | 73% / 27% / 0% |
-| P4P117 (25 pares) | P4P105 + P4P100 | 2,0 | 60% / 36% / 4% |
-| **Total (36 pares)** | | | **64% / 33% / 3%** |
-
-- No P4P105, 3 dos 11 pares são revisão só porque 2 cortes não têm tecido mole (eixo quantidade inconclusivo). Entre os pares conclusivos, o P4P105 aprova 8 de 8.
-- O P4P117 sai pior quando a régua vem só do P4P105 (uma série só, cortes muito parecidos).
-
-| Conjunto | Pares | Ruído v2 | % aprovada | Textura sinalizada |
+| Controle | n | Ruído v3 | % aprovada | Fora da amostra (paciente de fora) |
 |---|---|---|---|---|
-| cópia idêntica | 37 | 35 aprovada, 2 revisão | 95% (35/37) | 0% |
-| vizinho da calibração, só máscara | 36 | 29 aprovada, 7 revisão | 81% | 50% |
-| vizinho da calibração, mesma anatomia | 7 | 4 aprovada, 3 revisão | 57% | 0% |
-| vizinho só por índice (ignora série), só máscara | 36 | 23 aprovada, 13 revisão | 64% | 44% |
-| todos os pares do paciente, só máscara | 355 | 191 aprovada, 157 revisão, 7 reprovada | 54% | — |
+| cópia idêntica | 37 | 35 aprovada, 2 revisão | 94,6% | — |
+| **(a)** mesma série, corte adjacente (só máscara) | 35 | 28 aprovada, 7 revisão | **80%** (87,5% dos 32 conclusivos) | **63%** (P4P105 73%, P4P117 58%); 3% reprovada |
+| (a) com a mesma anatomia (corr. no pulmão ≥ 0,5) | 7 | 5 aprovada, 2 revisão | 71% | — |
+| **(b)** resíduo deslocado, mesma anatomia | 37 | 35 aprovada, 2 revisão | **94,6%** (100% dos conclusivos) | **94%** (P4P105 82%, P4P117 100%) |
+| **(c)** séries diferentes (positivo) | 265 | 155 aprovada, 103 revisão, 7 reprovada | 58% → **42% sinalizados** | — |
 
-- **A cópia não passa em 2 cortes**, que não têm tecido mole (eixo quantidade inconclusivo; a regra não deixa aprovar). O bug do `shape_dist` sumiu.
-- **Por que "mesma série primeiro":** no P4P117, cortes de séries diferentes no mesmo índice chegam a ter 2,6× o ruído fino do tecido mole (outra aquisição, outra dose). Ignorando a série, a aprovação cai de 81% para 64%. O framework não tem como saber que uma diferença de dose dessas é "da mesma máquina".
-- **Falso alarme por métrica de decisão** (pares vizinhos conclusivos): `t4_lung_soft_ratio` 6%, as outras 3%. Entre os diagnósticos, `t3_soft_mad1` (24%), `t1_soft_sigma` (18%) e `t3_lung_mad1`/`immerkaer` (17%) acusariam muito se ainda decidissem.
+- **k = 2,0** (o teto da grade). Nenhum k ≤ 2 cumpre (a) e (b) juntos; dentro da amostra, (a) fica em 80% e (b) em 94,6%.
+- **Cobertura (meta 4):** 2 cortes do P4P105 não têm tecido mole (`…I00004…-059`, `…I00013…-060`). Neles o eixo quantidade fica inconclusivo e o corte nunca aprova. São eles que tiram a cópia, o (b) e 3 pares do (a) da aprovação. É uma limitação de cobertura (2/37 = 5% dos cortes), não alarme falso. Entre os conclusivos, (b) aprova 100% e (a) 87,5%.
+- **(a), falhas conclusivas (4):** dois cortes da série S308 entre si (`lung_soft_ratio` ±1,2), S305 −65 × −58 (`immerkaer` −1,7) e S302 −070 × −054 (16 cortes de distância; `acf_len`).
+- **(b) não cria artefato de borda.** O resíduo só troca de lugar entre pixels da mesma região, no corpo erodido 5 px.
+  - Na primeira versão (corpo inteiro, sem regiões) o (b) aprovava só 81%: o resíduo do pulmão ia para o tecido mole e `t2_wiener_soft_acf_len` caía (z −1,6 a −2,1).
+  - Cobertura (fração do corpo que recebeu resíduo novo): mediana 83%, mínimo 66%; o resto fica com o próprio resíduo.
+  - Limitações: o ruído que o Wiener deixa em D é o mesmo nas duas imagens, e R carrega um pouco de anatomia. Isso deixa o (b) um pouco mais fácil que uma nova aquisição de verdade.
+- **(c) controle positivo: o framework vê diferença de protocolo dentro das reais.** 42% dos pares de séries diferentes são sinalizados, contra 20% no (a).
+  - O eixo que mais acusa é a quantidade (24% dos pares; grão 15%, distribuição 12%, espectro 6%).
+  - Razão do ruído fino no tecido mole (`immerkaer`, maior ÷ menor): mediana 1,53, P75 1,85, P90 2,57, máximo 5,0. Em 52% dos pares passa de 1,5×.
+  - Razão de σ da T1 no tecido mole: mediana 1,54, P90 3,1.
+
+## 2. Nova métrica de grão sem Wiener (meta 2)
+
+Candidatas testadas nas 37 reais. A perturbação é ruído gaussiano σ = 1 com +50% da variância fina, avaliado com k = 2.
+
+| Candidata | Pega ruído correlacionado | Repetibilidade (reais) | \|ρ\| textura (reais / deltas Dsr) |
+|---|---|---|---|
+| **`t1_soft_acf_len`** (ACF média das ROIs de 16 px sem plano) | **14%** (+100%: 37%) | 0,44 | 0,35 / 0,58 |
+| `t1_lung_acf_len` (ROIs de 32 px, pulmão) | 0% | 1,64 | 0,09 / 0,38 |
+| ρ(lag 2) da mesma ACF, tecido mole | 0% (z 0,25) | 0,41 | — |
+| ρ(lag 3), tecido mole | 0% | 0,71 | — |
+| fração do NPS na banda baixa, tecido mole | 0% | 1,33 | — |
+| `coherence` (σ da média 2×2 ÷ σ, T3) | 0% | 0,75 | 0,38 |
+
+**Falhou na meta (≥ 80%), então `t1_soft_acf_len` fica como diagnóstico.**
+
+- A perturbação acrescenta pouca potência perto da variação natural entre cortes vizinhos e da imprecisão de um corte só (2× o par × ímpar). Nenhum estimador repetível testado a separa com k = 2.
+- No pulmão a anatomia domina a ACF.
+- **Achado importante:** `t1_soft_acf_len` vê o defeito conhecido do Dsr (grão mais grosso no tecido mole) **corte a corte**: z mediano +2,3 (IC 1,9 a 2,8), contra +0,13 / −0,01 no baseline / gpbo11.
+- Se ela entrasse no eixo grão:
+  - Dsr: 1 aprovada, 12 revisão, 24 reprovada; baseline 18/16/3; gpbo11 25/11/1;
+  - (a): 74% aprovada; (b) e a mesma máquina simulada não mudam.
+- É uma decisão a tomar: ela cumpre repetibilidade, ρ e simulação, mas não a meta de ruído correlacionado.
 
 ## 3. Matriz de ortogonalidade
 
-Figuras: `figuras/matriz_pct_sinalizado.png`, `figuras/matriz_pior_z.png`. % dos 37 cortes sinalizados (revisão ou reprovada).
+% dos 37 cortes sinalizados (k = 2,0).
 
-| Perturbação | Quantidade | Grão | Espectro | Distrib. | **Ruído final** | Textura (GLCM/Wav/NEx) |
+| Perturbação | Quantidade | Grão | Espectro | Distrib. | **Ruído final** | GLCM / Wavelet / NEx |
 |---|---|---|---|---|---|---|
-| cópia idêntica | 0% | 0% | 0% | 0% | 5% | 0% |
-| ruído branco +25% | 8% | 0% | 0% | 0% | 14% | 0% |
-| ruído branco +50% | 54% | 8% | 0% | 3% | **65%** | 0% |
-| ruído branco +100% | 89% | 46% | 8% | 11% | **97%** | 5% |
-| ruído correlacionado (σ=1) +50% | 0% | 0% | 0% | 0% | **5%** | 0% |
-| ruído correlacionado (σ=1) +100% | 0% | 0% | 0% | 0% | **5%** | 0% |
-| resíduo × 0,5 | 14% | 8% | 14% | 24% | 46% | 14% |
-| resíduo borrado (σ=0,7) | 14% | 84% | 62% | 38% | **84%** | 38% (NEx) |
-| brilho +0,1 / +0,2 | 0% | 0% | 0% | 0% | 5% | 0% |
-| ganho ×1,1 na estrutura | 0% | 0% | 0% | 0% | 5% | 0% |
-| unsharp na estrutura | 3% | 0% | 32% | 0% | 38% | 97% |
-| estrutura deslocada 2 px | 0% | 0% | 0% | 0% | 5% | 62% |
+| cópia | 0 | 0 | 0 | 0 | 5% | 0 / 0 / 0 |
+| ruído branco +25% | 11 | 0 | 0 | 0 | 16% | 0 / 0 / 0 |
+| **ruído branco +50%** | 59 | 8 | 0 | 3 | **70%** | 0 / 0 / 0 |
+| ruído branco +100% | 89 | 30 | 5 | 11 | 95% | 0 / 0 / 5 |
+| **ruído correlacionado +50% / +100%** | 0 | 0 | 0 | 0 | **5% / 5%** | 0 |
+| resíduo × 0,5 | 14 | 8 | 8 | 24 | 43% | 0 / 0 / 14 |
+| **resíduo borrado (σ = 0,7)** | 14 | 78 | 62 | 38 | **78%** | 0 / 0 / 38 |
+| brilho +0,1 / +0,2; ganho ×1,1 | 0 | 0 | 0 | 0 | 5% | 0 |
+| unsharp na estrutura | 3 | 0 | 32 | 0 | 38% | 78 / 86 / 14 |
+| estrutura deslocada 2 px | 0 | 0 | 0 | 0 | 5% | 0 / 0 / 62 |
 
-(Os 5% de base são os 2 cortes sem tecido mole, que nunca aprovam.)
+- **Meta 3 (branco +50%):** 65% na v2 → 70% na v3. O k não mudou (2,0): os 5 pontos vêm da régua tirada só de vizinhos da mesma série, um pouco mais estreita. Não forcei k menor, porque (a) e (b) já não cumprem a meta com k = 2.
+- Resíduo borrado: 84% → 78% (mesmo efeito, ao contrário).
 
-- **Brilho, ganho e deslocamento não mexem no ruído** (só os 5% de base). O unsharp, que realça também o ruído fino, cai de 97% para 38%.
-- **A régua nova custa sensibilidade:** ruído branco +50% é pego em 65% (v1: 100%), resíduo × 0,5 em 46% (v1: 84%). Resíduo borrado continua bem pego (84%).
-- **Ruído correlacionado (item 5): não deu para melhorar.** Nenhuma métrica, de decisão ou de diagnóstico, passa de 3% de sinalização (`perturbacoes_por_metrica.csv`). `t2_wiener_acf_len` e `t3_lung_corr_index` têm |z| mediano < 0,1. O ruído gaussiano com σ = 1 mora nas baixas frequências: o Wiener o põe na "parte sem ruído" e o resíduo não muda. Na v1 só a f_média/forma da T1 no tecido mole o via (46%), e essas métricas saíram da decisão por pouca repetibilidade. Para pegar esse defeito seria preciso um estimador de baixa frequência repetível; fica em aberto.
+## 4. Verificação e redundância
 
-## 4. Redundância (|ρ| > 0,9)
+As 6 métricas de decisão continuam passando (`verificacao_metricas.csv`): |ρ| com a textura ≤ 0,89 nas reais e ≤ 0,75 nos deltas; repetibilidade ≤ 0,36. Falso alarme por métrica no (a): `sigma_ratio` 19% (não decide em só máscara), as demais 0–6%. Dentro da decisão, `t2_wiener_soft_acf_len` × `t3_soft_immerkaer` têm ρ = −0,95 nas reais.
 
-Igual à v1: só `t3_lung_mad1` e `t3_lung_immerkaer` passam de 0,9 com a textura (reais: até 0,94; deltas do Dsr: até 0,93). As duas agora são diagnóstico. Nenhuma métrica de decisão passa de 0,9.
+## v2 → v3
 
-## 5. v1 → v2
-
-| Medida | v1 | v2 |
+| Medida | v2 | v3 |
 |---|---|---|
-| métricas que decidem | 28 (a pior decide) | 7 em 4 eixos |
-| cópia idêntica aprovada | 0/37 (bug) | 35/37 |
-| vizinho real×real aprovado (só máscara) | 31% (11/36; vizinho por correlação) | 81% (29/36) dentro da amostra; **64% fora da amostra** |
-| todos os pares do paciente sinalizados | 91% | 46% |
-| ruído branco +50% sinalizado | 100% | 65% |
-| resíduo borrado sinalizado | 100% | 84% |
-| ruído correlacionado +50% sinalizado | 41% | 5% |
-| brilho/ganho sinalizado | 5% (1 lado) | 5% |
-| unsharp na estrutura sinalizado | 97% | 38% |
+| controle "mesma máquina" | vizinho mesma série primeiro (inclui séries diferentes) | (a) só mesma série + (b) resíduo deslocado |
+| k | 2,0 | 2,0 |
+| (a) aprovada, dentro / fora da amostra | 81% / 64% (vizinho v2) | 80% / 63% |
+| (b) aprovada, dentro / fora da amostra | — | 94,6% / 94% |
+| séries diferentes sinalizadas (c) | — (misturadas no controle) | 42% |
+| ruído branco +50% / correlacionado +50% | 65% / 5% | 70% / 5% |
+| resíduo borrado | 84% | 78% |
+| brilho / ganho | 5% | 5% |
 
 ## Conclusões
 
-1. **O falso alarme caiu muito** (todos os pares do paciente: 91% → 46% sinalizados), mas **não chegou à meta**: 81% dos vizinhos aprovados dentro da amostra e 64% fora dela, contra 85% pedidos. Parte é estrutural (cortes sem tecido mole) e parte é variação real de dose entre séries.
-2. **O preço é sensibilidade:** perturbações moderadas de ruído (+50% branco, resíduo × 0,5) passam a ser pegas só em metade a dois terços dos cortes. O ruído correlacionado ficou invisível.
-3. **Ortogonalidade:** brilho, ganho e deslocamento da anatomia não mexem no ruído. Nenhuma métrica de decisão é redundante com a textura.
+1. **Com a nova realização do ruído na mesma anatomia (b), o framework aprova todos os cortes conclusivos** (35/35; os 2 restantes não têm tecido mole). Para o uso real, comparar a sintética com a **própria** real, a régua está no lugar.
+2. **Entre cortes adjacentes da mesma série (a), a meta de 85% não foi atingida** (80% dentro, 63% fora da amostra). Com 2 pacientes úteis, a validação fora da amostra é frágil.
+3. **Diferença de aquisição dentro das reais é vista** (42% das séries diferentes sinalizadas, sobretudo pela quantidade).
+4. **Ruído correlacionado continua invisível** para a decisão. A melhor alternativa sem Wiener (`t1_soft_acf_len`) pega só 14%, mas detecta com força o defeito real do Dsr.
 
 ## Limitações
 
-- 3 pacientes, e só 2 formam pares. O "fora da amostra" são 2 dobras, uma delas treinada em 11 pares de uma série só.
-- σ0 e a impressão de referência do Wiener vêm das 37 reais em todas as dobras (só réguas e k são refeitos); isso favorece um pouco a validação.
-- A separação D + R usa o Wiener do próprio framework, o que favorece a T2 nas perturbações de resíduo.
+- 3 pacientes; só 2 formam pares (a). σ0 e a impressão de referência não são refeitos por dobra.
+- O (b) é mais fácil que uma nova aquisição real (ruído residual em D compartilhado, cobertura de 66–87%).
+- 2/37 cortes sem tecido mole nunca aprovam.

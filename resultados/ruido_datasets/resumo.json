@@ -4,13 +4,19 @@
     "dataset": "dados/Dsr",
     "n_originais": 37,
     "sigma0": 0.027060066884848875,
-    "versao": "noise_signature 0.2 (2026-10-26)",
+    "versao": "noise_signature 0.3 (2026-10-26)",
     "k": 2.0,
     "lopo": {
+      "n": 35,
+      "aprovada": 0.6285714285714286,
+      "revisão": 0.34285714285714286,
+      "reprovada": 0.02857142857142857
+    },
+    "lopo_controle_b": {
       "n": 36,
-      "aprovada": 0.6388888888888888,
-      "revisão": 0.3333333333333333,
-      "reprovada": 0.027777777777777776
+      "aprovada": 0.9444444444444444,
+      "revisão": 0.05555555555555555,
+      "reprovada": 0.0
     }
   },
   "metricas_decisao": {
@@ -64,19 +70,19 @@
       "n": 37,
       "pair_mode": "same-anatomy",
       "ruido": {
-        "revisão": 21,
-        "aprovada": 14,
+        "revisão": 20,
+        "aprovada": 15,
         "reprovada": 2
       },
       "t1": {
-        "revisão": 6,
+        "aprovada": 29,
         "inconclusivo": 2,
-        "aprovada": 28,
+        "revisão": 5,
         "reprovada": 1
       },
       "t2": {
-        "aprovada": 22,
-        "revisão": 13,
+        "aprovada": 23,
+        "revisão": 12,
         "reprovada": 2
       },
       "t3": {
@@ -90,14 +96,14 @@
         "reprovada": 2
       },
       "eixo_quantidade": {
-        "revisão": 8,
+        "aprovada": 27,
         "inconclusivo": 2,
-        "aprovada": 26,
+        "revisão": 7,
         "reprovada": 1
       },
       "eixo_grão": {
-        "aprovada": 26,
-        "revisão": 9,
+        "aprovada": 28,
+        "revisão": 7,
         "reprovada": 2
       },
       "eixo_espectro": {
@@ -127,8 +133,8 @@
       "n": 37,
       "pair_mode": "same-anatomy",
       "ruido": {
-        "revisão": 19,
-        "aprovada": 16,
+        "revisão": 16,
+        "aprovada": 19,
         "reprovada": 2
       },
       "t1": {
@@ -138,8 +144,8 @@
         "reprovada": 2
       },
       "t2": {
-        "aprovada": 27,
-        "revisão": 10
+        "aprovada": 32,
+        "revisão": 5
       },
       "t3": {
         "aprovada": 32,
@@ -158,8 +164,8 @@
         "reprovada": 2
       },
       "eixo_grão": {
-        "aprovada": 27,
-        "revisão": 10
+        "aprovada": 32,
+        "revisão": 5
       },
       "eixo_espectro": {
         "aprovada": 36,
@@ -188,13 +194,13 @@
       "n": 37,
       "pair_mode": "same-anatomy",
       "ruido": {
-        "revisão": 13,
-        "aprovada": 24
+        "revisão": 12,
+        "aprovada": 25
       },
       "t1": {
-        "aprovada": 28,
+        "aprovada": 31,
         "inconclusivo": 2,
-        "revisão": 7
+        "revisão": 4
       },
       "t2": {
         "aprovada": 36,
@@ -210,9 +216,9 @@
         "aprovada": 34
       },
       "eixo_quantidade": {
-        "aprovada": 26,
+        "aprovada": 28,
         "inconclusivo": 2,
-        "revisão": 9
+        "revisão": 7
       },
       "eixo_grão": {
         "aprovada": 36,
@@ -243,20 +249,22 @@
       "n": 37,
       "pair_mode": "mask-only",
       "ruido": {
-        "aprovada": 23,
-        "revisão": 14
+        "aprovada": 24,
+        "revisão": 12,
+        "reprovada": 1
       },
       "t1": {
         "inconclusivo": 37
       },
       "t2": {
-        "aprovada": 27,
-        "revisão": 10
+        "aprovada": 29,
+        "revisão": 8
       },
       "t3": {
         "aprovada": 31,
         "inconclusivo": 2,
-        "revisão": 4
+        "revisão": 3,
+        "reprovada": 1
       },
       "t4": {
         "aprovada": 33,
@@ -266,11 +274,12 @@
       "eixo_quantidade": {
         "aprovada": 31,
         "inconclusivo": 2,
-        "revisão": 4
+        "revisão": 3,
+        "reprovada": 1
       },
       "eixo_grão": {
-        "aprovada": 29,
-        "revisão": 8
+        "aprovada": 31,
+        "revisão": 6
       },
       "eixo_espectro": {
         "aprovada": 35,
@@ -302,12 +311,12 @@
       {
         "medida": "pior |z| (métricas de decisão)",
         "n": 37,
-        "mediana_baseline": 0.9510584006082418,
-        "mediana_gpbo11": 0.6874265755859191,
-        "mediana_diferenca": -0.27231568472676404,
+        "mediana_baseline": 0.911411429849222,
+        "mediana_gpbo11": 0.6485709012204574,
+        "mediana_diferenca": -0.2487304628852699,
         "gpbo11_melhor_em": 29,
         "gpbo11_pior_em": 8,
-        "p_wilcoxon": 4.364090273156762e-05
+        "p_wilcoxon": 8.939372492022812e-05
       },
       {
         "medida": "nº de métricas de decisão sinalizadas",
@@ -315,9 +324,9 @@
         "mediana_baseline": 0.0,
         "mediana_gpbo11": 0.0,
         "mediana_diferenca": 0.0,
-        "gpbo11_melhor_em": 11,
-        "gpbo11_pior_em": 2,
-        "p_wilcoxon": 0.010978772606732669
+        "gpbo11_melhor_em": 8,
+        "gpbo11_pior_em": 1,
+        "p_wilcoxon": 0.018255860587459264
       },
       {
         "medida": "nº de métricas de diagnóstico sinalizadas",
@@ -325,9 +334,9 @@
         "mediana_baseline": 1.0,
         "mediana_gpbo11": 0.0,
         "mediana_diferenca": -1.0,
-        "gpbo11_melhor_em": 21,
-        "gpbo11_pior_em": 4,
-        "p_wilcoxon": 0.0011745339363922283
+        "gpbo11_melhor_em": 22,
+        "gpbo11_pior_em": 6,
+        "p_wilcoxon": 0.004574250755626379
       },
       {
         "medida": "t1_lung_sigma",
@@ -368,6 +377,16 @@
         "gpbo11_melhor_em": 22,
         "gpbo11_pior_em": 15,
         "p_wilcoxon": 0.2677070687204832
+      },
+      {
+        "medida": "t1_lung_acf_len",
+        "n": 37,
+        "mediana_baseline": 0.06201567455243844,
+        "mediana_gpbo11": 0.04145626610191674,
+        "mediana_diferenca": -0.016929990819714885,
+        "gpbo11_melhor_em": 25,
+        "gpbo11_pior_em": 12,
+        "p_wilcoxon": 0.005908488208660856
       },
       {
         "medida": "t1_lung_shape_dist",
@@ -430,6 +449,16 @@
         "p_wilcoxon": 0.1226657732622698
       },
       {
+        "medida": "t1_soft_acf_len",
+        "n": 35,
+        "mediana_baseline": 0.3368169516173228,
+        "mediana_gpbo11": 0.2358823962023665,
+        "mediana_diferenca": -0.06356770869175199,
+        "gpbo11_melhor_em": 21,
+        "gpbo11_pior_em": 14,
+        "p_wilcoxon": 0.2011792931589298
+      },
+      {
         "medida": "t1_soft_shape_dist",
         "n": 35,
         "mediana_baseline": 0.2352764305953668,
@@ -442,9 +471,9 @@
       {
         "medida": "t1_soft_sigma_ratio",
         "n": 35,
-        "mediana_baseline": 0.6469436474825594,
-        "mediana_gpbo11": 0.6110752589615823,
-        "mediana_diferenca": -0.05241560118952082,
+        "mediana_baseline": 0.6103762050935873,
+        "mediana_gpbo11": 0.5765352191693124,
+        "mediana_diferenca": -0.049452894183679486,
         "gpbo11_melhor_em": 22,
         "gpbo11_pior_em": 13,
         "p_wilcoxon": 0.17884246999165043
@@ -452,9 +481,9 @@
       {
         "medida": "t2_wiener_acf_len",
         "n": 37,
-        "mediana_baseline": 0.831466235529859,
-        "mediana_gpbo11": 0.303309092398921,
-        "mediana_diferenca": -0.5085269181623303,
+        "mediana_baseline": 0.7291661506967493,
+        "mediana_gpbo11": 0.26599122601161074,
+        "mediana_diferenca": -0.4459599194738333,
         "gpbo11_melhor_em": 36,
         "gpbo11_pior_em": 1,
         "p_wilcoxon": 2.764863893389702e-10
@@ -462,9 +491,9 @@
       {
         "medida": "t2_wiener_acf_neg",
         "n": 37,
-        "mediana_baseline": 0.7387666046048115,
-        "mediana_gpbo11": 0.4109098792237593,
-        "mediana_diferenca": -0.2839448702503345,
+        "mediana_baseline": 0.7879414739230303,
+        "mediana_gpbo11": 0.43826146697345525,
+        "mediana_diferenca": -0.30284522633181704,
         "gpbo11_melhor_em": 36,
         "gpbo11_pior_em": 1,
         "p_wilcoxon": 2.9103830456733704e-11
@@ -472,9 +501,9 @@
       {
         "medida": "t2_wiener_kurtosis",
         "n": 37,
-        "mediana_baseline": 0.6331862680877572,
-        "mediana_gpbo11": 0.38631698818990534,
-        "mediana_diferenca": -0.22289811498908113,
+        "mediana_baseline": 0.5963612885341029,
+        "mediana_gpbo11": 0.36384948390513,
+        "mediana_diferenca": -0.20993475974796066,
         "gpbo11_melhor_em": 26,
         "gpbo11_pior_em": 11,
         "p_wilcoxon": 0.008335574442753568
@@ -482,9 +511,9 @@
       {
         "medida": "t2_wiener_lsd",
         "n": 37,
-        "mediana_baseline": 0.518946055941,
-        "mediana_gpbo11": 0.218964916362718,
-        "mediana_diferenca": -0.2980685986782798,
+        "mediana_baseline": 0.5091219115834638,
+        "mediana_gpbo11": 0.2148197014160844,
+        "mediana_diferenca": -0.2924258754928147,
         "gpbo11_melhor_em": 29,
         "gpbo11_pior_em": 8,
         "p_wilcoxon": 0.0002689021057449281
@@ -502,9 +531,9 @@
       {
         "medida": "t2_wiener_soft_acf_len",
         "n": 35,
-        "mediana_baseline": 0.2515843234839176,
-        "mediana_gpbo11": 0.2511592526334428,
-        "mediana_diferenca": -0.0029464642166245614,
+        "mediana_baseline": 0.25012606674404864,
+        "mediana_gpbo11": 0.24970345972925342,
+        "mediana_diferenca": -0.002929385643352697,
         "gpbo11_melhor_em": 19,
         "gpbo11_pior_em": 16,
         "p_wilcoxon": 0.8906679842039011
@@ -512,9 +541,9 @@
       {
         "medida": "t3_lung_mad1",
         "n": 37,
-        "mediana_baseline": 0.631007210602077,
-        "mediana_gpbo11": 0.22037386751479637,
-        "mediana_diferenca": -0.47927080464613236,
+        "mediana_baseline": 0.6310083274653276,
+        "mediana_gpbo11": 0.22037425756972742,
+        "mediana_diferenca": -0.47927165294063667,
         "gpbo11_melhor_em": 32,
         "gpbo11_pior_em": 5,
         "p_wilcoxon": 6.114787538535893e-06
@@ -532,9 +561,9 @@
       {
         "medida": "t3_lung_immerkaer",
         "n": 37,
-        "mediana_baseline": 0.859161167043653,
-        "mediana_gpbo11": 0.27489198274698046,
-        "mediana_diferenca": -0.5444246867529955,
+        "mediana_baseline": 1.0023521862937494,
+        "mediana_gpbo11": 0.320706510571444,
+        "mediana_diferenca": -0.6351605449265237,
         "gpbo11_melhor_em": 35,
         "gpbo11_pior_em": 2,
         "p_wilcoxon": 1.9936123862862587e-09
@@ -562,9 +591,9 @@
       {
         "medida": "t3_soft_mad1",
         "n": 35,
-        "mediana_baseline": 0.43063331000699767,
-        "mediana_gpbo11": 0.4184657102869139,
-        "mediana_diferenca": -0.08271518544436662,
+        "mediana_baseline": 0.5024084581785522,
+        "mediana_gpbo11": 0.4882128423888639,
+        "mediana_diferenca": -0.09650161244234012,
         "gpbo11_melhor_em": 22,
         "gpbo11_pior_em": 13,
         "p_wilcoxon": 0.17355046153534204
@@ -582,9 +611,9 @@
       {
         "medida": "t3_soft_immerkaer",
         "n": 35,
-        "mediana_baseline": 0.37194293062274203,
-        "mediana_gpbo11": 0.30692547915008256,
-        "mediana_diferenca": -0.1605696221909253,
+        "mediana_baseline": 0.3839297142270223,
+        "mediana_gpbo11": 0.3168169140942883,
+        "mediana_diferenca": -0.1657443765851038,
         "gpbo11_melhor_em": 25,
         "gpbo11_pior_em": 10,
         "p_wilcoxon": 0.007022218604106456
@@ -602,9 +631,9 @@
       {
         "medida": "t3_soft_hv_ratio",
         "n": 35,
-        "mediana_baseline": 0.23145630612946244,
-        "mediana_gpbo11": 0.1985747709228757,
-        "mediana_diferenca": 0.0019242906612990315,
+        "mediana_baseline": 0.25714741069541885,
+        "mediana_gpbo11": 0.2206161025644812,
+        "mediana_diferenca": 0.0021378823902151387,
         "gpbo11_melhor_em": 17,
         "gpbo11_pior_em": 18,
         "p_wilcoxon": 0.56539438420441
@@ -612,9 +641,9 @@
       {
         "medida": "t4_lung_soft_ratio",
         "n": 35,
-        "mediana_baseline": 0.5328548032096647,
-        "mediana_gpbo11": 0.250250766042488,
-        "mediana_diferenca": -0.23906420980014365,
+        "mediana_baseline": 0.526116716482217,
+        "mediana_gpbo11": 0.24708628041704644,
+        "mediana_diferenca": -0.23604118107006716,
         "gpbo11_melhor_em": 26,
         "gpbo11_pior_em": 9,
         "p_wilcoxon": 0.0002624634653329849
@@ -652,11 +681,11 @@
       ],
       "table": [
         [
-          14,
-          2
+          18,
+          1
         ],
         [
-          10,
+          7,
           9
         ],
         [
@@ -684,12 +713,12 @@
         "table": [
           [
             3,
-            11,
+            12,
             0
           ],
           [
             7,
-            13,
+            12,
             1
           ],
           [
@@ -701,9 +730,9 @@
         "row_label": "noise_signature",
         "col_label": "noise_evaluator"
       },
-      "kappa_3cat": -0.14096916299559473,
-      "kappa_binario": -0.09539473684210517,
-      "concordancia_binaria": 0.5135135135135135,
+      "kappa_3cat": -0.16786226685796274,
+      "kappa_binario": -0.12480000000000004,
+      "concordancia_binaria": 0.4864864864864865,
       "lucas_leituras_sinalizadas": {
         "quantity": 5,
         "grain": 17,
@@ -724,11 +753,11 @@
         "table": [
           [
             2,
-            12
+            13
           ],
           [
             5,
-            16
+            15
           ],
           [
             0,
@@ -739,7 +768,7 @@
         "col_label": "textura (GLCM/Wavelet/NEx)"
       },
       "ruido_sinaliza_textura_aprova": 5,
-      "textura_sinaliza_ruido_aprova": 12,
+      "textura_sinaliza_ruido_aprova": 13,
       "lucas_sinaliza_textura_aprova": 2
     },
     "Dsr-baseline": {
@@ -757,12 +786,12 @@
         "table": [
           [
             12,
-            4,
+            7,
             0
           ],
           [
             5,
-            13,
+            10,
             1
           ],
           [
@@ -774,9 +803,9 @@
         "row_label": "noise_signature",
         "col_label": "noise_evaluator"
       },
-      "kappa_3cat": 0.3975576662143826,
-      "kappa_binario": 0.45747800586510257,
-      "concordancia_binaria": 0.7297297297297297,
+      "kappa_3cat": 0.24694708276797833,
+      "kappa_binario": 0.2978102189781022,
+      "concordancia_binaria": 0.6486486486486487,
       "lucas_leituras_sinalizadas": {
         "quantity": 0,
         "grain": 2,
@@ -796,11 +825,11 @@
         ],
         "table": [
           [
-            10,
+            13,
             6
           ],
           [
-            11,
+            8,
             8
           ],
           [
@@ -811,7 +840,7 @@
         "row_label": "noise_signature",
         "col_label": "textura (GLCM/Wavelet/NEx)"
       },
-      "ruido_sinaliza_textura_aprova": 12,
+      "ruido_sinaliza_textura_aprova": 9,
       "textura_sinaliza_ruido_aprova": 6,
       "lucas_sinaliza_textura_aprova": 11
     },
@@ -830,20 +859,20 @@
           [
             11,
             5,
-            8
+            9
           ],
           [
             3,
             5,
-            5
+            4
           ]
         ],
         "row_label": "noise_signature",
         "col_label": "noise_evaluator"
       },
-      "kappa_3cat": 0.13953488372093026,
-      "kappa_binario": 0.19346049046321515,
-      "concordancia_binaria": 0.5675675675675675,
+      "kappa_3cat": 0.135706340378198,
+      "kappa_binario": 0.15343203230148048,
+      "concordancia_binaria": 0.5405405405405406,
       "lucas_leituras_sinalizadas": {
         "quantity": 0,
         "grain": 3,
@@ -862,18 +891,18 @@
         ],
         "table": [
           [
-            24,
+            25,
             0
           ],
           [
-            12,
+            11,
             1
           ]
         ],
         "row_label": "noise_signature",
         "col_label": "textura (GLCM/Wavelet/NEx)"
       },
-      "ruido_sinaliza_textura_aprova": 12,
+      "ruido_sinaliza_textura_aprova": 11,
       "textura_sinaliza_ruido_aprova": 0,
       "lucas_sinaliza_textura_aprova": 22
     },
@@ -881,7 +910,8 @@
       "ct_lucas": {
         "rows": [
           "aprovada",
-          "revisão"
+          "revisão",
+          "reprovada"
         ],
         "cols": [
           "aprovada",
@@ -892,20 +922,25 @@
           [
             6,
             9,
-            8
+            9
           ],
           [
             3,
             4,
-            7
+            5
+          ],
+          [
+            0,
+            0,
+            1
           ]
         ],
         "row_label": "noise_signature",
         "col_label": "noise_evaluator"
       },
-      "kappa_3cat": -0.01938775510204084,
-      "kappa_binario": 0.03896103896103899,
-      "concordancia_binaria": 0.4594594594594595,
+      "kappa_3cat": 0.02036659877800406,
+      "kappa_binario": 0.015209125475285029,
+      "concordancia_binaria": 0.43243243243243246,
       "lucas_leituras_sinalizadas": {
         "quantity": 21,
         "grain": 12,
@@ -916,7 +951,8 @@
       "ct_textura": {
         "rows": [
           "aprovada",
-          "revisão"
+          "revisão",
+          "reprovada"
         ],
         "cols": [
           "revisão",
@@ -925,18 +961,22 @@
         "table": [
           [
             21,
-            2
+            3
           ],
           [
             7,
-            7
+            5
+          ],
+          [
+            0,
+            1
           ]
         ],
         "row_label": "noise_signature",
         "col_label": "textura (GLCM/Wavelet/NEx)"
       },
       "ruido_sinaliza_textura_aprova": 0,
-      "textura_sinaliza_ruido_aprova": 23,
+      "textura_sinaliza_ruido_aprova": 24,
       "lucas_sinaliza_textura_aprova": 0
     }
   },
@@ -977,23 +1017,23 @@
       "sinal_igual_pct": 90.71428571428571
     }
   },
-  "n_discordancias_lucas": 64,
+  "n_discordancias_lucas": 70,
   "motivos_top": {
     "Dsr": [
       {
         "dataset": "Dsr",
         "metric": "t2_wiener_acf_len",
-        "n_cortes_decide": 9
-      },
-      {
-        "dataset": "Dsr",
-        "metric": "t1_soft_sigma_ratio",
-        "n_cortes_decide": 6
+        "n_cortes_decide": 7
       },
       {
         "dataset": "Dsr",
         "metric": "t2_wiener_lsd",
         "n_cortes_decide": 6
+      },
+      {
+        "dataset": "Dsr",
+        "metric": "t1_soft_sigma_ratio",
+        "n_cortes_decide": 5
       },
       {
         "dataset": "Dsr",
@@ -1019,13 +1059,13 @@
       },
       {
         "dataset": "Dsr-baseline",
-        "metric": "t2_wiener_acf_len",
-        "n_cortes_decide": 8
+        "metric": "t4_lung_soft_ratio",
+        "n_cortes_decide": 5
       },
       {
         "dataset": "Dsr-baseline",
-        "metric": "t4_lung_soft_ratio",
-        "n_cortes_decide": 5
+        "metric": "t2_wiener_acf_len",
+        "n_cortes_decide": 3
       },
       {
         "dataset": "Dsr-baseline",
@@ -1042,7 +1082,7 @@
       {
         "dataset": "Dsr-gpbo11",
         "metric": "t1_soft_sigma_ratio",
-        "n_cortes_decide": 7
+        "n_cortes_decide": 4
       },
       {
         "dataset": "Dsr-gpbo11",
@@ -1063,11 +1103,6 @@
     "Dgen": [
       {
         "dataset": "Dgen",
-        "metric": "t2_wiener_acf_len",
-        "n_cortes_decide": 5
-      },
-      {
-        "dataset": "Dgen",
         "metric": "t3_soft_immerkaer",
         "n_cortes_decide": 4
       },
@@ -1079,6 +1114,11 @@
       {
         "dataset": "Dgen",
         "metric": "t4_lung_soft_ratio",
+        "n_cortes_decide": 2
+      },
+      {
+        "dataset": "Dgen",
+        "metric": "t2_wiener_acf_len",
         "n_cortes_decide": 2
       },
       {
@@ -1139,6 +1179,18 @@
     },
     {
       "dataset": "Dsr",
+      "metric": "t1_lung_acf_len",
+      "role": "diagnóstico",
+      "median_z": 0.3420022055347075,
+      "ci_low": 0.27795677739697455,
+      "ci_high": 0.35715480199524513,
+      "n": 37,
+      "n_revisao": 0,
+      "n_reprovada": 0,
+      "n_inconclusivo": 0
+    },
+    {
+      "dataset": "Dsr",
       "metric": "t1_lung_shape_dist",
       "role": "diagnóstico",
       "median_z": 0.0,
@@ -1190,8 +1242,8 @@
       "metric": "t1_soft_f_avg",
       "role": "diagnóstico",
       "median_z": -0.627790406204317,
-      "ci_low": -0.7453475295803795,
-      "ci_high": -0.5576993127413019,
+      "ci_low": -0.7449052956519927,
+      "ci_high": -0.5438138108448942,
       "n": 35,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -1211,11 +1263,23 @@
     },
     {
       "dataset": "Dsr",
+      "metric": "t1_soft_acf_len",
+      "role": "diagnóstico",
+      "median_z": 2.3447018366596084,
+      "ci_low": 1.938340737846302,
+      "ci_high": 2.803329425305622,
+      "n": 35,
+      "n_revisao": 9,
+      "n_reprovada": 22,
+      "n_inconclusivo": 2
+    },
+    {
+      "dataset": "Dsr",
       "metric": "t1_soft_shape_dist",
       "role": "diagnóstico",
       "median_z": 0.5574930624909987,
       "ci_low": 0.4892539237143242,
-      "ci_high": 0.7047750880929956,
+      "ci_high": 0.7316521830203111,
       "n": 35,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -1225,11 +1289,11 @@
       "dataset": "Dsr",
       "metric": "t1_soft_sigma_ratio",
       "role": "decisão",
-      "median_z": -0.014171142396749173,
-      "ci_low": -0.24388710417857234,
-      "ci_high": 0.37498837247752437,
+      "median_z": -0.013370141513294303,
+      "ci_low": -0.2914635989012152,
+      "ci_high": 0.3509295678705793,
       "n": 35,
-      "n_revisao": 6,
+      "n_revisao": 5,
       "n_reprovada": 1,
       "n_inconclusivo": 2
     },
@@ -1237,11 +1301,11 @@
       "dataset": "Dsr",
       "metric": "t2_wiener_acf_len",
       "role": "decisão",
-      "median_z": 0.7621311228236,
-      "ci_low": 0.6461574544176973,
-      "ci_high": 0.9651336754356754,
+      "median_z": 0.668361736663111,
+      "ci_low": 0.5666569773353627,
+      "ci_high": 0.8463877148021184,
       "n": 37,
-      "n_revisao": 10,
+      "n_revisao": 7,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -1249,21 +1313,21 @@
       "dataset": "Dsr",
       "metric": "t2_wiener_acf_neg",
       "role": "diagnóstico",
-      "median_z": 0.8451279390787438,
-      "ci_low": 0.674582453955558,
-      "ci_high": 1.1189019888606562,
+      "median_z": 0.9013825879791282,
+      "ci_low": 0.7194850034358135,
+      "ci_high": 1.1933799887311982,
       "n": 37,
-      "n_revisao": 16,
-      "n_reprovada": 0,
+      "n_revisao": 17,
+      "n_reprovada": 1,
       "n_inconclusivo": 0
     },
     {
       "dataset": "Dsr",
       "metric": "t2_wiener_kurtosis",
       "role": "diagnóstico",
-      "median_z": 0.0876739954943513,
-      "ci_low": -0.33965504060829144,
-      "ci_high": 0.24139630834958437,
+      "median_z": 0.08257503290753286,
+      "ci_low": -0.31990131164087415,
+      "ci_high": 0.2273571313059201,
       "n": 37,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -1273,9 +1337,9 @@
       "dataset": "Dsr",
       "metric": "t2_wiener_lsd",
       "role": "decisão",
-      "median_z": 0.2577622795964731,
-      "ci_low": 0.13186194689782033,
-      "ci_high": 0.7348854992906465,
+      "median_z": 0.25288259351794307,
+      "ci_low": 0.12936567433391968,
+      "ci_high": 0.7209734150795041,
       "n": 37,
       "n_revisao": 6,
       "n_reprovada": 0,
@@ -1297,9 +1361,9 @@
       "dataset": "Dsr",
       "metric": "t2_wiener_soft_acf_len",
       "role": "decisão",
-      "median_z": 0.1151902959678949,
-      "ci_low": 0.006586831474744293,
-      "ci_high": 0.21343928821438563,
+      "median_z": 0.11452261913041731,
+      "ci_low": 0.006548652262067551,
+      "ci_high": 0.21220213131891094,
       "n": 35,
       "n_revisao": 0,
       "n_reprovada": 2,
@@ -1309,9 +1373,9 @@
       "dataset": "Dsr",
       "metric": "t3_lung_mad1",
       "role": "diagnóstico",
-      "median_z": -0.4992087534670402,
-      "ci_low": -0.6783891032859805,
-      "ci_high": -0.11093916928418332,
+      "median_z": -0.4992096370510972,
+      "ci_low": -0.7002533447631877,
+      "ci_high": -0.11093936564308246,
       "n": 37,
       "n_revisao": 7,
       "n_reprovada": 0,
@@ -1333,12 +1397,12 @@
       "dataset": "Dsr",
       "metric": "t3_lung_immerkaer",
       "role": "diagnóstico",
-      "median_z": -0.8334035624182851,
-      "ci_low": -1.1530490625808987,
-      "ci_high": -0.35452104962262776,
+      "median_z": -0.9723017227715592,
+      "ci_low": -1.345220539655977,
+      "ci_high": -0.4136068560909953,
       "n": 37,
-      "n_revisao": 14,
-      "n_reprovada": 3,
+      "n_revisao": 11,
+      "n_reprovada": 7,
       "n_inconclusivo": 0
     },
     {
@@ -1369,12 +1433,12 @@
       "dataset": "Dsr",
       "metric": "t3_soft_mad1",
       "role": "diagnóstico",
-      "median_z": -0.14649755073477952,
-      "ci_low": -0.6322865640307903,
-      "ci_high": 0.08131210636808951,
+      "median_z": -0.1709148058945993,
+      "ci_low": -0.7376719598318157,
+      "ci_high": 0.09486467730742533,
       "n": 35,
       "n_revisao": 5,
-      "n_reprovada": 0,
+      "n_reprovada": 1,
       "n_inconclusivo": 2
     },
     {
@@ -1382,7 +1446,7 @@
       "metric": "t3_soft_corr_index",
       "role": "diagnóstico",
       "median_z": 0.4244428736736612,
-      "ci_low": 0.2458068496150169,
+      "ci_low": 0.36267371150389177,
       "ci_high": 0.5699105419515754,
       "n": 35,
       "n_revisao": 0,
@@ -1393,9 +1457,9 @@
       "dataset": "Dsr",
       "metric": "t3_soft_immerkaer",
       "role": "decisão",
-      "median_z": -0.3099672402179904,
-      "ci_low": -0.5360311677178371,
-      "ci_high": -0.04156588696344374,
+      "median_z": -0.3199567034581927,
+      "ci_low": -0.5461763939037203,
+      "ci_high": -0.04290545078178697,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -1407,7 +1471,7 @@
       "role": "diagnóstico",
       "median_z": 0.2890721404406954,
       "ci_low": 0.12235688367771536,
-      "ci_high": 0.44569781589761914,
+      "ci_high": 0.46804544803731907,
       "n": 35,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -1417,9 +1481,9 @@
       "dataset": "Dsr",
       "metric": "t3_soft_hv_ratio",
       "role": "diagnóstico",
-      "median_z": -0.19082813288129066,
-      "ci_low": -0.2243841420880052,
-      "ci_high": -0.055653038317591254,
+      "median_z": -0.2120096059548187,
+      "ci_low": -0.26515284158113495,
+      "ci_high": -0.06183039442743378,
       "n": 35,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -1429,9 +1493,9 @@
       "dataset": "Dsr",
       "metric": "t4_lung_soft_ratio",
       "role": "decisão",
-      "median_z": -0.35724924980219375,
-      "ci_low": -0.49670413463705504,
-      "ci_high": -0.14372163501287893,
+      "median_z": -0.35273174069092533,
+      "ci_low": -0.490423182458513,
+      "ci_high": -0.1467386280773619,
       "n": 35,
       "n_revisao": 1,
       "n_reprovada": 2,
@@ -1455,7 +1519,7 @@
       "role": "diagnóstico",
       "median_z": 0.2256107877588979,
       "ci_low": 0.12826413776031567,
-      "ci_high": 0.39647485597524473,
+      "ci_high": 0.36404210278708693,
       "n": 37,
       "n_revisao": 1,
       "n_reprovada": 1,
@@ -1511,6 +1575,18 @@
     },
     {
       "dataset": "Dsr-baseline",
+      "metric": "t1_lung_acf_len",
+      "role": "diagnóstico",
+      "median_z": 0.048465230953673236,
+      "ci_low": 0.012851747433341276,
+      "ci_high": 0.06562685819147013,
+      "n": 37,
+      "n_revisao": 0,
+      "n_reprovada": 0,
+      "n_inconclusivo": 0
+    },
+    {
+      "dataset": "Dsr-baseline",
       "metric": "t1_lung_shape_dist",
       "role": "diagnóstico",
       "median_z": 0.0,
@@ -1526,8 +1602,8 @@
       "metric": "t1_lung_sigma_ratio",
       "role": "diagnóstico",
       "median_z": -0.11296375625945194,
-      "ci_low": -0.1593747255316934,
-      "ci_high": -0.09703908638740413,
+      "ci_low": -0.15915033741512702,
+      "ci_high": -0.09138064447179807,
       "n": 37,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -1539,7 +1615,7 @@
       "role": "diagnóstico",
       "median_z": -0.2532570035823479,
       "ci_low": -0.5915124761098016,
-      "ci_high": -0.1618848816628144,
+      "ci_high": -0.179720215314179,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -1562,7 +1638,7 @@
       "metric": "t1_soft_f_avg",
       "role": "diagnóstico",
       "median_z": -0.10971145206056343,
-      "ci_low": -0.24441863546961123,
+      "ci_low": -0.24482948471164234,
       "ci_high": 0.03789659411712697,
       "n": 35,
       "n_revisao": 0,
@@ -1574,11 +1650,23 @@
       "metric": "t1_soft_anisotropy",
       "role": "diagnóstico",
       "median_z": 0.015582770355185927,
-      "ci_low": -0.043294721393868994,
-      "ci_high": 0.12435062042539359,
+      "ci_low": -0.04584249408107798,
+      "ci_high": 0.1873420717673725,
       "n": 35,
       "n_revisao": 1,
       "n_reprovada": 0,
+      "n_inconclusivo": 2
+    },
+    {
+      "dataset": "Dsr-baseline",
+      "metric": "t1_soft_acf_len",
+      "role": "diagnóstico",
+      "median_z": 0.12744387963136194,
+      "ci_low": -0.17431721415875862,
+      "ci_high": 0.29372270783979587,
+      "n": 35,
+      "n_revisao": 1,
+      "n_reprovada": 1,
       "n_inconclusivo": 2
     },
     {
@@ -1597,9 +1685,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t1_soft_sigma_ratio",
       "role": "decisão",
-      "median_z": -0.5279617796964348,
-      "ci_low": -0.7362546014084755,
-      "ci_high": -0.2636463791526257,
+      "median_z": -0.4981195947739079,
+      "ci_low": -0.6945296641583412,
+      "ci_high": -0.24874419436691816,
       "n": 35,
       "n_revisao": 7,
       "n_reprovada": 2,
@@ -1609,11 +1697,11 @@
       "dataset": "Dsr-baseline",
       "metric": "t2_wiener_acf_len",
       "role": "decisão",
-      "median_z": 0.831466235529859,
-      "ci_low": 0.7127983931833038,
-      "ci_high": 0.8769016505183013,
+      "median_z": 0.7291661506967493,
+      "ci_low": 0.6250986971817124,
+      "ci_high": 0.7766239752068848,
       "n": 37,
-      "n_revisao": 8,
+      "n_revisao": 3,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -1621,11 +1709,11 @@
       "dataset": "Dsr-baseline",
       "metric": "t2_wiener_acf_neg",
       "role": "diagnóstico",
-      "median_z": 0.7387666046048115,
-      "ci_low": 0.5314095889664371,
-      "ci_high": 0.903084427701484,
+      "median_z": 0.7879414739230303,
+      "ci_low": 0.5667820556277471,
+      "ci_high": 0.9631968616403388,
       "n": 37,
-      "n_revisao": 8,
+      "n_revisao": 10,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -1633,11 +1721,11 @@
       "dataset": "Dsr-baseline",
       "metric": "t2_wiener_kurtosis",
       "role": "diagnóstico",
-      "median_z": 0.6331862680877572,
-      "ci_low": 0.3956525682977389,
-      "ci_high": 0.832595916690889,
+      "median_z": 0.5963612885341029,
+      "ci_low": 0.37264212339040287,
+      "ci_high": 0.7841736290421166,
       "n": 37,
-      "n_revisao": 12,
+      "n_revisao": 10,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -1645,9 +1733,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t2_wiener_lsd",
       "role": "decisão",
-      "median_z": 0.35285178749720714,
-      "ci_low": -0.300650653690335,
-      "ci_high": 0.6031875195889418,
+      "median_z": 0.3461719662373624,
+      "ci_low": -0.29495904973800186,
+      "ci_high": 0.5917686038861125,
       "n": 37,
       "n_revisao": 1,
       "n_reprovada": 0,
@@ -1669,9 +1757,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t2_wiener_soft_acf_len",
       "role": "decisão",
-      "median_z": 0.06924247545108193,
-      "ci_low": -0.04105471137517421,
-      "ci_high": 0.2889639936959057,
+      "median_z": 0.06884112569640136,
+      "ci_low": -0.04081674619222016,
+      "ci_high": 0.25012606674404864,
       "n": 35,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -1681,9 +1769,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t3_lung_mad1",
       "role": "diagnóstico",
-      "median_z": -0.631007210602077,
-      "ci_low": -0.7603651238830264,
-      "ci_high": -0.3019737942669082,
+      "median_z": -0.6310083274653276,
+      "ci_low": -0.7603664697057834,
+      "ci_high": -0.30197432875118635,
       "n": 37,
       "n_revisao": 10,
       "n_reprovada": 0,
@@ -1705,12 +1793,12 @@
       "dataset": "Dsr-baseline",
       "metric": "t3_lung_immerkaer",
       "role": "diagnóstico",
-      "median_z": -0.859161167043653,
-      "ci_low": -1.1136076977528249,
-      "ci_high": -0.617970374980124,
+      "median_z": -1.0023521862937494,
+      "ci_low": -1.2992057291846602,
+      "ci_high": -0.7209636331184683,
       "n": 37,
-      "n_revisao": 14,
-      "n_reprovada": 3,
+      "n_revisao": 12,
+      "n_reprovada": 7,
       "n_inconclusivo": 0
     },
     {
@@ -1741,12 +1829,12 @@
       "dataset": "Dsr-baseline",
       "metric": "t3_soft_mad1",
       "role": "diagnóstico",
-      "median_z": -0.2641917424772568,
-      "ci_low": -0.48103568929321205,
-      "ci_high": -0.14549160251924423,
+      "median_z": -0.3082254969996326,
+      "ci_low": -0.5844593215495774,
+      "ci_high": -0.16974119279911826,
       "n": 35,
-      "n_revisao": 5,
-      "n_reprovada": 0,
+      "n_revisao": 7,
+      "n_reprovada": 1,
       "n_inconclusivo": 2
     },
     {
@@ -1765,9 +1853,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t3_soft_immerkaer",
       "role": "decisão",
-      "median_z": -0.34169524217745373,
-      "ci_low": -0.6687526789541361,
-      "ci_high": -0.2011021982732227,
+      "median_z": -0.3527072189872714,
+      "ci_low": -0.5302767660327571,
+      "ci_high": -0.20758321547930372,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -1789,11 +1877,11 @@
       "dataset": "Dsr-baseline",
       "metric": "t3_soft_hv_ratio",
       "role": "diagnóstico",
-      "median_z": 0.11002235542398005,
-      "ci_low": 0.05253832341685227,
-      "ci_high": 0.300653931753579,
+      "median_z": 0.12223457761424206,
+      "ci_low": 0.05836995351237195,
+      "ci_high": 0.3015530940637431,
       "n": 35,
-      "n_revisao": 0,
+      "n_revisao": 2,
       "n_reprovada": 0,
       "n_inconclusivo": 2
     },
@@ -1801,9 +1889,9 @@
       "dataset": "Dsr-baseline",
       "metric": "t4_lung_soft_ratio",
       "role": "decisão",
-      "median_z": -0.2536859360601301,
-      "ci_low": -0.4822209111484595,
-      "ci_high": 0.0909138420540753,
+      "median_z": -0.25047801182183754,
+      "ci_low": -0.49445142443053314,
+      "ci_high": 0.08976421302043251,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 2,
@@ -1883,6 +1971,18 @@
     },
     {
       "dataset": "Dsr-gpbo11",
+      "metric": "t1_lung_acf_len",
+      "role": "diagnóstico",
+      "median_z": 0.0005883533276573099,
+      "ci_low": -0.02725934646280295,
+      "ci_high": 0.03487857384141762,
+      "n": 37,
+      "n_revisao": 0,
+      "n_reprovada": 0,
+      "n_inconclusivo": 0
+    },
+    {
+      "dataset": "Dsr-gpbo11",
       "metric": "t1_lung_shape_dist",
       "role": "diagnóstico",
       "median_z": 0.0,
@@ -1911,7 +2011,7 @@
       "role": "diagnóstico",
       "median_z": 0.008789941635543894,
       "ci_low": -0.4964596329814865,
-      "ci_high": 0.23835995209425614,
+      "ci_high": 0.22752765877547715,
       "n": 35,
       "n_revisao": 4,
       "n_reprovada": 0,
@@ -1934,8 +2034,8 @@
       "metric": "t1_soft_f_avg",
       "role": "diagnóstico",
       "median_z": -0.09050964822242838,
-      "ci_low": -0.16260013579748886,
-      "ci_high": -0.044918992810722265,
+      "ci_low": -0.1590908078427518,
+      "ci_high": -0.039295925929719776,
       "n": 35,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -1946,11 +2046,23 @@
       "metric": "t1_soft_anisotropy",
       "role": "diagnóstico",
       "median_z": -0.021125729495758378,
-      "ci_low": -0.08456423567471676,
-      "ci_high": 0.03389078046904666,
+      "ci_low": -0.0647420513754449,
+      "ci_high": 0.0644297405376356,
       "n": 35,
       "n_revisao": 2,
       "n_reprovada": 0,
+      "n_inconclusivo": 2
+    },
+    {
+      "dataset": "Dsr-gpbo11",
+      "metric": "t1_soft_acf_len",
+      "role": "diagnóstico",
+      "median_z": -0.010456939791737046,
+      "ci_low": -0.13045243922369543,
+      "ci_high": 0.10401143488895821,
+      "n": 35,
+      "n_revisao": 3,
+      "n_reprovada": 1,
       "n_inconclusivo": 2
     },
     {
@@ -1969,11 +2081,11 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t1_soft_sigma_ratio",
       "role": "decisão",
-      "median_z": 0.010410805227647119,
-      "ci_low": -0.41940231098107844,
-      "ci_high": 0.44956652486521465,
+      "median_z": 0.009822351315368679,
+      "ci_low": -0.39772245796176764,
+      "ci_high": 0.4241555048142568,
       "n": 35,
-      "n_revisao": 7,
+      "n_revisao": 4,
       "n_reprovada": 0,
       "n_inconclusivo": 2
     },
@@ -1981,9 +2093,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t2_wiener_acf_len",
       "role": "decisão",
-      "median_z": 0.24676785059967488,
-      "ci_low": 0.02925944981921283,
-      "ci_high": 0.3795284164554867,
+      "median_z": 0.2164065791833513,
+      "ci_low": 0.009524573564549988,
+      "ci_high": 0.3328328471817326,
       "n": 37,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -1993,9 +2105,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t2_wiener_acf_neg",
       "role": "diagnóstico",
-      "median_z": 0.4109098792237593,
-      "ci_low": 0.16852930991844187,
-      "ci_high": 0.5262083009855191,
+      "median_z": 0.43826146697345525,
+      "ci_low": 0.1797472057191896,
+      "ci_high": 0.5612345518661565,
       "n": 37,
       "n_revisao": 1,
       "n_reprovada": 0,
@@ -2005,11 +2117,11 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t2_wiener_kurtosis",
       "role": "diagnóstico",
-      "median_z": -0.039563879694322554,
-      "ci_low": -0.1369983871629589,
-      "ci_high": 0.21784122189936386,
+      "median_z": -0.037262915295320866,
+      "ci_low": -0.12903080627811828,
+      "ci_high": 0.20517196650534872,
       "n": 37,
-      "n_revisao": 4,
+      "n_revisao": 3,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -2017,9 +2129,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t2_wiener_lsd",
       "role": "decisão",
-      "median_z": -0.0484854011881783,
-      "ci_low": -0.2932703246244438,
-      "ci_high": 0.008622783938322746,
+      "median_z": -0.04756752624712686,
+      "ci_low": -0.2877184373484769,
+      "ci_high": 0.008459546404856341,
       "n": 37,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -2041,9 +2153,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t2_wiener_soft_acf_len",
       "role": "decisão",
-      "median_z": 0.01014374621751978,
-      "ci_low": -0.16761910910546732,
-      "ci_high": 0.14234760133780447,
+      "median_z": 0.010084950080763811,
+      "ci_low": -0.2334402535266777,
+      "ci_high": 0.14152251277035918,
       "n": 35,
       "n_revisao": 1,
       "n_reprovada": 0,
@@ -2053,9 +2165,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t3_lung_mad1",
       "role": "diagnóstico",
-      "median_z": 0.01756169778386357,
-      "ci_low": -0.1821719749619662,
-      "ci_high": 0.1158650323470845,
+      "median_z": 0.017561728867525602,
+      "ci_low": -0.18217229740072874,
+      "ci_high": 0.11586523742460896,
       "n": 37,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -2077,11 +2189,11 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t3_lung_immerkaer",
       "role": "diagnóstico",
-      "median_z": -0.21532438816617097,
-      "ci_low": -0.6257837171795886,
-      "ci_high": -0.1391550388213534,
+      "median_z": -0.251211157486776,
+      "ci_low": -0.7300791762043404,
+      "ci_high": -0.16234713898479564,
       "n": 37,
-      "n_revisao": 8,
+      "n_revisao": 9,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -2091,7 +2203,7 @@
       "role": "diagnóstico",
       "median_z": -0.0691848504391382,
       "ci_low": -0.1401368192343725,
-      "ci_high": 0.034581148708668984,
+      "ci_high": 0.014858388906694725,
       "n": 37,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -2113,11 +2225,11 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t3_soft_mad1",
       "role": "diagnóstico",
-      "median_z": 0.06678971308607445,
-      "ci_low": -0.4184657102869139,
-      "ci_high": 0.18643806857942616,
+      "median_z": 0.07792178634118496,
+      "ci_low": -0.3215659060293096,
+      "ci_high": 0.21835530881331947,
       "n": 35,
-      "n_revisao": 5,
+      "n_revisao": 6,
       "n_reprovada": 0,
       "n_inconclusivo": 2
     },
@@ -2126,7 +2238,7 @@
       "metric": "t3_soft_corr_index",
       "role": "diagnóstico",
       "median_z": 0.21409953845014365,
-      "ci_low": 0.11606144456015427,
+      "ci_low": 0.11043727249127049,
       "ci_high": 0.34818212766430384,
       "n": 35,
       "n_revisao": 0,
@@ -2137,9 +2249,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t3_soft_immerkaer",
       "role": "decisão",
-      "median_z": -0.18067172861429187,
-      "ci_low": -0.42346916906496873,
-      "ci_high": -0.043215357295940164,
+      "median_z": -0.18649432325450938,
+      "ci_low": -0.43711651352226866,
+      "ci_high": -0.020673308630075025,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -2151,7 +2263,7 @@
       "role": "diagnóstico",
       "median_z": -0.03923852015121103,
       "ci_low": -0.09946896218230801,
-      "ci_high": 0.0637006886270938,
+      "ci_high": 0.041925372718923305,
       "n": 35,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -2161,9 +2273,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t3_soft_hv_ratio",
       "role": "diagnóstico",
-      "median_z": -0.030780097095839728,
-      "ci_low": -0.1985747709228757,
-      "ci_high": 0.0619322890584755,
+      "median_z": -0.03419661534182435,
+      "ci_low": -0.1505722700496156,
+      "ci_high": 0.06880662720383744,
       "n": 35,
       "n_revisao": 1,
       "n_reprovada": 0,
@@ -2173,9 +2285,9 @@
       "dataset": "Dsr-gpbo11",
       "metric": "t4_lung_soft_ratio",
       "role": "decisão",
-      "median_z": -0.13740976227785892,
-      "ci_low": -0.29508422299576065,
-      "ci_high": 0.03639066692472459,
+      "median_z": -0.1356721803139747,
+      "ci_low": -0.2913528067178734,
+      "ci_high": 0.0608588469740412,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -2255,11 +2367,23 @@
     },
     {
       "dataset": "Dgen",
+      "metric": "t1_lung_acf_len",
+      "role": "diagnóstico",
+      "median_z": 0.10665776489330937,
+      "ci_low": 0.046010828688187344,
+      "ci_high": 0.21379591703353282,
+      "n": 37,
+      "n_revisao": 0,
+      "n_reprovada": 0,
+      "n_inconclusivo": 0
+    },
+    {
+      "dataset": "Dgen",
       "metric": "t1_lung_shape_dist",
       "role": "diagnóstico",
-      "median_z": 0.05953995376945126,
+      "median_z": 0.09134718923250755,
       "ci_low": 0.0,
-      "ci_high": 0.2619585504077387,
+      "ci_high": 0.2914444502702824,
       "n": 37,
       "n_revisao": 0,
       "n_reprovada": 0,
@@ -2306,7 +2430,7 @@
       "metric": "t1_soft_f_avg",
       "role": "diagnóstico",
       "median_z": 0.1797367071214142,
-      "ci_low": 0.0700623687788207,
+      "ci_low": 0.05000620959709115,
       "ci_high": 0.277745221728368,
       "n": 35,
       "n_revisao": 0,
@@ -2327,10 +2451,22 @@
     },
     {
       "dataset": "Dgen",
+      "metric": "t1_soft_acf_len",
+      "role": "diagnóstico",
+      "median_z": -0.1131503553251211,
+      "ci_low": -0.5127982075996342,
+      "ci_high": 0.014823982032603667,
+      "n": 35,
+      "n_revisao": 4,
+      "n_reprovada": 3,
+      "n_inconclusivo": 2
+    },
+    {
+      "dataset": "Dgen",
       "metric": "t1_soft_shape_dist",
       "role": "diagnóstico",
       "median_z": 0.1593242245644975,
-      "ci_low": 0.0878289656784537,
+      "ci_low": 0.08759829238981216,
       "ci_high": 0.20538956355542587,
       "n": 35,
       "n_revisao": 0,
@@ -2341,9 +2477,9 @@
       "dataset": "Dgen",
       "metric": "t1_soft_sigma_ratio",
       "role": "decisão",
-      "median_z": 0.00840620218960387,
-      "ci_low": -0.72113688858283,
-      "ci_high": 0.6931443750709626,
+      "median_z": 0.007931055218960377,
+      "ci_low": -0.6841975033763336,
+      "ci_high": 0.6539655113456939,
       "n": 35,
       "n_revisao": 12,
       "n_reprovada": 0,
@@ -2353,11 +2489,11 @@
       "dataset": "Dgen",
       "metric": "t2_wiener_acf_len",
       "role": "decisão",
-      "median_z": 0.5356860179055489,
-      "ci_low": -0.034019220253851574,
-      "ci_high": 0.7887752855717185,
+      "median_z": 0.46977747858798286,
+      "ci_low": -0.029833639445861832,
+      "ci_high": 0.6917277144495724,
       "n": 37,
-      "n_revisao": 5,
+      "n_revisao": 3,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -2365,11 +2501,11 @@
       "dataset": "Dgen",
       "metric": "t2_wiener_acf_neg",
       "role": "diagnóstico",
-      "median_z": 0.6128640161729089,
-      "ci_low": 0.06604316297433868,
-      "ci_high": 0.8792508495037317,
+      "median_z": 0.6536583722216138,
+      "ci_low": 0.07043922512493114,
+      "ci_high": 1.0163259174705923,
       "n": 37,
-      "n_revisao": 12,
+      "n_revisao": 13,
       "n_reprovada": 0,
       "n_inconclusivo": 0
     },
@@ -2377,9 +2513,9 @@
       "dataset": "Dgen",
       "metric": "t2_wiener_kurtosis",
       "role": "diagnóstico",
-      "median_z": -0.36638216358659365,
-      "ci_low": -0.5294050631411177,
-      "ci_high": -0.1548408969256377,
+      "median_z": -0.34507403300497785,
+      "ci_low": -0.49861581263407617,
+      "ci_high": -0.14583562762222033,
       "n": 37,
       "n_revisao": 8,
       "n_reprovada": 0,
@@ -2389,9 +2525,9 @@
       "dataset": "Dgen",
       "metric": "t2_wiener_lsd",
       "role": "decisão",
-      "median_z": -0.0966722738688858,
-      "ci_low": -0.3075663059668814,
-      "ci_high": 0.15842140544439434,
+      "median_z": -0.09484217541648098,
+      "ci_low": -0.30174378211350356,
+      "ci_high": 0.15542233696975805,
       "n": 37,
       "n_revisao": 2,
       "n_reprovada": 0,
@@ -2413,9 +2549,9 @@
       "dataset": "Dgen",
       "metric": "t2_wiener_soft_acf_len",
       "role": "decisão",
-      "median_z": 0.09727811187291822,
-      "ci_low": -0.20992379617812384,
-      "ci_high": 0.25318076853366894,
+      "median_z": 0.0967142593231409,
+      "ci_low": -0.20870701610853737,
+      "ci_high": 0.264395152647105,
       "n": 35,
       "n_revisao": 3,
       "n_reprovada": 0,
@@ -2425,9 +2561,9 @@
       "dataset": "Dgen",
       "metric": "t3_lung_mad1",
       "role": "diagnóstico",
-      "median_z": 0.11447788731315713,
-      "ci_low": -0.42869087052043786,
-      "ci_high": 0.7142349319809266,
+      "median_z": 0.11447808993547777,
+      "ci_low": -0.42869162929002264,
+      "ci_high": 0.7142361961546705,
       "n": 37,
       "n_revisao": 16,
       "n_reprovada": 0,
@@ -2449,12 +2585,12 @@
       "dataset": "Dgen",
       "metric": "t3_lung_immerkaer",
       "role": "diagnóstico",
-      "median_z": -0.42899359320308905,
-      "ci_low": -0.9132760597491469,
-      "ci_high": 0.5366991548281569,
+      "median_z": -0.50049127282225,
+      "ci_low": -1.0654860697780892,
+      "ci_high": 0.626147446904659,
       "n": 37,
-      "n_revisao": 12,
-      "n_reprovada": 1,
+      "n_revisao": 14,
+      "n_reprovada": 5,
       "n_inconclusivo": 0
     },
     {
@@ -2485,12 +2621,12 @@
       "dataset": "Dgen",
       "metric": "t3_soft_mad1",
       "role": "diagnóstico",
-      "median_z": 0.11591847445766264,
-      "ci_low": -0.4983939818054581,
-      "ci_high": 0.23642407277816646,
+      "median_z": 0.13523900885822748,
+      "ci_low": -0.4288810874800997,
+      "ci_high": 0.2969669755480262,
       "n": 35,
-      "n_revisao": 5,
-      "n_reprovada": 1,
+      "n_revisao": 8,
+      "n_reprovada": 2,
       "n_inconclusivo": 2
     },
     {
@@ -2498,7 +2634,7 @@
       "metric": "t3_soft_corr_index",
       "role": "diagnóstico",
       "median_z": -0.07769965983369559,
-      "ci_low": -0.11531971668655153,
+      "ci_low": -0.12401691672334918,
       "ci_high": 0.17229597210178896,
       "n": 35,
       "n_revisao": 0,
@@ -2509,12 +2645,12 @@
       "dataset": "Dgen",
       "metric": "t3_soft_immerkaer",
       "role": "decisão",
-      "median_z": -0.09394709448288517,
-      "ci_low": -0.4060536709325822,
-      "ci_high": 0.13721182107648028,
+      "median_z": -0.0969747726536512,
+      "ci_low": -0.419139757760589,
+      "ci_high": 0.14163381238691933,
       "n": 35,
-      "n_revisao": 4,
-      "n_reprovada": 0,
+      "n_revisao": 3,
+      "n_reprovada": 1,
       "n_inconclusivo": 2
     },
     {
@@ -2522,8 +2658,8 @@
       "metric": "t3_soft_coherence",
       "role": "diagnóstico",
       "median_z": -0.13937754715009212,
-      "ci_low": -0.4144471699537763,
-      "ci_high": 0.10136828379368916,
+      "ci_low": -0.3180305159723581,
+      "ci_high": 0.08642183213925995,
       "n": 35,
       "n_revisao": 1,
       "n_reprovada": 0,
@@ -2533,11 +2669,11 @@
       "dataset": "Dgen",
       "metric": "t3_soft_hv_ratio",
       "role": "diagnóstico",
-      "median_z": -0.22879854689122894,
-      "ci_low": -0.37587743278903674,
-      "ci_high": -0.10745232683383567,
+      "median_z": -0.25419464644460904,
+      "ci_low": -0.417613547801062,
+      "ci_high": -0.1374340205552005,
       "n": 35,
-      "n_revisao": 2,
+      "n_revisao": 3,
       "n_reprovada": 0,
       "n_inconclusivo": 2
     },
@@ -2545,9 +2681,9 @@
       "dataset": "Dgen",
       "metric": "t4_lung_soft_ratio",
       "role": "decisão",
-      "median_z": -0.008687389860296418,
-      "ci_low": -0.2274930571071093,
-      "ci_high": 0.14182550126889432,
+      "median_z": -0.008577535569857011,
+      "ci_low": -0.2138844427283077,
+      "ci_high": 0.14003208114401738,
       "n": 35,
       "n_revisao": 2,
       "n_reprovada": 0,

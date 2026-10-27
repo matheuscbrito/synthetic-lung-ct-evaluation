@@ -1,4 +1,4 @@
-"""Calibração só nas reais (v2): réguas por vizinhos reais, σ0 do Wiener, impressão de referência e k.
+"""Calibração só nas reais (v3): réguas por vizinhos da mesma série, σ0 do Wiener, impressão de referência e k.
 
 Gera o conteúdo de `calibracao.json`:
 
@@ -6,17 +6,18 @@ Gera o conteúdo de `calibracao.json`:
   fica fixo no filtro wavelet-Wiener para todas as imagens;
 - `fingerprint`: espectro radial médio (log10) do resíduo das reais, por filtro,
   e `lsd_norm`, a distância típica real × referência;
-- `neighbour_pairs`: cada original com o vizinho do mesmo paciente (fase
-  respiratória e índice do corte mais próximos);
+- `neighbour_pairs` (controle (a)): cada original com o vizinho da **mesma série**
+  do mesmo paciente (índice do corte e fase mais próximos); corte sozinho na série fica de fora;
 - `metrics`: para cada métrica, a escala da régua v2
   `scale = max(IQR do Δ entre vizinhos, 2 × IQR da diferença metade par × ímpar)`
   (mais a resolução de 1 bin para f_pico), e, como diagnóstico, P25/mediana/P75/IQR
   entre cortes e a repetibilidade (IQR par × ímpar ÷ IQR entre cortes). Para
   `shape_dist` (um lado só) também a `reference` = mediana da distância entre vizinhos;
-- `k`: multiplicador global da escala, o menor que faz os pares reais vizinhos
-  chegarem a ≥ 85% aprovada e ≤ 5% reprovada (procurado em 1,0–2,0);
+- `k`: multiplicador global da escala, o menor (em 1,0–2,0) que faz o controle (a)
+  chegar a ≥ 85% aprovada e ≤ 5% reprovada e o controle (b) — resíduo deslocado,
+  nova realização do ruído na mesma anatomia (`controls.py`) — a ≥ 95% aprovada;
 - `lopo`: o mesmo procedimento deixando um paciente fora (réguas e k só nos
-  outros), com o falso alarme medido no paciente de fora (fora da amostra).
+  outros), com (a) e (b) medidos no paciente de fora (fora da amostra).
 """
 from __future__ import annotations
 
@@ -32,13 +33,15 @@ from .noise_level import pooled_mad1
 from .nps import LEAK_FACTOR, MAX_OVERLAP, MAX_ROIS, MIN_COVER, MIN_ROIS, ROI_SIZE, SKIP_BINS
 from .regions import EDGE_PERCENTILE, SOFT_KEEP, VESSEL_PERCENTILE
 from .residual import DENOISERS, LEVELS, WAVELET, WINDOWS
-from .stationarity import BLOCK, MIN_VALID, RHO_MIN, STRIDE
+from .controls import SHIFT, residual_shift_control
+from .stationarity import BLOCK, MIN_VALID, RHO_MIN, STRIDE, map_rho
 
-VERSION = "noise_signature 0.2 (2026-10-26)"
+VERSION = "noise_signature 0.3 (2026-10-26)"
 MIN_CALIBRATION = 4
 K_GRID = tuple(np.round(np.arange(1.0, 2.0001, 0.05), 2))
 K_EXTENDED = tuple(np.round(np.arange(2.1, 5.0001, 0.1), 2))   # só para relatar o k que seria preciso
 K_TARGET_APPROVED, K_TARGET_REJECTED = 0.85, 0.05
+K_TARGET_CONTROL = 0.95                       # controle (b): resíduo deslocado, mesma anatomia
 SPLIT_FACTOR = 2.0
 # f_pico é discreto (um bin de frequência): a régua nunca fica menor que um bin
 RESOLUTION = {"t1_lung_f_peak": 1 / ROI_SIZE["lung"], "t1_soft_f_peak": 1 / ROI_SIZE["soft"]}
@@ -48,7 +51,9 @@ CONFIG = {
     "soft_keep": SOFT_KEEP, "wavelet": WAVELET, "levels": LEVELS, "windows": list(WINDOWS),
     "block": BLOCK, "block_stride": STRIDE, "block_min_valid": MIN_VALID, "map_rho_min": RHO_MIN,
     "bootstrap_draws": DRAWS, "bootstrap_seed": SEED, "split_factor": SPLIT_FACTOR,
-    "k_grid": [float(K_GRID[0]), float(K_GRID[-1])], "k_target": {"aprovada_min": K_TARGET_APPROVED, "reprovada_max": K_TARGET_REJECTED},
+    "k_grid": [float(K_GRID[0]), float(K_GRID[-1])],
+    "k_target": {"vizinhos_aprovada_min": K_TARGET_APPROVED, "vizinhos_reprovada_max": K_TARGET_REJECTED, "controle_residuo_aprovada_min": K_TARGET_CONTROL},
+    "neighbour_mode": "same_series", "control_shift_px": list(SHIFT),
 }
 
 
@@ -66,21 +71,33 @@ def slice_info(case_id: str) -> tuple[str, str, int, int]:
     return match.group(1), match.group(2), int(match.group(3)), int(match.group(4))
 
 
-def neighbour_pairs(case_ids, same_series_first: bool = True) -> list[tuple[int, int]]:
-    """Cada corte com o vizinho do mesmo paciente.
+NEIGHBOUR_MODES = ("same_series", "same_series_first", "index")
 
-    Ordem de preferência: mesma série (mesma aquisição), menor |Δ índice do
-    corte|, menor |Δ fase|. Com `same_series_first=False` a série é ignorada
-    (variante usada só para comparação no relatório).
+
+def neighbour_pairs(case_ids, mode: str = "same_series") -> list[tuple[int, int]]:
+    """Cada corte com o vizinho do mesmo paciente (menor |Δ índice do corte|, depois menor |Δ fase|).
+
+    - `same_series` (v3, controle (a)): só cortes da mesma série (mesma aquisição);
+      corte sem par na série fica de fora;
+    - `same_series_first` (v2): mesma série se houver, senão outra série;
+    - `index`: ignora a série.
     """
+    if mode not in NEIGHBOUR_MODES:
+        raise ValueError(mode)
     info = [slice_info(c) for c in case_ids]
     pairs = []
     for i, (patient, series, phase, index) in enumerate(info):
-        partners = [j for j, other in enumerate(info) if j != i and other[0] == patient]
+        partners = [j for j, other in enumerate(info) if j != i and other[0] == patient and (mode != "same_series" or other[1] == series)]
         if partners:
-            j = min(partners, key=lambda j: (same_series_first and info[j][1] != series, abs(info[j][3] - index), abs(info[j][2] - phase), j))
+            j = min(partners, key=lambda j: (mode == "same_series_first" and info[j][1] != series, abs(info[j][3] - index), abs(info[j][2] - phase), j))
             pairs.append((i, j))
     return pairs
+
+
+def cross_series_pairs(case_ids) -> list[tuple[int, int]]:
+    """Controle (c): pares do mesmo paciente em séries diferentes (i < j)."""
+    info = [slice_info(c) for c in case_ids]
+    return [(i, j) for i in range(len(info)) for j in range(i + 1, len(info)) if info[i][0] == info[j][0] and info[i][1] != info[j][1]]
 
 
 def summary(values) -> dict:
@@ -128,28 +145,42 @@ def rulers(readings, splits, nn_raws) -> dict:
     return metrics
 
 
-def status_rates(nn_raws, metrics: dict, k: float) -> dict:
-    statuses = [score(raw, {"metrics": metrics}, same_anatomy=False, k=k)["noise_signature_status"] for raw in nn_raws]
+def status_rates(raws, metrics: dict, k: float, same_anatomy: bool = False) -> dict:
+    statuses = [score(raw, {"metrics": metrics}, same_anatomy=same_anatomy, k=k)["noise_signature_status"] for raw in raws]
     counts = Counter(statuses)
     n = max(len(statuses), 1)
     return {"k": float(k), "n": len(statuses), "aprovada": counts.get("aprovada", 0) / n,
             "revisão": counts.get("revisão", 0) / n, "reprovada": counts.get("reprovada", 0) / n}
 
 
-def choose_k(nn_raws, metrics: dict) -> dict:
-    """Menor k da grade que leva os pares vizinhos a ≥ 85% aprovada e ≤ 5% reprovada; senão o melhor k ≤ 2."""
-    grid = [status_rates(nn_raws, metrics, k) for k in K_GRID]
-    ok = [g for g in grid if g["aprovada"] >= K_TARGET_APPROVED and g["reprovada"] <= K_TARGET_REJECTED]
-    # sem k que cumpra a meta: o que maximiza aprovada − reprovada; empate → o maior k (menos alarme falso)
-    chosen = ok[0] if ok else max(grid, key=lambda g: (round(g["aprovada"] - g["reprovada"], 9), g["k"]))
-    needed = next((g for g in (status_rates(nn_raws, metrics, k) for k in K_EXTENDED)
-                   if g["aprovada"] >= K_TARGET_APPROVED and g["reprovada"] <= K_TARGET_REJECTED), None) if not ok else chosen
+def _meets(a: dict, b: dict | None) -> bool:
+    ok = a["aprovada"] >= K_TARGET_APPROVED and a["reprovada"] <= K_TARGET_REJECTED
+    return ok and (b is None or b["aprovada"] >= K_TARGET_CONTROL)
+
+
+def choose_k(nn_raws, metrics: dict, control_raws=None) -> dict:
+    """Menor k da grade que cumpre as metas nos controles (a) e (b); senão o melhor k da grade.
+
+    (a) vizinhos da mesma série (só máscara): ≥ 85% aprovada e ≤ 5% reprovada;
+    (b) resíduo deslocado (mesma anatomia): ≥ 95% aprovada.
+    Sem k que cumpra: o que maximiza (aprovada − reprovada) somado nos dois; empate → maior k.
+    """
+    def rates(k):
+        a = status_rates(nn_raws, metrics, k)
+        b = status_rates(control_raws, metrics, k, same_anatomy=True) if control_raws else None
+        return {"k": float(k), "a": a, "b": b}
+
+    grid = [rates(k) for k in K_GRID]
+    ok = [g for g in grid if _meets(g["a"], g["b"])]
+    gain = lambda g: round(g["a"]["aprovada"] - g["a"]["reprovada"] + (g["b"]["aprovada"] - g["b"]["reprovada"] if g["b"] else 0), 9)
+    chosen = ok[0] if ok else max(grid, key=lambda g: (gain(g), g["k"]))
+    needed = chosen if ok else next((g for g in (rates(k) for k in K_EXTENDED) if _meets(g["a"], g["b"])), None)
     return {"k": chosen["k"], "target_met": bool(ok), "in_sample": chosen, "grid": grid,
             "k_needed": needed["k"] if needed else None}
 
 
-def calibration_inputs(valid, same_series_first: bool = True) -> dict:
-    """Medidas das originais (cada uma com o próprio plano), metades par × ímpar e pares vizinhos (d bruto)."""
+def calibration_inputs(valid, neighbour_mode: str = "same_series", controls: bool = True) -> dict:
+    """Medidas das originais (cada uma com o próprio plano), metades par × ímpar, controle (a) e controle (b) (d bruto)."""
     if len(valid) < MIN_CALIBRATION:
         raise RuntimeError(f"calibração precisa de pelo menos {MIN_CALIBRATION} originais válidas")
     ids = [case.paths.case_id for case in valid]
@@ -178,17 +209,28 @@ def calibration_inputs(valid, same_series_first: bool = True) -> dict:
         readings.append(reading)
         splits.append(split)
 
-    pairs = neighbour_pairs(ids, same_series_first)
+    pairs = neighbour_pairs(ids, neighbour_mode)
     nn_raws = [raw_pair(sides[i], sides[j], ctx, paired=False) for i, j in pairs]
-    return {"ids": ids, "sides": sides, "ctx": ctx, "readings": readings, "splits": splits, "pairs": pairs, "nn_raws": nn_raws}
+    control_raws, coverage = [], []
+    if controls:
+        for case, plan, side in zip(valid, plans, sides):
+            image, cov = residual_shift_control(case.original, sigma0, case.lung_mask, plan.regions.soft.host)
+            other = measure(image, plan, sigma0)
+            raw = raw_pair(side, other, ctx, paired=True)
+            raw["t4_map_rho"] = map_rho(side["t4"]["blocks"]["map"], other["t4"]["blocks"]["map"])
+            control_raws.append(raw)
+            coverage.append(cov)
+    return {"ids": ids, "sides": sides, "ctx": ctx, "readings": readings, "splits": splits, "pairs": pairs, "nn_raws": nn_raws,
+            "control_raws": control_raws, "control_coverage": coverage}
 
 
 def calibrate(valid, dataset: str = "", lopo: bool = True) -> dict:
-    """Réguas tiradas só das originais válidas e k pelos pares vizinhos (com validação deixando um paciente fora)."""
+    """Réguas pelos vizinhos da mesma série e k pelos controles (a) e (b), com validação deixando um paciente fora."""
     inputs = calibration_inputs(valid)
-    ids, ctx, readings, splits, pairs, nn_raws = (inputs[k] for k in ("ids", "ctx", "readings", "splits", "pairs", "nn_raws"))
+    ids, ctx, readings, splits, pairs, nn_raws, control_raws = (
+        inputs[k] for k in ("ids", "ctx", "readings", "splits", "pairs", "nn_raws", "control_raws"))
     metrics = rulers(readings, splits, nn_raws)
-    k_info = choose_k(nn_raws, metrics)
+    k_info = choose_k(nn_raws, metrics, control_raws)
 
     patients = [patient_key(c) for c in ids]
     folds = []
@@ -198,21 +240,29 @@ def calibrate(valid, dataset: str = "", lopo: bool = True) -> dict:
             if not test:
                 continue
             train_slices = [i for i, p in enumerate(patients) if p != patient]
+            test_slices = [i for i, p in enumerate(patients) if p == patient]
             train = [n for n, (i, _) in enumerate(pairs) if patients[i] != patient]
             fold_metrics = rulers([readings[i] for i in train_slices], [splits[i] for i in train_slices], [nn_raws[n] for n in train])
-            fold_k = choose_k([nn_raws[n] for n in train], fold_metrics)
+            fold_k = choose_k([nn_raws[n] for n in train], fold_metrics, [control_raws[i] for i in train_slices] if control_raws else None)
             held = status_rates([nn_raws[n] for n in test], fold_metrics, fold_k["k"])
+            held_b = status_rates([control_raws[i] for i in test_slices], fold_metrics, fold_k["k"], same_anatomy=True) if control_raws else {}
             folds.append({"held_out": patient, "k": fold_k["k"], "target_met_in_training": fold_k["target_met"],
-                          "n_train_pairs": len(train), "n_test_pairs": len(test), "test": held})
-    pooled = {}
+                          "n_train_pairs": len(train), "n_test_pairs": len(test), "test": held,
+                          "n_test_controls": len(test_slices), "test_controls": held_b})
+    pooled, pooled_b = {}, {}
     if folds:
         total = sum(f["n_test_pairs"] for f in folds)
         pooled = {"n": total, **{s: sum(f["test"][s] * f["n_test_pairs"] for f in folds) / total for s in ("aprovada", "revisão", "reprovada")}}
+        if control_raws:
+            total_b = sum(f["n_test_controls"] for f in folds)
+            pooled_b = {"n": total_b, **{s: sum(f["test_controls"][s] * f["n_test_controls"] for f in folds) / total_b
+                                         for s in ("aprovada", "revisão", "reprovada")}}
 
     return {
         "version": VERSION, "dataset": dataset, "n_cases": len(valid), "patients": sorted(set(patients)),
         "cases": ids, "config": CONFIG, **ctx,
         "neighbour_pairs": [[ids[i], ids[j]] for i, j in pairs],
+        "control_shift_coverage": inputs["control_coverage"],
         "metrics": metrics, "k": k_info["k"], "k_calibration": k_info,
-        "lopo": {"folds": folds, "pooled_out_of_sample": pooled},
+        "lopo": {"folds": folds, "pooled_out_of_sample": pooled, "pooled_out_of_sample_controls": pooled_b},
     }

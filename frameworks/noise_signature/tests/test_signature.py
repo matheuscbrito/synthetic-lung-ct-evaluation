@@ -7,7 +7,8 @@ from scipy.ndimage import gaussian_filter, uniform_filter1d
 
 from types import SimpleNamespace
 
-from frameworks.noise_signature.calibrate import neighbour_pairs, rulers
+from frameworks.noise_signature.calibrate import cross_series_pairs, neighbour_pairs, rulers
+from frameworks.noise_signature.controls import residual_shift_control
 from frameworks.noise_signature.decision import (DECISION_METRICS, bootstrap, certain_status, combine, final_status, score,
                                                  score_metric)
 from frameworks.noise_signature.measure import all_metric_keys
@@ -216,8 +217,10 @@ class V2DecisionTest(unittest.TestCase):
 
     def test_neighbours_prefer_same_series_then_index(self) -> None:
         ids = ["x-P1P1S300I00002 a-1-010", "x-P1P1S300I00002 a-1-020", "x-P1P1S301I00002 a-1-011", "x-P1P2S300I00001 a-1-010"]
-        self.assertEqual(neighbour_pairs(ids), [(0, 1), (1, 0), (2, 0)])
-        self.assertEqual(neighbour_pairs(ids, same_series_first=False)[0], (0, 2))
+        self.assertEqual(neighbour_pairs(ids, "same_series_first"), [(0, 1), (1, 0), (2, 0)])
+        self.assertEqual(neighbour_pairs(ids, "index")[0], (0, 2))
+        self.assertEqual(neighbour_pairs(ids), [(0, 1), (1, 0)])              # v3: só mesma série
+        self.assertEqual(cross_series_pairs(ids), [(0, 2), (1, 2)])
 
 
 def _phantom(seed: int, size: int = 320) -> tuple[np.ndarray, np.ndarray]:
@@ -235,6 +238,35 @@ def _phantom(seed: int, size: int = 320) -> tuple[np.ndarray, np.ndarray]:
     return image, lungs & (gaussian_filter(lungs.astype(float), 2) > 0.99)
 
 
+class GrainAndControlTest(unittest.TestCase):
+    def test_t1_acf_len_sees_correlated_noise(self) -> None:
+        rng = np.random.default_rng(11)
+        white = rng.normal(size=(SIZE, SIZE))
+        lengths = [t1(gaussian_filter(white, s) if s else white)["acf_len"] for s in (0, 0.7, 1.5)]
+        self.assertLess(lengths[0], 1.0)                           # ruído branco: cai abaixo de 1/e já no lag 1
+        self.assertTrue(lengths[0] < lengths[1] < lengths[2])
+        # sem filtro de ruído: um plano somado não muda (o plano sai de cada ROI)
+        yy, xx = np.mgrid[:SIZE, :SIZE]
+        self.assertAlmostEqual(t1(white + 0.01 * xx + 0.02 * yy)["acf_len"], lengths[0], places=6)
+
+    def test_residual_shift_control(self) -> None:
+        from frameworks.noise_signature.residual import wiener_denoise
+        image, lung = _phantom(3)
+        control, coverage = residual_shift_control(image, 0.02, lung)
+        self.assertGreater(coverage, 0.5)
+        air = image <= image.min() + 1e-6
+        np.testing.assert_allclose(control[air], image[air], atol=1e-6)          # o ar recortado não muda
+        base = wiener_denoise(image, 0.02)
+        res, new = image - base, control - base
+        body = ~air
+        self.assertAlmostEqual(float(np.std(new[body])), float(np.std(res[body])), delta=0.15 * float(np.std(res[body])))
+        # nova realização: o resíduo deslocado quase não se correlaciona com o original no tecido
+        inner = (np.abs(new - res) > 0) & body
+        self.assertLess(abs(np.corrcoef(new[inner], res[inner])[0, 1]), 0.1)
+        # o pulmão só recebe resíduo do pulmão
+        self.assertAlmostEqual(float(np.std(new[lung])), float(np.std(res[lung])), delta=0.15 * float(np.std(res[lung])))
+
+
 class CopyOfRealTest(unittest.TestCase):
     def test_copy_of_real_is_approved(self) -> None:
         from frameworks.noise_signature.calibrate import calibrate
@@ -247,6 +279,8 @@ class CopyOfRealTest(unittest.TestCase):
         image, lung = cases[0].original, cases[0].lung_mask
         row, _ = evaluate_pair("copia", image, image.copy(), lung, calib, same_anatomy=True)
         self.assertEqual(row["noise_signature_status"], "aprovada", row["noise_signature_reasons"])
+        # controle (b) dentro da calibração: medido e com cobertura
+        self.assertEqual(len(calib["control_shift_coverage"]), len(cases))
         # e o dobro do ruído não passa
         louder = image + (image > -0.59) * gaussian_filter(np.random.default_rng(99).normal(0, 0.05, image.shape), 0.6)
         row, _ = evaluate_pair("ruidosa", image, louder, lung, calib, same_anatomy=True)

@@ -5,13 +5,12 @@ Uso (da raiz do repositório):
     .venv/bin/python -m frameworks.noise_signature.experimentos.ortogonalidade \\
         --output-dir resultados/ruido_ortogonalidade
 
-1. Controles real × real: cada original válida do Dsr contra o vizinho do
-   mesmo paciente usado na calibração v2 (mesma série, índice e fase mais
-   próximos). Modo só máscara (cada imagem com a própria máscara) e, quando a
-   anatomia é próxima (correlação no pulmão ≥ 0,5), também mesma anatomia.
-   Mais: o vizinho só por índice (ignora a série), todos os pares do mesmo
-   paciente (só máscara), a cópia idêntica (sanidade) e o falso alarme fora da
-   amostra (calibração deixando um paciente fora, `calibracao["lopo"]`).
+1. Controles (v3): (a) cada original contra o corte adjacente da mesma série
+   (só máscara; e mesma anatomia quando a correlação no pulmão ≥ 0,5);
+   (b) nova realização do ruído na mesma anatomia (D + resíduo deslocado por
+   região, `controls.residual_shift_control`); (c) pares de séries diferentes do
+   mesmo paciente (outra aquisição: controle positivo); mais a cópia idêntica e
+   o desempenho fora da amostra (`calibracao["lopo"]`).
 2. Perturbações só de ruído na real (mesma anatomia): ruído branco, ruído
    correlacionado, resíduo atenuado/borrado.
 3. Perturbações só de estrutura/brilho: deslocamento de brilho, ganho e
@@ -41,7 +40,8 @@ from scipy.ndimage import gaussian_filter
 from scipy.stats import spearmanr
 
 from frameworks.noise_signature import evaluate as ns_eval
-from frameworks.noise_signature.calibrate import calibrate as ns_calibrate, neighbour_pairs, patient_key, status_rates
+from frameworks.noise_signature.calibrate import calibrate as ns_calibrate, cross_series_pairs, neighbour_pairs, patient_key, status_rates
+from frameworks.noise_signature.controls import residual_shift_control
 from frameworks.noise_signature.decision import DECISION_METRICS, EIXOS, active_decision_metrics, technique_of
 from frameworks.noise_signature.measure import TECHNIQUES, compute_metrics, make_plan, measure
 from frameworks.noise_signature.noise_level import pooled_mad1
@@ -229,16 +229,27 @@ def real_controls(valid, calib, ctx):
                 out.append({**base, "mode": "same-anatomy", **sa_row, **{k: rec[k] for k in rec if k.startswith("tex_")}})
         return out
 
-    nn_rows = neighbour_rows(neighbour_pairs(ids), "calibração (mesma série primeiro)", True)
-    nn_index_rows = neighbour_rows(neighbour_pairs(ids, same_series_first=False), "só índice/fase (ignora série)", False)
-    all_rows = []
-    for (i, j), (dice, corr, _) in sims.items():
-        if i < j:
-            row, _ = evaluate_noise(valid[i].paths.case_id, valid[i].original, valid[j].original,
-                                    valid[i].lung_mask, valid[j].lung_mask, calib, False)
-            all_rows.append({"case_id": valid[i].paths.case_id, "partner_id": valid[j].paths.case_id,
-                             "patient": patients[i], "mask_dice": dice, "lung_correlation": corr, **{k: v for k, v in row.items() if k != "case_id"}})
-    return identity_rows, nn_rows, nn_index_rows, all_rows
+    # (a) mesma série, corte adjacente (o vizinho da calibração)
+    nn_rows = neighbour_rows(neighbour_pairs(ids, "same_series"), "(a) mesma série, corte adjacente", True)
+    # (b) nova realização do ruído na mesma anatomia: D + resíduo deslocado por região
+    shift_rows = []
+    sigma0 = float(calib["sigma0"])
+    for a in valid:
+        plan = make_plan(a.original, a.lung_mask)
+        control, coverage = residual_shift_control(a.original, sigma0, a.lung_mask, plan.regions.soft.host)
+        row, _ = evaluate_noise(a.paths.case_id, a.original, control, a.lung_mask, a.lung_mask, calib, True)
+        tex = texture_row(a.paths.case_id, a.original, control, a.lung_mask, ctx)
+        shift_rows.append({**row, "shift_coverage": coverage, **{k: tex[k] for k in tex if k.startswith("tex_")}})
+    # (c) séries diferentes do mesmo paciente (outra aquisição): controle positivo
+    cross_rows = []
+    for i, j in cross_series_pairs(ids):
+        dice, corr, _ = sims[(i, j)]
+        row, _ = evaluate_noise(valid[i].paths.case_id, valid[i].original, valid[j].original,
+                                valid[i].lung_mask, valid[j].lung_mask, calib, False)
+        cross_rows.append({"case_id": valid[i].paths.case_id, "partner_id": valid[j].paths.case_id, "patient": patients[i],
+                           "series_a": series_info(valid[i].paths.case_id)[0], "series_b": series_info(valid[j].paths.case_id)[0],
+                           "mask_dice": dice, "lung_correlation": corr, **{k: v for k, v in row.items() if k != "case_id"}})
+    return identity_rows, nn_rows, shift_rows, cross_rows
 
 
 # ---------------------------------------------------------------- 2–3. perturbações
@@ -496,19 +507,25 @@ def main() -> None:
     print(f"{len(valid)} originais válidas; σ0 = {calib['sigma0']:.4f}; k = {calib['k']}", flush=True)
 
     # 1. controles
-    identity, nn_rows, nn_index_rows, all_rows = real_controls(valid, calib, ctx)
+    identity, nn_rows, shift_rows, cross_rows = real_controls(valid, calib, ctx)
     write_csv(out / "controles_identidade.csv", identity)
-    write_csv(out / "controles_real_real.csv", nn_rows + nn_index_rows)
-    write_csv(out / "controles_todos_pares.csv", all_rows)
+    write_csv(out / "controles_real_real.csv", nn_rows)
+    write_csv(out / "controles_residuo_deslocado.csv", shift_rows)
+    write_csv(out / "controles_series_diferentes.csv", cross_rows)
+    for name in ("controles_todos_pares.csv",):
+        (out / name).unlink(missing_ok=True)       # substituído pelo controle (c) na v3
     nn_mo = [r for r in nn_rows if r["mode"] == "mask-only"]
     nn_sa = [r for r in nn_rows if r["mode"] == "same-anatomy"]
-    control_sets = {"cópia idêntica": identity, "vizinho (calibração), só máscara": nn_mo,
-                    "vizinho (calibração), mesma anatomia": nn_sa, "vizinho só por índice (ignora série), só máscara": nn_index_rows,
-                    "todos os pares do paciente, só máscara": all_rows}
+    control_sets = {"cópia idêntica": identity, "(a) mesma série, corte adjacente, só máscara": nn_mo,
+                    "(a) mesma série, corte adjacente, mesma anatomia (corr ≥ 0,5)": nn_sa,
+                    "(b) resíduo deslocado, mesma anatomia": shift_rows,
+                    "(c) séries diferentes do paciente, só máscara": cross_rows}
     control_matrix = [matrix([{**r, "conjunto": name} for r in rows], "conjunto")[0] for name, rows in control_sets.items() if rows]
     write_csv(out / "controles_matriz.csv", control_matrix)
     metric_fp = {name: per_metric_flags(rows) for name, rows in (("vizinho_so_mascara", nn_mo), ("vizinho_mesma_anatomia", nn_sa),
-                                                                 ("vizinho_so_indice", nn_index_rows), ("todos_pares", all_rows)) if rows}
+                                                                 ("residuo_deslocado", shift_rows), ("series_diferentes", cross_rows)) if rows}
+    cross_summary = cross_series_summary(cross_rows)
+    no_soft = [r["case_id"] for r in identity if r["eixo_quantidade_status"] == "inconclusivo"]
     write_csv(out / "controles_por_metrica.csv", [{"conjunto": k, **r} for k, rows in metric_fp.items() for r in rows])
     lopo = calib["lopo"]
 
@@ -584,6 +601,9 @@ def main() -> None:
 
     summary = {
         "data": DATE, "versao": calib["version"], "n_originais": len(valid), "sigma0": calib["sigma0"], "seed": SEED,
+        "controle_c_series_diferentes": cross_summary, "cortes_sem_tecido_mole": no_soft,
+        "cobertura_residuo_deslocado": {"min": float(np.min([r["shift_coverage"] for r in shift_rows])),
+                                        "mediana": float(np.median([r["shift_coverage"] for r in shift_rows]))},
         "k": calib["k"], "k_calibracao": {k: v for k, v in calib["k_calibration"].items() if k != "grid"}, "lopo": lopo,
         "metricas_decisao": {e: list(ks) for e, ks in EIXOS.items()},
         "controles": {m["conjunto"]: {"n": m["n"], "ruido_final": m["ruido_final_counts"], "pct_sinalizado": m["ruido_final_pct"],
@@ -593,6 +613,7 @@ def main() -> None:
                                       **({f"{t}_pct": m[f"{t}_pct"] for t in TEXTURE_TECHS + ("textura", "brilho")} if "GLCM_pct" in m else {})}
                       for m in control_matrix},
         "falso_alarme_por_metrica_vizinhos": metric_fp.get("vizinho_so_mascara"),
+        "falso_alarme_por_metrica_residuo_deslocado": metric_fp.get("residuo_deslocado"),
         "matriz": pmatrix,
         "verificacao": verification,
         "redundancia": {"reais_ruido_textura": flags_real, "deltas_dsr_ruido_textura": flags_delta, "reais_ruido_ruido": flags_nn,
@@ -604,21 +625,40 @@ def main() -> None:
     print(f"pronto: {out}")
 
 
+def cross_series_summary(rows) -> dict:
+    """Controle (c): fração sinalizada, por eixo, e a distribuição da razão de ruído entre séries."""
+    flagged = [r for r in rows if r["noise_signature_status"] in FLAGGED]
+    ratio_sigma = np.exp([fnum(r["t1_soft_sigma_ratio_d"]) for r in rows])
+    ratio_imm = np.array([fnum(r["t3_soft_immerkaer_synthetic"]) / fnum(r["t3_soft_immerkaer_real"]) for r in rows])
+    fold = lambda x: np.maximum(x, 1 / x)                 # razão "maior ÷ menor"
+    pct = lambda x: [float(v) for v in np.nanpercentile(fold(x), [25, 50, 75, 90, 100])]
+    return {"n": len(rows), "pct_sinalizado": pct_flagged(r["noise_signature_status"] for r in rows),
+            "status": dict(Counter(r["noise_signature_status"] for r in rows)),
+            "eixo_pct_sinalizado": {e: pct_flagged(r[f"eixo_{e}_status"] for r in rows) for e in NOISE_EIXOS},
+            "razao_sigma_t1_soft_P25_P50_P75_P90_max": pct(ratio_sigma),
+            "razao_immerkaer_soft_P25_P50_P75_P90_max": pct(ratio_imm),
+            "pct_razao_immerkaer_maior_1_5": float(100 * np.nanmean(fold(ratio_imm) > 1.5)),
+            "n_sinalizados": len(flagged)}
+
+
 def plot_k(path, calib) -> None:
     plt = plt_setup()
     grid = calib["k_calibration"]["grid"]
     fig, ax = plt.subplots(figsize=(6.5, 3.6))
     ks = [g["k"] for g in grid]
     for status, color in (("aprovada", STATUS_COLORS["aprovada"]), ("revisão", STATUS_COLORS["revisão"]), ("reprovada", STATUS_COLORS["reprovada"])):
-        ax.plot(ks, [100 * g[status] for g in grid], color=color, lw=2, label=status)
+        ax.plot(ks, [100 * g["a"][status] for g in grid], color=color, lw=2, label=f"(a) {status}")
+    if grid[0].get("b"):
+        ax.plot(ks, [100 * g["b"]["aprovada"] for g in grid], color=STATUS_COLORS["aprovada"], lw=1.5, ls=":", label="(b) aprovada")
+        ax.axhline(95, color="#52514e", lw=0.8, ls=":")
     ax.axhline(85, color=STATUS_COLORS["aprovada"], lw=0.8, ls="--")
     ax.axhline(5, color=STATUS_COLORS["reprovada"], lw=0.8, ls="--")
     ax.axvline(calib["k"], color="#52514e", lw=0.8)
     ax.set_xlabel("k (multiplicador da escala)")
-    ax.set_ylabel("% dos pares vizinhos real × real")
+    ax.set_ylabel("% dos controles")
     ax.set_ylim(0, 100)
     ax.legend(fontsize=8, frameon=False)
-    ax.set_title(f"Calibração do k nas reais (dentro da amostra); escolhido k = {pt(calib['k'], 2)}", fontsize=10, loc="left")
+    ax.set_title(f"Calibração do k: controles (a) e (b), dentro da amostra; k = {pt(calib['k'], 2)}", fontsize=10, loc="left")
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -627,6 +667,7 @@ def plot_k(path, calib) -> None:
 def write_report(out, summary, control_matrix, pmatrix, metric_fp, pmetric, verification):
     """Rascunho automático das tabelas; o texto interpretativo é escrito à mão em resumo.md."""
     parts = ["## Tabelas geradas automaticamente", "", f"k = {summary['k']}; calibração: {summary['k_calibracao']}", "",
+             f"Controle (c): {summary['controle_c_series_diferentes']}", "", f"Sem tecido mole: {summary['cortes_sem_tecido_mole']}", "",
              f"LOPO: {summary['lopo']}", ""]
     parts.append(md_table(["Conjunto", "n", "Ruído v2", "% aprovada", *[f"eixo {e}" for e in NOISE_EIXOS], "T1", "T2", "T3", "T4", "Textura"],
                           [[m["conjunto"], m["n"], fmt_counts(m["ruido_final_counts"]), f"{pt(m['ruido_aprovada_pct'], 0)}%",

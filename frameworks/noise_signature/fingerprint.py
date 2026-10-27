@@ -26,36 +26,11 @@ from functools import lru_cache
 
 import numpy as np
 
-from .nps import SKIP_BINS, RoiSet, hann, patches, radial_profiles
+from .nps import ACF_LAGS, SKIP_BINS, RoiSet, acf_shape, hann, patches, radial_profiles, roi_acf
 
-ACF_LAGS = 10
 GRID_STEP = 8            # período em px do decodificador (k/8 ciclos/pixel); k/4 = múltiplos pares
 METRICS = ("acf_len", "acf_neg", "kurtosis", "lsd", "grid_peak", "soft_acf_len")
 MIN_UNITS = 8            # = nps.MIN_ROIS (sem importar, para não criar ciclo)
-
-
-@lru_cache(maxsize=None)
-def _acf_radial(size: int) -> tuple[np.ndarray, np.ndarray]:
-    """Pesos para tirar a autocovariância radial (lags 0..10) de uma FFT com zero-padding 2×."""
-    lag = np.fft.fftfreq(2 * size, d=1.0 / (2 * size)).astype(int)
-    ly, lx = np.meshgrid(lag, lag, indexing="ij")
-    overlap = np.clip(size - np.abs(ly), 0, None) * np.clip(size - np.abs(lx), 0, None)
-    radius = np.rint(np.hypot(lx, ly)).astype(int)
-    matrix = np.zeros(((2 * size) ** 2, ACF_LAGS + 1))
-    flat = radius.ravel()
-    inside = (flat <= ACF_LAGS) & (overlap.ravel() > 0)
-    matrix[np.flatnonzero(inside), flat[inside]] = 1.0 / overlap.ravel()[inside]
-    return matrix / np.maximum((matrix > 0).sum(axis=0), 1), overlap
-
-
-def roi_acf(stack: np.ndarray) -> np.ndarray:
-    """Autocovariância radial não enviesada (n, 11) de cada recorte, sem janela."""
-    n, size, _ = stack.shape
-    centred = stack - stack.mean(axis=(1, 2), keepdims=True)
-    power = np.abs(np.fft.fft2(centred, s=(2 * size, 2 * size))) ** 2
-    acov = np.real(np.fft.ifft2(power))
-    with np.errstate(all="ignore"):
-        return acov.reshape(n, -1) @ _acf_radial(size)[0]
 
 
 def residual_spectra(stack: np.ndarray) -> np.ndarray:
@@ -83,18 +58,6 @@ def roi_units(res: np.ndarray, rois: RoiSet, strict: np.ndarray, spectral: bool)
         spec = residual_spectra(stack)
         units.update(spec=spec, prof=radial_profiles(spec))
     return units
-
-
-def acf_shape(acf: np.ndarray) -> tuple[float, float]:
-    """(raio em que ρ cai abaixo de 1/e, profundidade do lobo negativo)."""
-    rho = acf / max(float(acf[0]), 1e-30)
-    below = np.flatnonzero(rho < np.exp(-1))
-    if not below.size:
-        length = float(ACF_LAGS)
-    else:
-        r = int(below[0])
-        length = float(r - 1 + (rho[r - 1] - np.exp(-1)) / (rho[r - 1] - rho[r]))
-    return length, float(max(0.0, -rho[1:].min()))
 
 
 def kurtosis(mom: np.ndarray) -> float:

@@ -24,7 +24,7 @@ from .regions import REGION_NAMES, Regions, build_regions
 from .residual import DENOISERS, residual
 from .stationarity import METRICS as T4_METRICS, Blocks, block_units, select_blocks, t4_metrics
 
-T1_METRICS = ("sigma", "f_peak", "f_avg", "anisotropy")
+T1_METRICS = ("sigma", "f_peak", "f_avg", "anisotropy", "acf_len")
 # métricas do par (comparam duas leituras T1): forma do NPS e razão de σ (log)
 PAIR_METRICS = {"t1_lung": ("shape_dist", "sigma_ratio"), "t1_soft": ("shape_dist", "sigma_ratio")}
 

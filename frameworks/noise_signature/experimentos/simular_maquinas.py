@@ -18,7 +18,8 @@ Validação de `docs/ruido/metodo.md` §6 (primeira linha da tabela), sem dados 
    próximo e regressão logística, deixando um paciente de fora); (d) camada de
    decisão calibrada na máquina M0 = ramp·média (outra realização do ruído);
    (e) repetibilidade metade par × ímpar das ROIs.
-   v2: a régua e o k vêm dos pares vizinhos de M0 (mesma calibração das reais);
+   v2/v3: a régua e o k vêm dos controles de M0 (vizinhos da mesma série e
+   resíduo deslocado; mesma calibração das reais);
    o resumo traz as metas de mesma máquina, kernel diferente e dose 2×.
 
 Uso (da raiz do repositório):

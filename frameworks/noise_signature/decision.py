@@ -1,4 +1,4 @@
-"""Decisão da assinatura de ruído v2 (metodo.md §5 e §8).
+"""Decisão da assinatura de ruído v2/v3 (metodo.md §5, §8 e §9).
 
 1. Por métrica: z = d / (k · escala). d = sintética − real (ou a métrica do
    par); escala = max(IQR do Δ entre vizinhos reais do mesmo paciente,
@@ -63,6 +63,8 @@ EIXOS = {
 # Propostas para a decisão que falharam na verificação e ficaram como diagnóstico
 # (metodo.md §8): t1_soft_f_avg e t3_lung_corr_index (repetibilidade par × ímpar
 # ≥ 0,6 nas reais) e t1_soft_shape_dist (spread par × ímpar 2× o dos vizinhos).
+# v3 (metodo.md §9): t1_soft_acf_len (grão sem passar pelo Wiener) foi testada
+# para ruído correlacionado e pega só ~19%: fica como diagnóstico.
 EIXO_LABELS = {"quantidade": "quantidade (dose)", "grão": "grão (kernel)", "espectro": "espectro do resíduo", "distribuição": "distribuição no corte"}
 DECISION_METRICS = tuple(key for keys in EIXOS.values() for key in keys)
 SAME_ANATOMY_ONLY = {"t1_soft_sigma_ratio"}          # só decide com as mesmas ROIs nos dois lados
@@ -219,9 +221,13 @@ def score(raw: dict, calib: dict, same_anatomy: bool, k: float | None = None) ->
     return out
 
 
+KEY_LABELS = {"t1_lung_acf_len": "comprimento de correlação do ruído (sem filtro)",
+              "t1_soft_acf_len": "comprimento de correlação do ruído (sem filtro)"}
+
+
 def label_of(key: str) -> str:
     prefix = prefix_of(key)
-    return f"{PREFIX_LABELS[prefix]} · {METRIC_LABELS.get(key[len(prefix) + 1:], key)}"
+    return f"{PREFIX_LABELS[prefix]} · {KEY_LABELS.get(key, METRIC_LABELS.get(key[len(prefix) + 1:], key))}"
 
 
 def metric_reason(raw: dict, scored: dict, key: str) -> str:
