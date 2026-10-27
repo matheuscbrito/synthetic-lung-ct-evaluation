@@ -72,6 +72,31 @@ def test_version_label_meta_wins_over_defaults():
     assert cv.version_label("Dsr", history, {"Dsr": {"label": None, "provenance": None}}) == "reference"
 
 
+def test_lab_baseline_is_first_version_named_baseline():
+    history = {"reference": "Dsr", "versions": [{"name": "Dsr"}, {"name": "X-baseline"}, {"name": "Y-baseline"}]}
+    assert cv.lab_baseline(history) == "X-baseline"
+    assert cv.version_label("X-baseline", history, {}) == "baseline"
+    assert cv.version_label("Y-baseline", history, {}) == "Y-baseline"
+
+
+def test_lab_baseline_none_without_baseline_suffix_and_reference_present():
+    history = {"reference": "Dsr", "versions": [{"name": "Dsr"}, {"name": "B"}]}
+    assert cv.lab_baseline(history) is None
+
+
+def test_lab_baseline_falls_back_to_default_when_reference_missing():
+    history = {"reference": "Gone", "versions": [{"name": "A"}, {"name": "B"}]}
+    assert cv.lab_baseline(history) == "A"
+
+
+def test_lab_baseline_label_on_real_history_copy(tmp_history):
+    rows = by_name(get_versions(TestClient(create_app(tmp_history))))
+    assert rows["Dsr-baseline"]["label"] == "baseline"
+    assert rows["Dsr-baseline"]["is_reference"] is False
+    assert rows["Dsr"]["label"] == "reference"
+    assert rows["Dsr-copy"]["label"] == "Dsr-copy"
+
+
 def test_load_and_save_meta_round_trip(tmp_path):
     assert cv.load_meta(tmp_path) == {}
     cv.save_meta(tmp_path, "M12", "M12", {"run": "gp", "step": "12"})

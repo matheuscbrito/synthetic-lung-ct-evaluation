@@ -94,18 +94,27 @@ def detected_provenance(folder: Path) -> dict | None:
     return {"run": optimizer, "step": str(step)}
 
 
-def version_label(name: str, history: dict, meta: dict) -> str:
-    """Rótulo de exibição: o do arquivo lateral; senão `reference`, `baseline` (linha de base padrão) ou o nome.
+def lab_baseline(history: dict) -> str | None:
+    """Versão de linha de base do laboratório, que recebe o rótulo `baseline`.
 
-    Porte da regra de rótulos do workbench: a referência é sempre `reference`; a linha de base padrão, quando
-    não é a referência, é `baseline`; qualquer outra versão aparece pelo nome da pasta.
+    É a primeira versão (na ordem do histórico) cujo nome termina em `-baseline`; sem ela, a linha de base
+    padrão do histórico quando ela não é a referência; senão None.
     """
+    for item in history["versions"]:
+        if item["name"].endswith("-baseline"):
+            return item["name"]
+    default = data.default_baseline(history)
+    return default if default != history.get("reference") else None
+
+
+def version_label(name: str, history: dict, meta: dict) -> str:
+    """Rótulo de exibição: o do arquivo lateral; senão `reference`, `baseline` (`lab_baseline`) ou o nome."""
     label = (meta.get(name) or {}).get("label")
     if label:
         return label
     if name == history.get("reference"):
         return "reference"
-    if name == data.default_baseline(history):
+    if name == lab_baseline(history):
         return "baseline"
     return name
 
