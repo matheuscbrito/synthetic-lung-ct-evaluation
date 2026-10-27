@@ -159,3 +159,25 @@ def test_schema_with_stale_history(stale_dir):
     assert all("limits" in metric for metric in body["metrics"])
     assert [axis["key"] for axis in body["axes"]] == ["texture", "brightness", "noise"]
     assert [status["key"] for status in body["statuses"]] == ["approved", "inconclusive", "review", "rejected"]
+
+
+def test_technique_keys_match_items(client):
+    """As chaves de técnica do schema são as dos itens; toda métrica aponta para uma delas."""
+    body = _schema(client)
+    wb = data.load(HISTORY_DIR)
+    reference = wb.history["reference"]
+    item_keys = set()
+    for row in wb.rows(reference):
+        item = data.slice_json(row, wb.history["calibration"])
+        for axis, _ in AXES:
+            item_keys |= set(item[axis]["techniques"])
+    schema_keys = [t["key"] for t in body["techniques"]]
+    assert len(schema_keys) == len(set(schema_keys))
+    assert set(schema_keys) == item_keys
+    assert all(t["label"] for t in body["techniques"])
+    for metric in body["metrics"]:
+        assert metric["technique"] in schema_keys, metric["key"]
+    by_key = {m["key"]: m["technique"] for m in body["metrics"]}
+    assert by_key["nps_quantity"] == "quantity" and by_key["nps_air"] == "air"
+    assert by_key["delta_mu"] == by_key["sat31"] == by_key["glcm_contrast"] == "GLCM"
+    assert by_key["ll"] == by_key["wavelet_fine"] == "Wavelet" and by_key["nex"] == "NEx"

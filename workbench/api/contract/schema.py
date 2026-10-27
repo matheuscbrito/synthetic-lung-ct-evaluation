@@ -115,6 +115,14 @@ LAYER_LABEL = {
 
 COHORT_TESTS = [{"key": "nex_shift", "label": "NEx cohort test", "axis": "texture"}]
 
+# Rótulos das técnicas: as chaves são as de `slice[eixo]["techniques"]` (as mesmas de /api/items);
+# as do ruído vêm de `noise_evaluator.integration.NPS_METRICS` mais "air" (data.slice_json)
+TECHNIQUE_LABEL = {
+    "GLCM": "GLCM", "Wavelet": "Wavelet", "NEx": "NEx",
+    "quantity": "NPS quantity", "grain": "NPS grain size", "low_band": "NPS wide patterns",
+    "high_band": "NPS fine grain", "air": "Air spots",
+}
+
 
 def _choices(keys, labels: dict, descriptions: dict | None = None) -> list[dict]:
     out = []
@@ -194,13 +202,14 @@ def metric_descriptors(calibration_body: dict, slices: list[dict]) -> list[dict]
     """
     if not slices:
         return []
+    keys = _technique_keys(slices[0])
     out = []
     for index, metric in enumerate(slices[0]["metrics"]):
         key = metric["key"]
         has_z = any(_finite(s["metrics"][index]["z"]) for s in slices)
         out.append({
             "key": key, "label": metric["label"], "axis": metric["group"],
-            "technique": metric["technique"].lower(),
+            "technique": metric_technique(metric, keys),
             "display": "z" if has_z and key != "delta_mu" else "value",
             # Δμ é diferença crua de tom (régua de 32 tons): o rótulo "IQR" de data.py não vale para ele
             "unit": "" if key == "delta_mu" else metric["unit"],
@@ -212,12 +221,29 @@ def metric_descriptors(calibration_body: dict, slices: list[dict]) -> list[dict]
     return out
 
 
+def _technique_keys(slice: dict) -> list[str]:
+    """Chaves de técnica do corte, na ordem dos eixos (união de `slice[eixo]["techniques"]`)."""
+    keys: list[str] = []
+    for axis, _ in AXES:
+        for key in slice.get(axis, {}).get("techniques", {}):
+            if key not in keys:
+                keys.append(key)
+    return keys
+
+
+def metric_technique(metric: dict, keys: list[str]) -> str | None:
+    """Técnica do veredito a que a métrica pertence: o nome da técnica (GLCM, Wavelet, NEx) ou, no ruído,
+    a chave da métrica sem o prefixo `nps_` (nps_quantity → quantity, nps_air → air)."""
+    for candidate in (metric["technique"], metric["technique"].lower(), metric["key"].removeprefix("nps_")):
+        if candidate in keys:
+            return candidate
+    return None
+
+
 def techniques(slices: list[dict]) -> list[dict]:
-    """Técnicas na ordem em que aparecem nas métricas do primeiro corte."""
-    seen: dict[str, str] = {}
-    for metric in slices[0]["metrics"] if slices else []:
-        seen.setdefault(metric["technique"].lower(), metric["technique"])
-    return [{"key": key, "label": label} for key, label in seen.items()]
+    """Técnicas com as mesmas chaves dos itens (`/api/items` → `techniques[eixo]`), na ordem dos eixos."""
+    keys = _technique_keys(slices[0]) if slices else []
+    return [{"key": key, "label": TECHNIQUE_LABEL.get(key, key)} for key in keys]
 
 
 def addons() -> dict:
