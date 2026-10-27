@@ -39,4 +39,9 @@ describe("route hash", () => {
     expect(parseHash("#/generators/runs").section).toBe("generators");
     expect(parseHash("#/versions/overview").section).toBe("versions");
   });
+
+  test("unknown section resets the whole route, tab included", () => {
+    expect(parseHash("#/nope/item")).toEqual({ section: "dataset", tab: "overview" });
+    expect(parseHash("#/nope/item?item=A&dataset=B")).toEqual({ section: "dataset", tab: "overview" });
+  });
 });

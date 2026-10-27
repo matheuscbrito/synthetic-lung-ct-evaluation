@@ -10,14 +10,46 @@ import { realBundle } from "./fixtures";
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
+let calls: { url: string; method: string }[];
 
 function respond(body: unknown) {
   return { ok: true, status: 200, statusText: "OK", json: async () => body };
 }
 
+function schemaFor(key: string, hasHistory: boolean) {
+  return { ...realBundle.schema, dataset: { ...realBundle.schema.dataset, key, has_history: hasHistory } };
+}
+
+// tabela pela URL completa (caminho + query); POST e GET não colidem porque o método também entra na conta
+function mockApi(table: Record<string, unknown>) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      calls.push({ url, method });
+      const key = `${method} ${url}`;
+      if (key in table) return respond(table[key]);
+      throw new Error(`unexpected ${key}`);
+    }),
+  );
+}
+
+async function flush() {
+  for (let i = 0; i < 4; i++) {
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 0));
+    });
+  }
+}
+
+function buttonNamed(text: string) {
+  return Array.from(host.querySelectorAll("button")).find(b => b.textContent === text);
+}
+
 beforeEach(() => {
   clearContractCache();
   window.location.hash = "";
+  calls = [];
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
@@ -30,21 +62,44 @@ afterEach(async () => {
 });
 
 test("a dataset without history shows the Evaluate button", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      if (url.startsWith("/api/status")) return respond({ stale: false, has_history: false, baseline: null, token: null });
-      if (url.startsWith("/api/schema")) return respond({ ...realBundle.schema, dataset: { ...realBundle.schema.dataset, has_history: false } });
-      throw new Error(`unexpected ${url}`);
-    }),
-  );
-  await act(async () => {
-    root.render(<App />);
+  mockApi({
+    "GET /api/status": { stale: false, has_history: false, baseline: null, token: null },
+    "GET /api/schema": schemaFor("Only", false),
   });
-  await act(async () => {
-    await new Promise(r => setTimeout(r, 0));
-  });
-  const button = Array.from(host.querySelectorAll("button")).find(b => b.textContent === "Evaluate");
-  expect(button).toBeDefined();
+  await act(async () => root.render(<App />));
+  await flush();
+  expect(buttonNamed("Evaluate")).toBeDefined();
   expect(host.querySelector("nav")).toBeNull();
+});
+
+test("the route dataset decides the first-run gate and the init POST", async () => {
+  window.location.hash = "#/dataset/overview?dataset=X";
+  mockApi({
+    "GET /api/status?dataset=X": { stale: false, has_history: false, baseline: null, token: 1 },
+    "GET /api/status": { stale: false, has_history: true, baseline: "ref", token: 2 },
+    "GET /api/schema?dataset=X": schemaFor("X", false),
+    "POST /api/datasets/X/init": { message: "ok", name: "X" },
+  });
+  await act(async () => root.render(<App />));
+  await flush();
+  expect(buttonNamed("Evaluate")).toBeDefined();
+  expect(calls.some(c => c.url === "/api/status" && c.method === "GET")).toBe(false);
+  await act(async () => buttonNamed("Evaluate")!.click());
+  await flush();
+  expect(calls.some(c => c.method === "POST" && c.url === "/api/datasets/X/init")).toBe(true);
+});
+
+test("a stale dataset shows Recalculate and its click refreshes that dataset", async () => {
+  window.location.hash = "#/dataset/overview?dataset=X";
+  mockApi({
+    "GET /api/status?dataset=X": { stale: true, has_history: true, baseline: "ref", token: 3 },
+    "GET /api/schema?dataset=X": schemaFor("X", true),
+    "POST /api/refresh?dataset=X": { message: "refreshed" },
+  });
+  await act(async () => root.render(<App />));
+  await flush();
+  expect(buttonNamed("Recalculate")).toBeDefined();
+  await act(async () => buttonNamed("Recalculate")!.click());
+  await flush();
+  expect(calls.some(c => c.method === "POST" && c.url === "/api/refresh?dataset=X")).toBe(true);
 });

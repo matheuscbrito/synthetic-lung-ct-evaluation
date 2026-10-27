@@ -28,9 +28,10 @@ export function parseHash(hash: string): Route {
   const text = hash.startsWith("#") ? hash.slice(1) : hash;
   const [path, search = ""] = text.split("?", 2);
   const [sectionPart = "", tabPart = ""] = path.split("/").filter(Boolean);
-  const section = SECTIONS.includes(sectionPart as Section) ? (sectionPart as Section) : DEFAULT.section;
+  // seção desconhecida descarta a rota inteira (aba e parâmetros também)
+  if (!SECTIONS.includes(sectionPart as Section)) return { ...DEFAULT };
   const tab = TABS.includes(tabPart as Tab) ? (tabPart as Tab) : DEFAULT.tab;
-  const route: Route = { section, tab };
+  const route: Route = { section: sectionPart as Section, tab };
   const params = new URLSearchParams(search);
   for (const key of SCALARS) {
     const value = params.get(key);
