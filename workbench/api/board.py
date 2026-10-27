@@ -189,6 +189,41 @@ def _case_rows(wb: Workbench, case_id: str, names: list[str] | None = None) -> d
     return rows
 
 
+def technique_png(wb: Workbench, case_id: str, technique: str, names: list[str]) -> bytes:
+    """Figura de uma técnica (`visual.TECHNIQUE_FIGURES`): original e cada versão de `names`. 404 se desconhecida."""
+    if technique not in TECHNIQUE_FIGURES:
+        raise NotFound(f"unknown technique: {technique}")
+    return _png(technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id, names)))
+
+
+def map_png(wb: Workbench, case_id: str, layer: str, compared: bool, names: list[str]) -> bytes:
+    """Mapa regional (`visual.map_figure`); camada desconhecida 404, veredito sem comparar 400."""
+    if layer not in MAP_LAYERS:
+        raise NotFound(f"unknown layer: {layer}")
+    if layer == "veredito" and not compared:
+        raise HTTPException(400, "the verdict layer exists only compared with the original")
+    _case_rows(wb, case_id, names)  # corte desconhecido: 404
+    # sem cache: a figura muda quando uma versão entra ou sai
+    return _png(map_figure(wb.history_dir, case_id, layer, compared, version_names=names))
+
+
+def nps_png(wb: Workbench, case_id: str, requested: list[str]) -> bytes:
+    """Figura de NPS e ar: `requested` tem zero, uma ou duas versões distintas (ver a rota `/api/figure/.../nps.png`)."""
+    for name in requested:
+        wb.entry(name)  # desconhecida: 404
+    if len(requested) > 2:
+        raise HTTPException(400, "the NPS figure compares at most two versions: reference and compared")
+    if not requested:
+        names = [wb.baseline, wb.history["versions"][-1]["name"]]
+    else:
+        names = [wb.baseline, requested[0]] if len(requested) == 1 else list(requested)
+    _case_rows(wb, case_id, names)  # corte desconhecido: 404
+    try:
+        return nps_case_png(wb.history, case_id, names[0], names[1])
+    except placar.PlacarError as exc:  # corte que não pode ser carregado nas versões pedidas
+        raise HTTPException(404, f"slice could not be loaded: {case_id}") from exc
+
+
 def router(datasets: dict) -> APIRouter:
     api = APIRouter()
 
@@ -201,25 +236,16 @@ def router(datasets: dict) -> APIRouter:
 
     @api.get("/api/figure/{case_id}/technique/{technique}.png")
     def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
-        if technique not in TECHNIQUE_FIGURES:
-            raise NotFound(f"unknown technique: {technique}")
         wb = _wb(dataset)
-        names = _version_names(wb, versions)
-        fig = technique_figure(wb.history_dir, case_id, technique, _case_rows(wb, case_id, names))
-        return _response(fig)
+        return Response(technique_png(wb, case_id, technique, _version_names(wb, versions)), media_type="image/png")
 
     @api.get("/api/figure/{case_id}/map/{layer}.png")
-    def map_png(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT),
-                versions: str | None = Query(None)):
-        if layer not in MAP_LAYERS:
+    def map_route(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT),
+                  versions: str | None = Query(None)):
+        if layer not in MAP_LAYERS:  # antes de ler o histórico, como antes da extração
             raise NotFound(f"unknown layer: {layer}")
-        if layer == "veredito" and not compared:
-            raise HTTPException(400, "the verdict layer exists only compared with the original")
         wb = _wb(dataset)  # histórico ausente: 404
-        names = _version_names(wb, versions)
-        _case_rows(wb, case_id, names)  # corte desconhecido: 404
-        fig = map_figure(wb.history_dir, case_id, layer, compared, version_names=names)
-        return _response(fig)
+        return Response(map_png(wb, case_id, layer, compared, _version_names(wb, versions)), media_type="image/png")
 
     @api.get("/api/figure/{case_id}/nps.png")
     def nps(case_id: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
@@ -236,20 +262,7 @@ def router(datasets: dict) -> APIRouter:
         repeated = sorted({name for name in requested if requested.count(name) > 1})
         if repeated:
             raise HTTPException(400, f"duplicate version in versions=: {', '.join(repeated)}")
-        for name in requested:
-            wb.entry(name)  # desconhecida: 404
-        if len(requested) > 2:
-            raise HTTPException(400, "the NPS figure compares at most two versions: reference and compared")
-        if not requested:
-            names = [wb.baseline, wb.history["versions"][-1]["name"]]
-        else:
-            names = [wb.baseline, requested[0]] if len(requested) == 1 else requested
-        _case_rows(wb, case_id, names)  # corte desconhecido: 404
-        try:
-            png = nps_case_png(wb.history, case_id, names[0], names[1])
-        except placar.PlacarError as exc:  # corte que não pode ser carregado nas versões pedidas
-            raise HTTPException(404, f"slice could not be loaded: {case_id}") from exc
-        return Response(png, media_type="image/png")
+        return Response(nps_png(wb, case_id, requested), media_type="image/png")
 
     @api.post("/api/versions")
     def add_version(body: VersionIn, dataset: str = Query(DEFAULT)):
@@ -313,8 +326,3 @@ def router(datasets: dict) -> APIRouter:
         return {"message": message}
 
     return api
-
-
-def _response(fig) -> Response:
-    # sem cache: a figura muda quando uma versão entra ou sai
-    return Response(_png(fig), media_type="image/png")
