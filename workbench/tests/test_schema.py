@@ -8,7 +8,7 @@ from frameworks.noise_evaluator.integration import AIR_LIMITS
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES
 from workbench.api import calibration, data, datasets as ds, notebook, optimizers, reasons
 from workbench.api.app import create_app
-from workbench.api.contract import AXES, DATASET_LABEL
+from workbench.api.contract import AXES, DATASET_LABEL, versions
 
 from .conftest import DATA_OK, HISTORY_DIR
 
@@ -109,7 +109,7 @@ def test_dataset_labels_and_item_nouns(client):
     assert "independent" in group_by["note"]
     wb = data.load(HISTORY_DIR)
     assert dataset["reference_version"] == wb.history["reference"]
-    assert dataset["default_baseline"] == data.default_baseline(wb.history)
+    assert dataset["default_baseline"] == (versions.lab_baseline(wb.history) or data.default_baseline(wb.history))
     assert dataset["has_history"] is True
     assert body["cohort_tests"] == [{"key": "nex_shift", "label": "NEx cohort test", "axis": "texture"}]
     indicators = body["indicators"]

@@ -25,6 +25,7 @@ from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES
 from workbench.api import board, calibration, data, notebook, optimizers, reasons
 from workbench.api import datasets as ds
 from workbench.api.contract import AXES, DATASET_LABEL
+from workbench.api.contract import bench
 from workbench.api.data import NotFound
 
 STATUSES = [
@@ -257,7 +258,7 @@ def schema_json(datasets: dict, dataset: str) -> dict:
             "key": dataset, "label": DATASET_LABEL.get(cfg["mode"], dataset), "mode_label": cfg["mode"],
             "item": dict(ITEM), "group_by": dict(GROUP_BY),
             "reference_version": history.get("reference") if history else None,
-            "default_baseline": data.default_baseline(history) if history else None,
+            "default_baseline": bench.default_baseline(history) if history else None,  # mesma regra do /api/v2/board
             "has_history": history is not None,
             "stale": data.is_stale(history) if history else False,
         }),
