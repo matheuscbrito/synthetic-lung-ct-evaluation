@@ -1,9 +1,12 @@
 """T2 — impressão do resíduo · Lukáš 2006, Chen 2008, Corvi 2023.
 
 Medido no resíduo W (residual.py) nas ROIs pulmonares de 32 px (as de 16 px do
-tecido mole entram só na curtose):
+tecido mole entram na curtose e no `soft_acf_len`):
 
 - `acf_len`: raio em que a autocorrelação radial de W cai abaixo de 1/e;
+- `soft_acf_len` (v2): o mesmo nas ROIs de 16 px do tecido mole (grão do ruído
+  onde quase não há anatomia; substitui a f_média da T1 na decisão, que é pouco
+  repetível — ver metodo.md §8);
 - `acf_neg`: profundidade do lobo negativo da autocorrelação;
 - `kurtosis`: curtose em excesso de W nos pixels sem estrutura (gaussiano = 0);
 - `lsd`: distância log-espectral do espectro radial de W até a impressão de
@@ -12,7 +15,7 @@ tecido mole entram só na curtose):
   frequências k/8 ciclos/pixel em cada eixo e diagonal (k/4 está contido),
   contra o fundo local. É o rastro esperado do decodificador da difusão latente.
   A literatura espera ~0 nas reais; nestes TIFFs as reais já têm alguma
-  estrutura nessas frequências, e a régua IQR das reais absorve isso.
+  estrutura nessas frequências, e a régua (diagnóstico na v2) absorve isso.
 
 Tudo vem de grandezas lineares por ROI (autocovariância, espectro, somas de
 potências), então o bootstrap só reamostra linhas.
@@ -27,7 +30,8 @@ from .nps import SKIP_BINS, RoiSet, hann, patches, radial_profiles
 
 ACF_LAGS = 10
 GRID_STEP = 8            # período em px do decodificador (k/8 ciclos/pixel); k/4 = múltiplos pares
-METRICS = ("acf_len", "acf_neg", "kurtosis", "lsd", "grid_peak")
+METRICS = ("acf_len", "acf_neg", "kurtosis", "lsd", "grid_peak", "soft_acf_len")
+MIN_UNITS = 8            # = nps.MIN_ROIS (sem importar, para não criar ciclo)
 
 
 @lru_cache(maxsize=None)
@@ -67,17 +71,17 @@ def moments(stack: np.ndarray, keep: np.ndarray) -> np.ndarray:
 
 
 def roi_units(res: np.ndarray, rois: RoiSet, strict: np.ndarray, spectral: bool) -> dict:
-    """Grandezas por ROI do resíduo; `spectral` liga espectro e autocorrelação (só nas ROIs de 32 px)."""
+    """Grandezas por ROI do resíduo: momentos e autocorrelação; `spectral` liga o espectro (só nas ROIs de 32 px)."""
     if not len(rois):
-        empty = {"mom": np.zeros((0, 5))}
+        empty = {"mom": np.zeros((0, 5)), "acf": np.zeros((0, ACF_LAGS + 1))}
         if spectral:
             empty.update(acf=np.zeros((0, ACF_LAGS + 1)), spec=np.zeros((0, rois.size, rois.size)), prof=np.zeros((0, rois.size // 2 + 1)))
         return empty
     stack = patches(res, rois)
-    units = {"mom": moments(stack, patches(strict.astype(float), rois) > 0.5)}
+    units = {"mom": moments(stack, patches(strict.astype(float), rois) > 0.5), "acf": roi_acf(stack)}
     if spectral:
         spec = residual_spectra(stack)
-        units.update(acf=roi_acf(stack), spec=spec, prof=radial_profiles(spec))
+        units.update(spec=spec, prof=radial_profiles(spec))
     return units
 
 
@@ -146,14 +150,16 @@ def grid_peak(spec: np.ndarray) -> float:
     return float(np.log(max(ratios))) if ratios else float("nan")
 
 
-def t2_metrics(units: dict, reference: np.ndarray | None = None, lsd_norm: float = 1.0) -> dict:
-    """Métricas da T2 a partir das ROIs (já reamostradas). `units` = {"lung": {...}, "soft": {"mom"}}."""
-    lung = units["lung"]
+def t2_metrics(units: dict, reference: np.ndarray | None = None, lsd_norm: float = 1.0, min_units: int = MIN_UNITS) -> dict:
+    """Métricas da T2 a partir das ROIs (já reamostradas). `units` = {"lung": {...}, "soft": {"mom", "acf"}}."""
+    lung, soft = units["lung"], units["soft"]
     length, negative = acf_shape(lung["acf"].mean(axis=0))
+    soft_length = acf_shape(soft["acf"].mean(axis=0))[0] if len(soft["acf"]) >= min_units else float("nan")
     return {
         "acf_len": length,
         "acf_neg": negative,
         "kurtosis": kurtosis(np.concatenate([lung["mom"], units["soft"]["mom"]])),
         "lsd": lsd(lung["prof"], reference) / lsd_norm,
         "grid_peak": grid_peak(lung["spec"]),
+        "soft_acf_len": soft_length,
     }

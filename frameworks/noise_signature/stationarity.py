@@ -9,7 +9,7 @@ robusto à estrutura que sobra.
 - `cv_map`: coeficiente de variação do mapa;
 - `nlf_slope`: inclinação de σ local × intensidade média do bloco;
 - `map_rho` (só mesma anatomia): Spearman entre os mapas real e sintético. Fica
-  fora da régua IQR: ρ < 0,3 manda para revisão.
+  fora da régua: ρ < 0,3 manda para revisão (eixo distribuição).
 """
 from __future__ import annotations
 

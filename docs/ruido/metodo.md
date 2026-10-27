@@ -1,6 +1,6 @@
 # Assinatura de ruído — desenho do método
 
-Data: 26/10/2026 · Branch: `ruido-experimental-matheus` · Código: `frameworks/noise_signature/`
+Data: 26/10/2026 (v2 na mesma data) · Branch: `ruido-experimental-matheus` · Código: `frameworks/noise_signature/`
 
 Base: as três notas de literatura em `docs/ruido/literatura/` (A = caracterização do ruído em CT, B = assinatura de fonte, C = estimação de nível de ruído).
 
@@ -37,13 +37,15 @@ As regiões são **definidas na real e aplicadas igualmente à sintética** (mes
 
 ## 4. As quatro técnicas
 
-Mesma ideia da textura: várias técnicas independentes, cada uma com poucas métricas, todas na régua IQR.
+Mesma ideia da textura: várias técnicas independentes, cada uma com poucas métricas. Na v2 (§8) as técnicas são a estrutura de medida; só 7 métricas, agrupadas em 4 eixos, decidem. As demais ficam como diagnóstico.
 
 ### T1 — NPS (espectro do ruído) · TG-233, Friedman 2013, Dolly 2016
 - ROIs de 32×32 px, passo 8, sobreposição ≤ 50%, ≥ 90% dentro da região; mínimo de 8 ROIs por região, máximo de 64.
 - Cada ROI: subtrai um plano (1ª ordem), aplica janela de Hann normalizada por ⟨w²⟩, faz |DFT|² e tira a média → NPS 2D; perfil radial em ciclos/pixel; ignora DC e o 1º bin.
 - Métricas por região: `sigma` (√∫NPS), `f_peak`, `f_avg`, `anisotropy` (energia nos setores ±45° de fx ÷ ±45° de fy), `leak` (fração de ROIs cujo NPS cresce no 1º bin útil, só como diagnóstico).
-- Métrica de forma do par: `shape_dist` = ∫|nNPS_sint − nNPS_real| (Oostveen 2024), com NPS normalizado por área. Vai para a régua como as demais (a referência é a distância real×real entre cortes do mesmo paciente).
+- Métrica de forma do par: `shape_dist` = ∫|nNPS_sint − nNPS_real| (Oostveen 2024), com NPS normalizado por área. De um lado só (v2): z = max(0, (d − mediana dos vizinhos reais)/(k·escala)). Diagnóstico na v2.
+- Razão de σ do par (v2): `sigma_ratio` = log(σ_sint/σ_real) nas mesmas ROIs. Decide (eixo quantidade) só no modo mesma anatomia.
+- Vazamento com fallback (v2): se sobrariam < 8 ROIs sem vazamento numa região com ≥ 8 ROIs, ficam as que menos vazam (a metade, no mínimo 8) e a região é marcada (`leak_fallback`).
 
 ### T2 — Impressão do resíduo · Lukáš 2006, Chen 2008, Corvi 2023
 - Resíduo W = I − F(I), em que F é o filtro wavelet-Wiener (db4, 4 níveis, janelas {3,5,7,9}) com **σ0 fixo**, calibrado uma vez nas reais (mediana do MAD-HH1). Assim o filtro não "se adapta" à sintética. Controle: mediana 3×3. Uma conclusão só vale se os dois filtros concordarem.
@@ -53,6 +55,7 @@ Mesma ideia da textura: várias técnicas independentes, cada uma com poucas mé
   - `kurtosis` do resíduo (ruído de CT ≈ gaussiano, 0);
   - `lsd`: distância log-espectral do espectro radial do resíduo até a **impressão de referência** (média das reais), dividida pela distância típica real×referência;
   - `grid_peak`: proeminência (estilo PCE) dos picos em k/8 ciclos/pixel no espectro 2D do resíduo. É o rastro do autoencoder da difusão latente; nas reais deve ser ~0.
+  - `soft_acf_len` (v2): `acf_len` nas ROIs de 16 px do tecido mole (grão onde quase não há anatomia).
 
 ### T3 — Nível de ruído multiescala · Donoho 1994, Immerkær 1996, Colom & Buades 2013
 Medido só nos pixels sem estrutura (`lung` e `soft` separadamente):
@@ -67,15 +70,16 @@ Atenção (C §2): todos esses estimadores supõem ruído branco. Em ruído de C
 ### T4 — Distribuição espacial (estacionariedade) · Li 2012, TG-233 (NUI)
 - Mapa de σ local por MAD em blocos 64×64 (passo 32) com ≥ 2000 pixels válidos.
 - Métricas: `lung_soft_ratio` (σ_lung/σ_soft), `cv_map` (coeficiente de variação do mapa) e `nlf_slope` (inclinação de σ local × intensidade média do bloco).
-- No modo mesma anatomia: `map_rho` (Spearman entre os mapas real e sintético). Esta métrica não entra na régua IQR: ρ < 0,3 manda para revisão.
+- No modo mesma anatomia: `map_rho` (Spearman entre os mapas real e sintético). Esta métrica não entra na régua: ρ < 0,3 manda para revisão (eixo distribuição).
 
-## 5. Decisão (mesma lógica da textura)
+## 5. Decisão (v2; o que mudou em relação à v1 está no §8)
 
-1. **Calibração só nas reais.** Para cada métrica, IQR do valor entre as originais válidas (`calibrar`), gravado em `calibracao.json` com σ0 do Wiener, impressão de referência e versão.
-2. **Por métrica:** z = (sint − real)/IQR. |z| ≤ 1 é `aprovada`; 1–2 é `revisão`; > 2 é `reprovada` (`decision.metric_status`).
-3. **Margem de erro:** IC 95% por bootstrap das mesmas ROIs/blocos nas duas imagens (300 sorteios). A diferença só pesa se o IC exclui zero (`certain_status`, mesma regra do `noise_evaluator`).
-4. **Por técnica:** a pior métrica decide. **Final** (`noise_signature_status`): a pior técnica decide. Poucas ROIs → `inconclusivo`, que não aprova sozinho (vira revisão).
-5. **Motivo em texto** para cada métrica fora da faixa, em português simples.
+1. **Calibração só nas reais** (`calibrate.calibrate`). Para cada original, o vizinho do mesmo paciente: mesma série primeiro, depois menor |Δ índice do corte| e menor |Δ fase|. Para cada métrica, escala = max(IQR do Δ entre vizinhos, 2 × IQR da diferença metade par × ímpar das ROIs) (f_pico: no mínimo 1 bin). Grava em `calibracao.json` com σ0, impressão de referência, pares, k e a validação deixando um paciente fora.
+2. **Por métrica:** d = sintética − real (ou a métrica do par); z = d/(k·escala). |z| ≤ 1 é `aprovada`; 1–2 é `revisão`; > 2 é `reprovada`. `shape_dist` só de um lado.
+3. **Margem de erro:** IC 95% de d por bootstrap das mesmas ROIs/blocos nas duas imagens (300 sorteios). A diferença só pesa se o IC exclui zero (`certain_status`).
+4. **Por eixo** (quantidade, grão, espectro, distribuição): a pior métrica de decisão. **Final:** reprovada se algum eixo reprova; revisão se algum pede revisão; aprovada caso contrário. Eixo sem métrica conclusiva = `inconclusivo`, que não aprova (vira revisão). O status por técnica (T1–T4, só métricas de decisão) é relatado, não decide.
+5. **k:** um multiplicador global, o menor em 1,0–2,0 que leva os pares vizinhos a ≥ 85% aprovada e ≤ 5% reprovada; senão o que maximiza aprovada − reprovada (empate → maior k).
+6. **Motivo em texto** para cada métrica de decisão fora da faixa; as de diagnóstico fora da faixa vão para `noise_signature_diagnostics`.
 
 ## 6. Como provar que funciona (validação)
 
@@ -92,5 +96,39 @@ Atenção (C §2): todos esses estimadores supõem ruído branco. Em ruído de C
 
 - Os dados vêm de **um tomógrafo** e 3 pacientes. Podemos dizer "a sintética tem o ruído destas CTs", não "identifica o tomógrafo X". A identificação de máquina é demonstrada só em simulação.
 - Sem HU nem pixel spacing: as frequências estão em ciclos/pixel e a quantidade de ruído não pode ser convertida em dose absoluta.
-- O recorte do ar nas reais indica que houve janelamento ou normalização. Se a sintética foi normalizada de forma diferente, as razões de σ mudam. A régua IQR e a comparação pareada reduzem esse problema, mas não o eliminam.
+- O recorte do ar nas reais indica que houve janelamento ou normalização. Se a sintética foi normalizada de forma diferente, as razões de σ mudam. A régua e a comparação pareada reduzem esse problema, mas não o eliminam.
 - O fator de downsampling do autoencoder (para `grid_peak`) precisa ser confirmado com o Dayvison. A métrica varre k/4 e k/8.
+- v2: a meta de falso alarme (≥ 85% dos vizinhos reais aprovados) **não** foi atingida com k ≤ 2 (ver §8). Ruído correlacionado de baixa frequência não é detectado.
+
+## 8. v2: o que mudou e por quê
+
+A validação da v1 (`resultados/ruido_simulacao`, `ruido_ortogonalidade`, `ruido_datasets`, commit 12719bb) mostrou uma régua estrita demais: 69% dos pares vizinhos real × real sinalizados, 91% de todos os pares do mesmo paciente e só 51% da mesma máquina simulada aprovada. As causas eram 28 métricas com "a pior decide", régua = IQR entre cortes, IC que só cobre o sorteio de ROIs e métricas pouco repetíveis.
+
+| Mudança | Por quê |
+|---|---|
+| **Decisão × diagnóstico.** 7 métricas decidem, em 4 eixos; as outras são só diagnóstico | Com ~15% de alarme falso por métrica e 28 métricas, quase todo par era sinalizado; várias eram redundantes ou pouco repetíveis |
+| Eixos: quantidade (`t3_soft_immerkaer`, `t1_soft_sigma_ratio`), grão (`t2_wiener_acf_len`, `t2_wiener_soft_acf_len`), espectro (`t2_wiener_lsd`), distribuição (`t4_lung_soft_ratio` + `map_rho`) | Agrupar pelo que a máquina controla: dose, kernel, impressão do resíduo, distribuição no corte |
+| **Verificação de cada métrica de decisão:** \|ρ\| < 0,9 com GLCM/Wavelet/NEx (reais e deltas do Dsr) e repetibilidade par × ímpar < 0,6 | Uma métrica de ruído que anda com a textura ou que não se repete não acrescenta informação |
+| `t1_soft_f_avg` → diagnóstico; entrou `t2_wiener_soft_acf_len` | Repetibilidade 1,12 nas reais (falhou); a nova tem 0,11 |
+| `t3_lung_corr_index` e `t1_soft_shape_dist` → diagnóstico | Repetibilidade 0,71 e spread par × ímpar 2,0× o dos vizinhos |
+| `t3_lung_mad1`/`immerkaer` → diagnóstico | \|ρ\| até 0,94 com a textura (medem anatomia) |
+| **Régua = max(IQR do Δ entre vizinhos reais, 2 × IQR par × ímpar)** | A variação natural entre cortes vizinhos do mesmo paciente é a referência certa; o termo par × ímpar protege métricas ruidosas |
+| Vizinho = **mesma série primeiro** | No P4P117, séries diferentes no mesmo índice têm até 2,6× o ruído fino do tecido mole (outra aquisição/dose) |
+| **k global** calibrado nos vizinhos, com validação deixando um paciente fora | Um só grau de liberdade para levar o falso alarme à meta, medido fora da amostra |
+| `shape_dist` de um lado só | Bug: a cópia exata da real ia para revisão (distância menor que a de dois cortes reais não é defeito) |
+| `sigma_ratio` (log σ_sint/σ_real) na mesma anatomia | O σ absoluto varia muito entre cortes (tamanho do corpo); a razão nas mesmas ROIs cancela isso e o viés do σ medido |
+| Fallback do vazamento | A v1 descartava quase todas as ROIs com pouco ruído (T1 conclusiva em 303/444 imagens simuladas; agora 420/444) |
+
+**Resultados da v2** (detalhes nos três `resumo.md`):
+
+| Meta | Resultado | Passa? |
+|---|---|---|
+| vizinhos real × real aprovados fora da amostra ≥ 85% | 64% (dentro da amostra 81%; k = 2,0, seria preciso k ≈ 2,4) | não |
+| cópia da real aprovada ≥ 95% | 94,6% (35/37; os 2 cortes sem tecido mole são inconclusivos) | não (por pouco) |
+| mesma máquina simulada aprovada ≥ 80% | 92% | sim |
+| kernel diferente sinalizado ≥ 80% | 100% | sim |
+| dose 2× sinalizada ≥ 80% | 100% | sim |
+| só ruído (branco +50%; resíduo borrado) sinalizado ≥ 80%, textura ≤ 10% | 65% e 84%; textura 0% e 38% (NEx) | não / sim, mas a textura acusa 38% no borrado |
+| brilho / ganho na estrutura: ruído sinalizado ≤ 15% | 5% | sim |
+
+**Leitura:** a régua pelos vizinhos tirou a maior parte do alarme falso e manteve a separação de máquinas na simulação. Mas, nestas reais, cortes vizinhos do mesmo paciente diferem tanto quanto uma perturbação moderada de ruído (+50% de variância). Com k ≤ 2 não dá para ter ≥ 85% de aprovação real × real e ≥ 80% de detecção de +50% de ruído ao mesmo tempo. Ruído correlacionado de baixa frequência (gaussiano σ = 1) continua invisível: o Wiener o põe na parte "sem ruído", e o único sinal (f_média da T1) não é repetível.

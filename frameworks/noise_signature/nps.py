@@ -105,7 +105,29 @@ def leak_flags(profiles: np.ndarray) -> np.ndarray:
     O ruído de CT (FBP) é passa-banda e o branco é plano; só a anatomia faz o
     perfil crescer em direção ao DC (A §4).
     """
-    return profiles[:, SKIP_BINS] > LEAK_FACTOR * profiles[:, SKIP_BINS + 1:].max(axis=1)
+    return leak_scores(profiles) > LEAK_FACTOR
+
+
+def leak_scores(profiles: np.ndarray) -> np.ndarray:
+    """1º bin útil ÷ máximo dos demais: > 1 = o NPS sobe para o DC (vazamento)."""
+    return profiles[:, SKIP_BINS] / np.maximum(profiles[:, SKIP_BINS + 1:].max(axis=1), 1e-30)
+
+
+def leak_keep(features: dict) -> tuple[np.ndarray, bool]:
+    """ROIs que entram na T1 e se houve recurso ao fallback (v2).
+
+    Regra v1: só as ROIs sem vazamento. Se isso deixaria a região com menos de
+    MIN_ROIS (inconclusiva) mas ela tem ROIs suficientes, a v2 fica com a
+    metade que menos vaza (no mínimo MIN_ROIS) e marca a região (`leak_fallback`).
+    """
+    leak = features["leak"]
+    keep, n = ~leak, len(leak)
+    if keep.sum() >= MIN_ROIS or n < MIN_ROIS:
+        return keep, False
+    order = np.argsort(leak_scores(features["profile"]), kind="stable")
+    keep = np.zeros(n, bool)
+    keep[order[: max(MIN_ROIS, n // 2)]] = True
+    return keep, True
 
 
 def candidate_rois(host: np.ndarray, strict: np.ndarray, size: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -9,7 +9,8 @@ Uso (da raiz do repositório):
    conjuntos) e congela: noise_signature, texture_evaluator e noise_evaluator.
 2. Avalia Dsr, Dsr-baseline e Dsr-gpbo11 (mesma anatomia) e Dgen (só máscara),
    sempre com as máscaras do Dgen.
-3. Contagens por conjunto e técnica; mediana do z por métrica com IC 95% por
+3. Contagens por conjunto, eixo e técnica (v2: só as métricas de decisão
+   decidem); mediana do z por métrica (decisão e diagnóstico) com IC 95% por
    bootstrap dos cortes; métricas que mais derrubam.
 4. Baseline × gpbo11 pareados por corte (Wilcoxon no |z|).
 5. Concordância com o noise_evaluator (Lucas): tabela cruzada e kappa de Cohen;
@@ -29,7 +30,9 @@ from frameworks.noise_signature import evaluate as ns_eval
 from frameworks.noise_signature.nps import ROI_SIZE, SKIP_BINS, frequencies
 from frameworks.texture_evaluator.regional import apply_pair_check
 
-from .ortogonalidade import (DATE, DGEN, FLAGGED, NOISE_TECHS, SEED, STATUS_COLORS, STATUS_ORDER, dump_json, evaluate_noise,
+from frameworks.noise_signature.decision import DECISION_METRICS, EIXOS, active_decision_metrics
+
+from .ortogonalidade import (DATE, DGEN, FLAGGED, NOISE_EIXOS, NOISE_TECHS, SEED, STATUS_COLORS, STATUS_ORDER, dump_json, evaluate_noise,
                              fmt_counts, fnum, load_reference, md_table, metric_keys, pct_flagged, plt_setup, pt, status_bars,
                              texture_row, worst_abs_z, write_csv)
 
@@ -135,9 +138,8 @@ def main() -> None:
         status_summary[name] = {
             "n": len(rows), "pair_mode": protocol[name]["pair_mode"],
             "ruido": dict(Counter(r["noise_signature_status"] for r in rows)),
-            "ruido_1lado": dict(Counter(r["noise_status_1lado"] for r in rows)),
             **{t: dict(Counter(r[f"{t}_status"] for r in rows)) for t in NOISE_TECHS},
-            **{f"{t}_1lado": dict(Counter(r[f"{t}_status_1lado"] for r in rows)) for t in NOISE_TECHS},
+            **{f"eixo_{e}": dict(Counter(r[f"eixo_{e}_status"] for r in rows)) for e in NOISE_EIXOS},
             "lucas": dict(Counter(r["lucas_verdict"] for r in rows)),
             "textura": dict(Counter(r["tex_textura"] for r in rows)),
             "textura_final": dict(Counter(r["tex_final"] for r in rows)),
@@ -145,14 +147,15 @@ def main() -> None:
         for key in keys:
             med, lo, hi, n = boot_median_ci([fnum(r[f"{key}_z"]) for r in rows], rng)
             st = [r[f"{key}_status"] for r in rows]
-            z_rows.append({"dataset": name, "metric": key, "median_z": med, "ci_low": lo, "ci_high": hi, "n": n,
+            z_rows.append({"dataset": name, "metric": key, "role": "decisão" if key in DECISION_METRICS else "diagnóstico", "median_z": med, "ci_low": lo, "ci_high": hi, "n": n,
                            "n_revisao": st.count("revisão"), "n_reprovada": st.count("reprovada"), "n_inconclusivo": st.count("inconclusivo")})
         # quem decide a técnica que reprova: para cada corte, as métricas com o pior status do corte
         drivers = Counter()
         for r in rows:
-            worst = max((r[f"{k}_status"] for k in keys if r[f"{k}_status"] in FLAGGED), key=FLAGGED.index, default=None)
+            active = active_decision_metrics(protocol[name]["pair_mode"] == "same-anatomy")
+            worst = max((r[f"{k}_status"] for k in active if r[f"{k}_status"] in FLAGGED), key=FLAGGED.index, default=None)
             if worst:
-                drivers.update(k for k in keys if r[f"{k}_status"] == worst)
+                drivers.update(k for k in active if r[f"{k}_status"] == worst)
         driver_rows += [{"dataset": name, "metric": k, "n_cortes_decide": v} for k, v in drivers.most_common()]
     write_csv(out / "z_por_metrica.csv", z_rows)
     write_csv(out / "motivos.csv", driver_rows)
@@ -162,8 +165,9 @@ def main() -> None:
     gpbo = {r["case_id"]: r for r in by_ds["Dsr-gpbo11"]}
     common = sorted(set(base) & set(gpbo))
     cmp_rows = []
-    summaries = {"pior |z| (todas as métricas)": lambda r: worst_abs_z(r, [f"{k}_z" for k in keys]),
-                 "nº de métricas sinalizadas": lambda r: float(sum(r[f"{k}_status"] in FLAGGED for k in keys))}
+    summaries = {"pior |z| (métricas de decisão)": lambda r: worst_abs_z(r, [f"{k}_z" for k in DECISION_METRICS]),
+                 "nº de métricas de decisão sinalizadas": lambda r: float(sum(r[f"{k}_status"] in FLAGGED for k in DECISION_METRICS)),
+                 "nº de métricas de diagnóstico sinalizadas": lambda r: float(sum(r[f"{k}_status"] in FLAGGED for k in keys if k not in DECISION_METRICS))}
     for key in keys:
         summaries[key] = (lambda k: lambda r: abs(fnum(r[f"{k}_z"])))(key)
     for label, fn in summaries.items():
@@ -178,29 +182,29 @@ def main() -> None:
                          "gpbo11_melhor_em": int(np.sum(diff < 0)), "gpbo11_pior_em": int(np.sum(diff > 0)), "p_wilcoxon": p})
     write_csv(out / "baseline_vs_gpbo11.csv", cmp_rows)
     ct_bg = crosstab([base[c]["noise_signature_status"] for c in common], [gpbo[c]["noise_signature_status"] for c in common], "baseline", "gpbo11")
-    ct_bg1 = crosstab([base[c]["noise_status_1lado"] for c in common], [gpbo[c]["noise_status_1lado"] for c in common], "baseline (1 lado)", "gpbo11 (1 lado)")
 
     # 3. Lucas e textura
     agree = {}
     for name, rows in by_ds.items():
-        ours, ours1, lucas = [r["noise_signature_status"] for r in rows], [r["noise_status_1lado"] for r in rows], [r["lucas_verdict"] for r in rows]
+        ours, lucas = [r["noise_signature_status"] for r in rows], [r["lucas_verdict"] for r in rows]
         tex = [r["tex_textura"] for r in rows]
         agree[name] = {
             "ct_lucas": crosstab(ours, lucas, "noise_signature", "noise_evaluator"),
-            "ct_lucas_1lado": crosstab(ours1, lucas, "noise_signature (1 lado)", "noise_evaluator"),
-            "kappa_3cat": kappa(ours, lucas), "kappa_3cat_1lado": kappa(ours1, lucas),
+            "kappa_3cat": kappa(ours, lucas),
             "kappa_binario": kappa([binary(s) for s in ours], [binary(s) for s in lucas]),
-            "kappa_binario_1lado": kappa([binary(s) for s in ours1], [binary(s) for s in lucas]),
-            "concordancia_binaria_1lado": float(np.mean([binary(a) == binary(b) for a, b in zip(ours1, lucas)])),
+            "concordancia_binaria": float(np.mean([binary(a) == binary(b) for a, b in zip(ours, lucas)])),
             "lucas_leituras_sinalizadas": {k: int(sum(r[f"lucas_{k}"] in FLAGGED for r in rows)) for k in NOISE_READINGS},
-            "ct_textura": crosstab(ours1, tex, "noise_signature (1 lado)", "textura (GLCM/Wavelet/NEx)"),
-            "ruido_sinaliza_textura_aprova": int(sum(a in FLAGGED and t == "aprovada" for a, t in zip(ours1, tex))),
-            "textura_sinaliza_ruido_aprova": int(sum(a == "aprovada" and t in FLAGGED for a, t in zip(ours1, tex))),
+            "ct_textura": crosstab(ours, tex, "noise_signature", "textura (GLCM/Wavelet/NEx)"),
+            "ruido_sinaliza_textura_aprova": int(sum(a in FLAGGED and t == "aprovada" for a, t in zip(ours, tex))),
+            "textura_sinaliza_ruido_aprova": int(sum(a == "aprovada" and t in FLAGGED for a, t in zip(ours, tex))),
             "lucas_sinaliza_textura_aprova": int(sum(a in FLAGGED and t == "aprovada" for a, t in zip(lucas, tex))),
         }
     # métricas de mesma natureza: quantidade e grão (z de cada framework)
     pairs = {"quantidade: t1_soft_sigma × Lucas quantity": ("t1_soft_sigma_z", "lucas_quantity_z"),
              "quantidade: t3_lung_mad1 × Lucas quantity": ("t3_lung_mad1_z", "lucas_quantity_z"),
+             "quantidade: t3_soft_immerkaer × Lucas quantity": ("t3_soft_immerkaer_z", "lucas_quantity_z"),
+             "quantidade: t1_soft_sigma_ratio × Lucas quantity": ("t1_soft_sigma_ratio_z", "lucas_quantity_z"),
+             "grão: t2_wiener_acf_len × Lucas grain": ("t2_wiener_acf_len_z", "lucas_grain_z"),
              "grão: t1_soft_f_avg × Lucas grain": ("t1_soft_f_avg_z", "lucas_grain_z"),
              "grão: t1_lung_f_avg × Lucas grain": ("t1_lung_f_avg_z", "lucas_grain_z")}
     from scipy.stats import spearmanr
@@ -213,10 +217,10 @@ def main() -> None:
                             "sinal_igual_pct": float(100 * np.mean(np.sign(x[ok]) == np.sign(y[ok]))) if ok.any() else float("nan")}
     disagreements = []
     for r in all_rows:
-        if binary(r["noise_status_1lado"]) != binary(r["lucas_verdict"]):
+        if binary(r["noise_signature_status"]) != binary(r["lucas_verdict"]):
             flagged_lucas = [k for k in NOISE_READINGS if r[f"lucas_{k}"] in FLAGGED]
-            ours = sorted(((abs(fnum(r[f"{k}_z"])), k) for k in keys if r[f"{k}_status"] in FLAGGED), reverse=True)[:3]
-            disagreements.append({"dataset": r["dataset"], "case_id": r["case_id"], "noise_signature_1lado": r["noise_status_1lado"],
+            ours = sorted(((abs(fnum(r[f"{k}_z"])), k) for k in DECISION_METRICS if r[f"{k}_status"] in FLAGGED), reverse=True)[:3]
+            disagreements.append({"dataset": r["dataset"], "case_id": r["case_id"], "noise_signature": r["noise_signature_status"],
                                   "lucas": r["lucas_verdict"], "lucas_sinalizou": ", ".join(flagged_lucas),
                                   "nosso_top3": ", ".join(f"{k} (|z| {z:.1f})" for z, k in ours)})
     write_csv(out / "discordancias_lucas.csv", disagreements)
@@ -225,12 +229,13 @@ def main() -> None:
     groups = {}
     for name in DATASETS:
         groups[f"{name} · ruído"] = status_summary[name]["ruido"]
-        groups[f"{name} · ruído (1 lado)"] = status_summary[name]["ruido_1lado"]
         groups[f"{name} · Lucas"] = status_summary[name]["lucas"]
         groups[f"{name} · textura"] = status_summary[name]["textura"]
     status_bars(fig_dir / "status_por_conjunto.png", groups, "Veredito por conjunto (calibração congelada nas reais do Dsr)")
-    tech_groups = {f"{name} · {t.upper()}": status_summary[name][f"{t}_1lado"] for name in DATASETS for t in NOISE_TECHS}
-    status_bars(fig_dir / "status_por_tecnica.png", tech_groups, "Status por técnica de ruído (shape_dist 1 lado)")
+    tech_groups = {f"{name} · {t.upper()}": status_summary[name][t] for name in DATASETS for t in NOISE_TECHS}
+    status_bars(fig_dir / "status_por_tecnica.png", tech_groups, "Status por técnica de ruído (v2: só métricas de decisão)")
+    eixo_groups = {f"{name} · {e}": status_summary[name][f"eixo_{e}"] for name in DATASETS for e in NOISE_EIXOS}
+    status_bars(fig_dir / "status_por_eixo.png", eixo_groups, "Status por eixo (quantidade, grão, espectro, distribuição)")
 
     plt = plt_setup()
     fig, ax = plt.subplots(figsize=(9, 0.55 * len(keys) + 1.5))
@@ -248,12 +253,12 @@ def main() -> None:
         ax.axvline(edge, color="#a3a29b", lw=0.8, ls="--" if abs(edge) == 1 else ":")
     ax.axvline(0, color="#52514e", lw=0.8)
     ax.set_yticks(range(len(keys)))
-    ax.set_yticklabels(keys, fontsize=7)
+    ax.set_yticklabels([k + (" ★" if k in DECISION_METRICS else "") for k in keys], fontsize=7)
     ax.invert_yaxis()
     ax.set_xlim(-10, 10)
-    ax.set_xlabel("z = (sintética − real) / IQR das reais (cortado em ±10; sem pontos extremos)")
+    ax.set_xlabel("z = d / (k · escala dos vizinhos reais) (cortado em ±10; sem pontos extremos)")
     ax.legend(fontsize=8, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 1.0))
-    ax.set_title("z por métrica de ruído e conjunto", fontsize=10, loc="left", pad=22)
+    ax.set_title("z por métrica de ruído e conjunto (★ = decide; as demais são diagnóstico)", fontsize=10, loc="left", pad=22)
     fig.tight_layout()
     fig.savefig(fig_dir / "z_por_metrica.png", dpi=130)
     plt.close(fig)
@@ -274,32 +279,35 @@ def main() -> None:
             if row_i == 1:
                 ax.set_xlabel("ciclos/pixel")
             if col == 0:
-                ax.set_ylabel("NPS radial (mediana dos cortes; faixa P25–P75)")
+                ax.set_ylabel("pulmão" if region == "lung" else "tecido mole")
+    fig.supylabel("NPS radial (mediana dos cortes; faixa P25–P75)", fontsize=9)
     fig.tight_layout()
     fig.savefig(fig_dir / "nps_medio_por_conjunto.png", dpi=130)
     plt.close(fig)
 
-    summary = {"data": DATE, "calibracao": {"dataset": "dados/Dsr", "n_originais": len(ref_valid), "sigma0": calib["sigma0"]},
+    summary = {"data": DATE, "calibracao": {"dataset": "dados/Dsr", "n_originais": len(ref_valid), "sigma0": calib["sigma0"],
+                                            "versao": calib["version"], "k": calib["k"], "lopo": calib["lopo"]["pooled_out_of_sample"]},
+               "metricas_decisao": {e: list(ks) for e, ks in EIXOS.items()},
                "protocolo": protocol, "status": status_summary, "baseline_vs_gpbo11": {"n_pares": len(common), "testes": cmp_rows,
-                                                                                         "ct": ct_bg, "ct_1lado": ct_bg1},
+                                                                                         "ct": ct_bg},
                "lucas_e_textura": agree, "mesma_natureza_lucas": same_kind, "n_discordancias_lucas": len(disagreements),
                "motivos_top": {name: [d for d in driver_rows if d["dataset"] == name][:6] for name in DATASETS},
                "z_por_metrica": z_rows}
     dump_json(out / "resumo.json", summary)
 
     parts = ["## Tabelas geradas automaticamente", ""]
-    parts.append(md_table(["Conjunto", "n", "Ruído", "Ruído (1 lado)", "Lucas", "Textura"],
-                          [[n, s["n"], fmt_counts(s["ruido"]), fmt_counts(s["ruido_1lado"]), fmt_counts(s["lucas"]), fmt_counts(s["textura"])]
+    parts.append(md_table(["Conjunto", "n", "Ruído v2", "Lucas", "Textura"],
+                          [[n, s["n"], fmt_counts(s["ruido"]), fmt_counts(s["lucas"]), fmt_counts(s["textura"])]
                            for n, s in status_summary.items()]))
-    parts += ["", md_table(["Conjunto"] + [t.upper() for t in NOISE_TECHS],
-                           [[n] + [fmt_counts(s[f"{t}_1lado"]) for t in NOISE_TECHS] for n, s in status_summary.items()])]
-    parts += ["", md_table(["Conjunto", "métrica", "mediana z", "IC 95%", "rev", "repr", "inc"],
-                           [[z["dataset"], z["metric"], pt(z["median_z"], 2), f"{pt(z['ci_low'], 2)} a {pt(z['ci_high'], 2)}",
+    parts += ["", md_table(["Conjunto"] + [f"eixo {e}" for e in NOISE_EIXOS] + [t.upper() for t in NOISE_TECHS],
+                           [[n] + [fmt_counts(s[f"eixo_{e}"]) for e in NOISE_EIXOS] + [fmt_counts(s[t]) for t in NOISE_TECHS] for n, s in status_summary.items()])]
+    parts += ["", md_table(["Conjunto", "métrica", "papel", "mediana z", "IC 95%", "rev", "repr", "inc"],
+                           [[z["dataset"], z["metric"], z["role"], pt(z["median_z"], 2), f"{pt(z['ci_low'], 2)} a {pt(z['ci_high'], 2)}",
                              z["n_revisao"], z["n_reprovada"], z["n_inconclusivo"]] for z in z_rows])]
     parts += ["", md_table(list(cmp_rows[0].keys()), [[pt(v, 3) if isinstance(v, float) else v for v in r.values()] for r in cmp_rows])]
-    parts += ["", crosstab_md(ct_bg), "", crosstab_md(ct_bg1)]
+    parts += ["", crosstab_md(ct_bg)]
     for name, a in agree.items():
-        parts += ["", f"### {name}", crosstab_md(a["ct_lucas"]), "", crosstab_md(a["ct_lucas_1lado"]), "", crosstab_md(a["ct_textura"]),
+        parts += ["", f"### {name}", crosstab_md(a["ct_lucas"]), "", crosstab_md(a["ct_textura"]),
                   "", str({k: v for k, v in a.items() if not k.startswith("ct_")})]
     parts += ["", str(same_kind), "", str({n: [d for d in driver_rows if d["dataset"] == n][:8] for n in DATASETS})]
     (out / "tabelas_auto.md").write_text("\n".join(parts) + "\n", encoding="utf-8")

@@ -1,9 +1,9 @@
 machine,aprovada,revisão,reprovada
-ramp·baixa,0,2,35
-ramp·média,19,15,3
-ramp·alta,0,7,30
-shepp-logan·baixa,0,22,15
-shepp-logan·média,0,14,23
+ramp·baixa,0,3,34
+ramp·média,34,3,0
+ramp·alta,0,21,16
+shepp-logan·baixa,6,27,4
+shepp-logan·média,0,25,12
 shepp-logan·alta,0,0,37
 cosine·baixa,0,0,37
 cosine·média,0,0,37

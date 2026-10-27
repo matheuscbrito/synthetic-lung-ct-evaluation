@@ -18,6 +18,8 @@ Validação de `docs/ruido/metodo.md` §6 (primeira linha da tabela), sem dados 
    próximo e regressão logística, deixando um paciente de fora); (d) camada de
    decisão calibrada na máquina M0 = ramp·média (outra realização do ruído);
    (e) repetibilidade metade par × ímpar das ROIs.
+   v2: a régua e o k vêm dos pares vizinhos de M0 (mesma calibração das reais);
+   o resumo traz as metas de mesma máquina, kernel diferente e dose 2×.
 
 Uso (da raiz do repositório):
 
@@ -44,6 +46,7 @@ from skimage.morphology import disk
 from skimage.transform import iradon, radon
 
 from frameworks.noise_signature.calibrate import calibrate, halves, patient_key
+from frameworks.noise_signature.decision import DECISION_METRICS, EIXOS
 from frameworks.noise_signature.evaluate import _json_default, evaluate_pair, load_valid
 from frameworks.noise_signature.measure import compute_metrics, make_plan, measure
 from frameworks.noise_signature.noise_level import pooled_mad1
@@ -345,7 +348,7 @@ def figure_status(counts: pd.DataFrame, folder: Path) -> None:
         for j in range(counts.shape[1]):
             value = int(counts.values[i, j])
             axis.text(j, i, value, ha="center", va="center", fontsize=8, color="white" if value > counts.values.max() / 2 else "#2b2a27")
-    axis.set_title("Veredito por máquina (calibrado em M0 = ramp·média)", fontsize=9)
+    axis.set_title("Veredito por máquina — v2 (calibrado em M0 = ramp·média)", fontsize=9)
     fig.tight_layout()
     fig.savefig(folder / "status_por_maquina.png", dpi=130)
     plt.close(fig)
@@ -533,11 +536,29 @@ def main() -> None:
     technique_counts = {}
     for key, part in pairs.groupby("machine", sort=False):
         technique_counts[key] = {t: dict(Counter(part[f"{t}_status"])) for t in ("t1", "t2", "t3", "t4")}
-    status_cols = [c for c in pairs.columns if c.endswith("_status") and c.count("_") >= 3 and not c.startswith("t2_median")]
-    flagged = {}
+        technique_counts[key].update({f"eixo_{e}": dict(Counter(part[f"eixo_{e}_status"])) for e in EIXOS})
+    status_cols = [f"{k}_status" for k in DECISION_METRICS] + ["t4_map_rho_status"]
+    diag_cols = [c for c in pairs.columns if c.endswith("_status") and c.count("_") >= 3 and not c.startswith("t2_median")
+                 and c not in status_cols and not c.startswith("eixo_")]
+    flagged, flagged_diag = {}, {}
     for key, part in pairs.groupby("machine", sort=False):
         frac = {c[:-7]: float(part[c].isin(("revisão", "reprovada")).mean()) for c in status_cols}
         flagged[key] = dict(sorted(((k, v) for k, v in frac.items() if v > 0), key=lambda kv: -kv[1])[:6])
+        frac = {c[:-7]: float(part[c].isin(("revisão", "reprovada")).mean()) for c in diag_cols}
+        flagged_diag[key] = dict(sorted(((k, v) for k, v in frac.items() if v > 0), key=lambda kv: -kv[1])[:6])
+    m0 = machine_key(*REFERENCE)
+    share = lambda keys, statuses: float(pairs[pairs.machine.isin(keys)]["noise_signature_status"].isin(statuses).mean())
+    other_kernels = [machine_key(k, REFERENCE[1]) for k in FILTERS if k != REFERENCE[0]]
+    dose_2x = [machine_key(REFERENCE[0], d) for d in DOSES if d != REFERENCE[1]]
+    targets = {
+        "mesma_maquina_aprovada": share([m0], ("aprovada",)),
+        "kernel_diferente_mesma_dose_sinalizado": share(other_kernels, ("revisão", "reprovada")),
+        "kernel_diferente_por_maquina": {m: share([m], ("revisão", "reprovada")) for m in other_kernels},
+        "dose_2x_sinalizada": share(dose_2x, ("revisão", "reprovada")),
+        "dose_2x_por_maquina": {m: share([m], ("revisão", "reprovada")) for m in dose_2x},
+        "outras_maquinas_aprovadas": int(pairs[pairs.machine != m0]["noise_signature_status"].eq("aprovada").sum()),
+        "outras_maquinas_n": int((pairs.machine != m0).sum()),
+    }
 
     # (e) repetibilidade: IQR(par − ímpar) ÷ IQR entre cortes, dentro de cada máquina
     repeat = []
@@ -550,9 +571,13 @@ def main() -> None:
                 spread = np.subtract(*np.percentile(values, [75, 25]))
                 if spread > 0:
                     ratios.append(np.subtract(*np.percentile(diffs, [75, 25])) / spread)
-        repeat.append({"metric": metric, "repeat_ratio_median": float(np.median(ratios)) if ratios else np.nan,
+        entry = calib["metrics"].get(metric, {})
+        repeat.append({"metric": metric, "role": "decisão" if metric in DECISION_METRICS else "diagnóstico",
+                       "repeat_ratio_median": float(np.median(ratios)) if ratios else np.nan,
                        "repeat_ratio_max": float(np.max(ratios)) if ratios else np.nan,
-                       "calib_M0_repeatability_iqr": calib["metrics"].get(metric, {}).get("repeatability_iqr", np.nan)})
+                       "calib_M0_repeatability_iqr": entry.get("repeatability_iqr", np.nan),
+                       "calib_M0_repeatability_nn": entry.get("repeatability_nn", np.nan),
+                       "calib_M0_scale": entry.get("scale", np.nan), "calib_M0_scale_source": entry.get("scale_source")})
     repeat = pd.DataFrame(repeat)
 
     # saídas
@@ -596,14 +621,17 @@ def main() -> None:
         "monotony_key": monotony.set_index("metric").loc[[m for m in ("t1_soft_sigma", "t1_soft_f_avg", "t1_soft_f_peak", "t3_soft_mad1",
                                                                        "t3_soft_corr_index", "t3_soft_coherence", "t2_wiener_acf_len",
                                                                        "t2_wiener_acf_neg", "t3_lung_corr_index") if m in set(monotony.metric)]].to_dict(orient="index"),
-        "decision": {"status_counts": status_counts.to_dict(orient="index"), "technique_counts": technique_counts, "top_flagged_metrics": flagged},
+        "decision": {"k": calib["k"], "k_calibration": {k: v for k, v in calib["k_calibration"].items() if k != "grid"},
+                     "lopo_M0": calib["lopo"], "targets": targets,
+                     "status_counts": status_counts.to_dict(orient="index"), "technique_counts": technique_counts,
+                     "top_flagged_decision_metrics": flagged, "top_flagged_diagnostic_metrics": flagged_diag},
         "repeatability": repeat.to_dict(orient="records"),
         "runtime_s": {"simulation": round(t_sim, 1), "total": round(time.time() - start, 1)},
     }
     (out / "resumo.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, default=_json_default), encoding="utf-8")
     print(json.dumps({"acc": summary["accuracy"]["soft_sigma_abs_rel_err_median"],
                       "ident": {k: (v["nearest_centroid"], v["logistic"], v["chance"]) for k, v in identification.items()},
-                      "status": status_counts.to_dict(orient="index"), "runtime": summary["runtime_s"]}, indent=1, ensure_ascii=False, default=_json_default))
+                      "status": status_counts.to_dict(orient="index"), "targets": targets, "k": calib["k"], "runtime": summary["runtime_s"]}, indent=1, ensure_ascii=False, default=_json_default))
 
 
 if __name__ == "__main__":

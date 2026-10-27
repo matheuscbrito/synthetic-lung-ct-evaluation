@@ -1,48 +1,65 @@
-dataset,case_id,noise_signature_1lado,lucas,lucas_sinalizou,nosso_top3
-Dsr,1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058,reprovada,aprovada,,"t1_soft_shape_dist (|z| 4.3), t1_soft_f_avg (|z| 3.4), t4_lung_soft_ratio (|z| 1.9)"
-Dsr,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,"t2_wiener_kurtosis (|z| 1.7), t3_lung_hv_ratio (|z| 1.1)"
-Dsr,1.000000-P4P105S300I00013 Gated 90.0A-34039-1-045,reprovada,aprovada,,t1_soft_shape_dist (|z| 3.6)
-Dsr,1.000000-P4P117S301I00008 Gated 50.0A-70687-1-062,reprovada,aprovada,,"t1_soft_f_avg (|z| 2.6), t1_soft_shape_dist (|z| 2.1), t3_soft_corr_index (|z| 1.7)"
-Dsr,1.000000-P4P117S301I00010 Gated 70.0A-84091-1-072,revisão,aprovada,,"t1_soft_f_peak (|z| 2.0), t1_soft_shape_dist (|z| 1.4), t3_lung_corr_index (|z| 1.2)"
-Dsr,1.000000-P4P117S302I00003 Gated 0.0A-54642-1-054,reprovada,aprovada,,"t1_soft_f_avg (|z| 3.5), t1_soft_shape_dist (|z| 3.4), t3_soft_corr_index (|z| 1.8)"
-Dsr,1.000000-P4P117S302I00006 Gated 30.0A-18623-1-036,reprovada,aprovada,,"t1_soft_f_avg (|z| 2.7), t1_soft_shape_dist (|z| 2.5), t3_soft_corr_index (|z| 1.6)"
-Dsr,1.000000-P4P117S302I00009 Gated 60.0A-40067-1-047,revisão,aprovada,,"t1_soft_f_avg (|z| 1.8), t4_lung_soft_ratio (|z| 1.5), t3_soft_corr_index (|z| 1.2)"
-Dsr,1.000000-P4P117S302I00010 Gated 70.0A-60710-1-070,reprovada,aprovada,,"t1_soft_f_avg (|z| 3.6), t1_soft_shape_dist (|z| 2.4), t3_soft_corr_index (|z| 2.2)"
-Dsr,1.000000-P4P117S303I00003 Gated 0.0A-45715-1-051,reprovada,aprovada,,"t1_soft_f_avg (|z| 2.1), t2_wiener_lsd (|z| 1.5), t1_soft_shape_dist (|z| 1.4)"
-Dsr-baseline,1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058,reprovada,aprovada,,"t4_lung_soft_ratio (|z| 2.0), t2_wiener_kurtosis (|z| 2.0), t3_soft_hv_ratio (|z| 1.5)"
-Dsr-baseline,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,t3_lung_hv_ratio (|z| 1.1)
-Dsr-baseline,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-042,reprovada,aprovada,,"t2_wiener_kurtosis (|z| 2.1), t3_soft_hv_ratio (|z| 1.3)"
-Dsr-baseline,1.000000-P4P105S300I00010 Gated 60.0A-69158-1-056,reprovada,aprovada,,t4_lung_soft_ratio (|z| 2.6)
-Dsr-baseline,1.000000-P4P105S300I00013 Gated 90.0A-34039-1-045,reprovada,aprovada,,"t1_soft_shape_dist (|z| 2.5), t1_soft_f_avg (|z| 2.5), t3_lung_hv_ratio (|z| 2.2)"
-Dsr-baseline,1.000000-P4P105S300I00013 Gated 90.0A-34039-1-060,revisão,aprovada,,"t2_wiener_kurtosis (|z| 1.9), t3_lung_corr_index (|z| 1.5), t2_wiener_lsd (|z| 1.1)"
-Dsr-baseline,1.000000-P4P117S300I00006 Gated 30.0A-98754-1-53,revisão,aprovada,,"t1_soft_f_peak (|z| 2.0), t1_lung_anisotropy (|z| 2.0), t4_cv_map (|z| 1.5)"
-Dsr-baseline,1.000000-P4P117S301I00006 Gated 30.0A-04191-1-044,reprovada,aprovada,,"t2_wiener_grid_peak (|z| 2.7), t4_nlf_slope (|z| 2.1), t4_lung_soft_ratio (|z| 1.6)"
-Dsr-baseline,1.000000-P4P117S301I00008 Gated 50.0A-70687-1-062,aprovada,revisão,high_band,
-Dsr-baseline,1.000000-P4P117S301I00010 Gated 70.0A-84091-1-072,reprovada,aprovada,,"t3_soft_corr_index (|z| 2.0), t1_soft_f_peak (|z| 2.0), t2_wiener_lsd (|z| 1.4)"
-Dsr-baseline,1.000000-P4P117S303I00003 Gated 0.0A-45715-1-051,revisão,aprovada,,"t1_soft_shape_dist (|z| 1.4), t2_wiener_lsd (|z| 1.4), t4_nlf_slope (|z| 1.2)"
-Dsr-baseline,1.000000-P4P117S303I00005 Gated 20.0A-54841-1-033,revisão,aprovada,,"t1_soft_shape_dist (|z| 1.6), t4_nlf_slope (|z| 1.4), t3_soft_coherence (|z| 1.3)"
-Dsr-baseline,1.000000-P4P117S304I00011 Gated 80.0A-89961-1-46,revisão,aprovada,,"t3_lung_hv_ratio (|z| 1.8), t2_wiener_lsd (|z| 1.5), t4_cv_map (|z| 1.0)"
-Dsr-baseline,1.000000-P4P117S305I00003 Gated 0.0A-96421-1-46,reprovada,aprovada,,"t1_soft_shape_dist (|z| 3.0), t1_soft_f_avg (|z| 2.1), t2_wiener_kurtosis (|z| 1.9)"
-Dsr-baseline,1.000000-P4P117S305I00005 Gated 20.0A-05991-1-43,revisão,aprovada,,"t1_soft_shape_dist (|z| 1.9), t1_soft_f_avg (|z| 1.5), t4_nlf_slope (|z| 1.1)"
-Dsr-baseline,1.000000-P4P117S305I00009 Gated 60.0A-75309-1-49,revisão,aprovada,,t2_wiener_kurtosis (|z| 1.0)
-Dsr-baseline,1.000000-P4P117S308I00005 Gated 20.0A-76239-1-044,reprovada,aprovada,,"t4_lung_soft_ratio (|z| 5.9), t3_soft_corr_index (|z| 2.6), t4_cv_map (|z| 2.2)"
+dataset,case_id,noise_signature,lucas,lucas_sinalizou,nosso_top3
+Dsr,1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058,revisão,aprovada,,"t4_lung_soft_ratio (|z| 1.1), t1_soft_sigma_ratio (|z| 1.0)"
+Dsr,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,
+Dsr,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-042,aprovada,revisão,low_band,
+Dsr,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-070,aprovada,revisão,low_band,
+Dsr,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-078,aprovada,revisão,"grain, low_band",
+Dsr,1.000000-P4P105S300I00008 Gated 40.0A-54784-1-078,aprovada,revisão,"grain, low_band, high_band",
+Dsr,1.000000-P4P105S300I00009 Gated 50.0A-40237-1-078,aprovada,revisão,"grain, low_band, high_band",
+Dsr,1.000000-P4P105S300I00009 Gated 50.0A-40237-1-081,aprovada,revisão,"grain, low_band, high_band",
+Dsr,1.000000-P4P105S300I00010 Gated 60.0A-69158-1-056,aprovada,revisão,"grain, low_band, high_band, air",
+Dsr,1.000000-P4P117S300I00008 Gated 50.0A-92363-1-27,aprovada,revisão,quantity,
+Dsr,1.000000-P4P117S300I00008 Gated 50.0A-92363-1-59,aprovada,revisão,"grain, low_band",
+Dsr,1.000000-P4P117S301I00006 Gated 30.0A-04191-1-044,aprovada,revisão,"grain, low_band",
+Dsr,1.000000-P4P117S301I00010 Gated 70.0A-84091-1-072,revisão,aprovada,,t3_soft_immerkaer (|z| 1.1)
+Dsr,1.000000-P4P117S302I00003 Gated 0.0A-54642-1-054,revisão,aprovada,,t1_soft_sigma_ratio (|z| 1.7)
+Dsr,1.000000-P4P117S302I00006 Gated 30.0A-18623-1-036,revisão,aprovada,,t1_soft_sigma_ratio (|z| 1.5)
+Dsr,1.000000-P4P117S302I00009 Gated 60.0A-40067-1-047,revisão,aprovada,,t1_soft_sigma_ratio (|z| 1.8)
+Dsr,1.000000-P4P117S302I00010 Gated 70.0A-60710-1-070,revisão,aprovada,,t2_wiener_acf_len (|z| 1.2)
+Dsr,1.000000-P4P117S308I00009 Gated 60.0A-55977-1-039,aprovada,revisão,,
+Dsr-baseline,1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058,revisão,aprovada,,t4_lung_soft_ratio (|z| 1.2)
+Dsr-baseline,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,
+Dsr-baseline,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-070,aprovada,revisão,air,
+Dsr-baseline,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-078,aprovada,revisão,air,
+Dsr-baseline,1.000000-P4P105S300I00010 Gated 60.0A-69158-1-056,revisão,aprovada,,t4_lung_soft_ratio (|z| 1.5)
+Dsr-baseline,1.000000-P4P105S300I00013 Gated 90.0A-34039-1-060,revisão,aprovada,,
+Dsr-baseline,1.000000-P4P117S300I00005 Gated 20.0A-79282-1-36,aprovada,revisão,high_band,
+Dsr-baseline,1.000000-P4P117S302I00010 Gated 70.0A-60710-1-070,aprovada,revisão,high_band,
+Dsr-baseline,1.000000-P4P117S303I00005 Gated 20.0A-54841-1-033,revisão,aprovada,,
+Dsr-baseline,1.000000-P4P117S308I00005 Gated 20.0A-76239-1-044,reprovada,aprovada,,"t4_lung_soft_ratio (|z| 3.5), t1_soft_sigma_ratio (|z| 2.2), t2_wiener_soft_acf_len (|z| 1.4)"
+Dsr-gpbo11,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-042,aprovada,reprovada,air,
+Dsr-gpbo11,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-070,aprovada,reprovada,air,
+Dsr-gpbo11,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-078,aprovada,reprovada,air,
+Dsr-gpbo11,1.000000-P4P105S300I00008 Gated 40.0A-54784-1-078,aprovada,reprovada,air,
+Dsr-gpbo11,1.000000-P4P105S300I00009 Gated 50.0A-40237-1-078,aprovada,reprovada,air,
+Dsr-gpbo11,1.000000-P4P105S300I00009 Gated 50.0A-40237-1-081,aprovada,reprovada,air,
 Dsr-gpbo11,1.000000-P4P105S300I00010 Gated 60.0A-69158-1-056,aprovada,reprovada,air,
 Dsr-gpbo11,1.000000-P4P105S300I00011 Gated 70.0A-12662-1-031,aprovada,reprovada,air,
-Dsr-gpbo11,1.000000-P4P117S300I00006 Gated 30.0A-98754-1-53,revisão,aprovada,,t1_lung_anisotropy (|z| 1.6)
-Dsr-gpbo11,1.000000-P4P117S300I00008 Gated 50.0A-92363-1-59,revisão,aprovada,,"t3_soft_corr_index (|z| 1.4), t4_nlf_slope (|z| 1.2)"
+Dsr-gpbo11,1.000000-P4P117S300I00005 Gated 20.0A-79282-1-36,aprovada,revisão,high_band,
 Dsr-gpbo11,1.000000-P4P117S301I00006 Gated 30.0A-04191-1-044,aprovada,revisão,air,
-Dsr-gpbo11,1.000000-P4P117S301I00010 Gated 70.0A-84091-1-072,reprovada,aprovada,,"t3_soft_corr_index (|z| 2.1), t3_soft_immerkaer (|z| 1.1)"
-Dsr-gpbo11,1.000000-P4P117S303I00005 Gated 20.0A-54841-1-033,revisão,aprovada,,t2_wiener_lsd (|z| 1.2)
+Dsr-gpbo11,1.000000-P4P117S301I00010 Gated 70.0A-84091-1-072,revisão,aprovada,,t3_soft_immerkaer (|z| 1.1)
+Dsr-gpbo11,1.000000-P4P117S302I00010 Gated 70.0A-60710-1-070,aprovada,revisão,high_band,
+Dsr-gpbo11,1.000000-P4P117S303I00003 Gated 0.0A-45715-1-051,aprovada,revisão,high_band,
 Dsr-gpbo11,1.000000-P4P117S304I00007 Gated 40.0A-06258-1-58,aprovada,revisão,high_band,
-Dsr-gpbo11,1.000000-P4P117S305I00004 Gated 10.0A-28414-1-65,revisão,aprovada,,"t3_soft_immerkaer (|z| 1.8), t2_wiener_kurtosis (|z| 1.3), t2_wiener_lsd (|z| 1.2)"
-Dsr-gpbo11,1.000000-P4P117S305I00009 Gated 60.0A-75309-1-49,revisão,aprovada,,t1_soft_shape_dist (|z| 1.2)
-Dsr-gpbo11,1.000000-P4P117S308I00007 Gated 40.0A-32548-1-065,reprovada,aprovada,,"t1_soft_anisotropy (|z| 3.2), t4_lung_soft_ratio (|z| 2.2), t3_soft_hv_ratio (|z| 2.0)"
-Dgen,1.000000-P4P100S300I00003 Gated 0.0A-29193-1-058,revisão,aprovada,,"t3_soft_hv_ratio (|z| 1.7), t3_soft_coherence (|z| 1.5)"
-Dgen,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,"t2_wiener_kurtosis (|z| 1.6), t4_nlf_slope (|z| 1.6), t3_lung_corr_index (|z| 1.1)"
-Dgen,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-042,reprovada,aprovada,,"t3_soft_coherence (|z| 2.6), t4_lung_soft_ratio (|z| 1.5), t4_nlf_slope (|z| 1.3)"
-Dgen,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-070,reprovada,aprovada,,"t3_soft_coherence (|z| 2.2), t3_lung_corr_index (|z| 2.1), t4_lung_soft_ratio (|z| 1.5)"
-Dgen,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-078,revisão,aprovada,,"t4_lung_soft_ratio (|z| 1.8), t3_soft_coherence (|z| 1.8), t3_lung_corr_index (|z| 1.5)"
-Dgen,1.000000-P4P105S300I00010 Gated 60.0A-69158-1-056,reprovada,aprovada,,"t3_soft_coherence (|z| 4.7), t2_wiener_kurtosis (|z| 2.0), t3_soft_corr_index (|z| 1.7)"
-Dgen,1.000000-P4P105S300I00013 Gated 90.0A-34039-1-045,reprovada,aprovada,,"t1_soft_shape_dist (|z| 3.9), t1_soft_f_avg (|z| 3.4), t3_soft_coherence (|z| 2.3)"
-Dgen,1.000000-P4P117S302I00003 Gated 0.0A-54642-1-054,revisão,aprovada,,"t2_wiener_lsd (|z| 1.5), t3_soft_coherence (|z| 1.3), t3_soft_hv_ratio (|z| 1.3)"
-Dgen,1.000000-P4P117S305I00003 Gated 0.0A-96421-1-46,revisão,aprovada,,"t3_soft_coherence (|z| 1.2), t1_soft_f_avg (|z| 1.1)"
+Dsr-gpbo11,1.000000-P4P117S305I00004 Gated 10.0A-28414-1-65,revisão,aprovada,,"t3_soft_immerkaer (|z| 1.8), t1_soft_sigma_ratio (|z| 1.0)"
+Dsr-gpbo11,1.000000-P4P117S308I00007 Gated 40.0A-32548-1-065,revisão,aprovada,,"t4_lung_soft_ratio (|z| 1.3), t1_soft_sigma_ratio (|z| 1.0)"
+Dgen,1.000000-P4P105S300I00004 Gated 0.0A-69532-1-059,revisão,aprovada,,
+Dgen,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-070,revisão,aprovada,,t2_wiener_soft_acf_len (|z| 1.1)
+Dgen,1.000000-P4P105S300I00006 Gated 20.0A-02729-1-078,revisão,aprovada,,t4_lung_soft_ratio (|z| 1.1)
+Dgen,1.000000-P4P105S300I00009 Gated 50.0A-40237-1-081,aprovada,revisão,"grain, low_band, high_band",
+Dgen,1.000000-P4P117S300I00005 Gated 20.0A-79282-1-36,aprovada,revisão,quantity,
+Dgen,1.000000-P4P117S300I00008 Gated 50.0A-92363-1-27,aprovada,reprovada,"quantity, grain, low_band, high_band",
+Dgen,1.000000-P4P117S300I00008 Gated 50.0A-92363-1-59,aprovada,reprovada,"quantity, high_band",
+Dgen,1.000000-P4P117S301I00006 Gated 30.0A-04191-1-044,aprovada,reprovada,"quantity, high_band",
+Dgen,1.000000-P4P117S301I00008 Gated 50.0A-70687-1-062,aprovada,reprovada,"quantity, grain, low_band, high_band",
+Dgen,1.000000-P4P117S302I00006 Gated 30.0A-18623-1-036,aprovada,reprovada,"quantity, grain, low_band, high_band",t1_soft_sigma_ratio (|z| 1.4)
+Dgen,1.000000-P4P117S302I00009 Gated 60.0A-40067-1-047,aprovada,reprovada,"grain, low_band, high_band",t1_soft_sigma_ratio (|z| 1.6)
+Dgen,1.000000-P4P117S302I00010 Gated 70.0A-60710-1-070,aprovada,reprovada,"quantity, high_band",
+Dgen,1.000000-P4P117S303I00003 Gated 0.0A-45715-1-051,aprovada,reprovada,"grain, low_band, high_band",
+Dgen,1.000000-P4P117S304I00007 Gated 40.0A-06258-1-58,aprovada,revisão,quantity,
+Dgen,1.000000-P4P117S305I00005 Gated 20.0A-05991-1-43,aprovada,revisão,"quantity, high_band",
+Dgen,1.000000-P4P117S305I00008 Gated 50.0A-65210-1-54,aprovada,revisão,quantity,
+Dgen,1.000000-P4P117S305I00009 Gated 60.0A-75309-1-49,aprovada,revisão,"quantity, high_band",
+Dgen,1.000000-P4P117S308I00005 Gated 20.0A-76239-1-044,aprovada,revisão,quantity,t1_soft_sigma_ratio (|z| 1.1)
+Dgen,1.000000-P4P117S308I00007 Gated 40.0A-32548-1-065,aprovada,revisão,quantity,
+Dgen,1.000000-P4P117S308I00009 Gated 60.0A-55977-1-039,aprovada,revisão,,
