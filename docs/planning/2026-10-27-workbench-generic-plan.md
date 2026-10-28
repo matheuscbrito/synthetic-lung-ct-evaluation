@@ -22,7 +22,7 @@
 - UI copy in English; full-screen layout (no outer frame); light theme only; tokens from `theme.css`.
 - Non-finite numbers are `null` on the wire; the UI prints `n/a` and keeps item order in charts.
 - Tests never write to real `outputs/`; expected values come from framework functions or fixtures, never hardcoded counts.
-- Commit messages in Portuguese, ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Use Conventional Commits (`type(scope): descrição`), with the description in Portuguese and no co-author trailers. Preserve original author/committer dates when rewriting messages; correct timestamps only from evidence.
 
 ## Review Focus
 

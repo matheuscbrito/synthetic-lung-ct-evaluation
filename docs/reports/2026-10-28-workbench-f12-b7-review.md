@@ -104,3 +104,19 @@ publicados até `3fab9d2`, e o título e a descrição do
 com o corpo preparado. A consulta confirmou o head remoto `3fab9d259844be5f8863761d7e63660e548f24f0`,
 PR aberto, sem reviews ou checks registrados; a mergeabilidade estava sendo recalculada
 (`UNKNOWN`). Este registro documental acompanha a publicação. Não houve merge.
+
+
+## Padronização do histórico solicitada — 2026-10-28
+
+O pesquisador pediu remoção de coautorias e Conventional Commits. Foram reescritos os
+91 commits exclusivos do PR (inclusive o merge de main), removendo 89 trailers.
+Cada commit preserva exatamente sua árvore, identidade principal, data de autoria,
+data de commit e fuso. A topologia do merge e os commits compartilhados com main
+permanecem intactos. O novo head correspondente ao antigo `e4c150e` é
+`0906b5469dd32f1f854997fddb23354e4919218c`. As referências a hashes anteriores neste relatório são históricas.
+
+Distribuição original preservada: 40 commits em 23/10, 14 em 26/10, 20 em 27/10 e
+17 em 28/10, no fuso -03:00. O commit deste registro é novo e tem a data real da
+alteração documental. O GitHub já associa o email dos commits a `gabrielbringel`;
+eles ainda não contam no gráfico porque o PR continua fora da branch padrão `main`.
+Backup e mapa completo de hashes ficaram locais, fora do PR.
