@@ -3,9 +3,11 @@ import { ApiError, get, post, type ServerStatus } from "./api";
 import { clearContractCache, setContractToken, useContract } from "./contract/client";
 import type { Schema } from "./contract/types";
 import { DatasetOverview } from "./dataset/Overview";
+import { GeneratorBenchmark } from "./generators/Benchmark";
 import { useRoute, type Route, type Section } from "./route";
 import { Shell } from "./shell/Shell";
 import { Rail } from "./shell/Rail";
+import { VersionsView } from "./versions/VersionsView";
 
 function message(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -85,6 +87,10 @@ function Gate({ status, route, onRoute, onChanged }: GateProps) {
     <Shell rail={<Rail active={route.section} onNavigate={section => onRoute({ section, tab: "overview" })} />}>
       {route.section === "dataset" && route.tab === "overview" ? (
         <DatasetOverview schema={schema.data} route={route} onRoute={onRoute} />
+      ) : route.section === "generators" && route.tab !== "runs" && route.tab !== "exp" ? (
+        <GeneratorBenchmark schema={schema.data} route={route} onRoute={onRoute} />
+      ) : route.section === "versions" ? (
+        <VersionsView schema={schema.data} route={route} onRoute={onRoute} onChanged={onChanged} />
       ) : (
         <Placeholder route={route} />
       )}

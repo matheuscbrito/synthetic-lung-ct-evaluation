@@ -1,0 +1,19 @@
+/* Versões: coluna esquerda com a lista e os runs detectados (mockup slide "Versions"). */
+.versions-view .vleft {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.versions-view .vrow-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.versions-view .vrow-edit .inp {
+  margin-top: 0;
+  max-width: 220px;
+}

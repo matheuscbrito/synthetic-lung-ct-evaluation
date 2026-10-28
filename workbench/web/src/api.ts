@@ -209,6 +209,10 @@ export function del<T>(path: string): Promise<T> {
   return request<T>("DELETE", path);
 }
 
+export function patch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>("PATCH", path, undefined, body);
+}
+
 const enc = encodeURIComponent;
 
 // Token do histórico (mtime de historico.json): muda quando o histórico muda e invalida o cache do navegador.
