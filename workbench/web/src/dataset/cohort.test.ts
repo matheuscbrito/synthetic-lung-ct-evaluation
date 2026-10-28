@@ -6,7 +6,7 @@ import { orderItems } from "../contract/format";
 import type { Item, MetricDesc, Schema } from "../contract/types";
 import { realBundle, stressBundle, type Bundle } from "../fixtures";
 import { CohortCharts } from "./CohortCharts";
-import { alignTo, cohortSeries, matrixRows, scatterSeries, tableOrder } from "./cohort";
+import { alignTo, cohortSeries, factDistribution, matrixRows, scatterSeries, tableOrder } from "./cohort";
 import { ItemTable } from "./ItemTable";
 import { axisTechniques } from "./strip";
 import { VerdictMatrix } from "./VerdictMatrix";
@@ -211,4 +211,51 @@ test("Table: one row per item in severity order, metric text and row click", asy
   await act(async () => nameHead.click());
   const byName = Array.from(host.querySelectorAll<HTMLTableRowElement>("table.itab tbody tr")).map(r => r.dataset.id);
   expect(byName).toEqual([...items].sort((x: Item, y: Item) => (x.label < y.label ? -1 : x.label > y.label ? 1 : 0)).map(i => i.id));
+});
+
+describe("factDistribution (parity #33)", () => {
+  // recontagem direta dos fatos do fixture: valor -> quantidade
+  const recount = (items: Item[], label: string) => {
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const value = it.facts.find(f => f.label === label)?.value;
+      if (value !== undefined) counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    return counts;
+  };
+
+  test("real: one line per categorical fact, counts sum to the items, most frequent first", () => {
+    const items = current(realBundle);
+    const dist = factDistribution(items);
+    expect(dist.length).toBeGreaterThan(0);
+    for (const d of dist) {
+      const counts = recount(items, d.label);
+      expect(new Map(d.values.map(v => [v.value, v.count]))).toEqual(counts);
+      expect(d.values.reduce((n, v) => n + v.count, 0)).toBe(items.filter(it => it.facts.some(f => f.label === d.label)).length);
+      const ns = d.values.map(v => v.count);
+      expect(ns).toEqual([...ns].sort((a, c) => c - a));
+    }
+  });
+
+  test("numeric or all-distinct facts are not categorical", () => {
+    // stress: Seed is a different number per image
+    expect(factDistribution(current(stressBundle))).toEqual([]);
+    const mk = (id: string, facts: { label: string; value: string }[]) => ({ ...current(stressBundle)[0], id, facts });
+    const items = [
+      mk("a", [{ label: "Kind", value: "x" }, { label: "Count", value: "3" }, { label: "Tag", value: "p" }]),
+      mk("b", [{ label: "Kind", value: "x" }, { label: "Count", value: "3" }, { label: "Tag", value: "q" }]),
+      mk("c", [{ label: "Kind", value: "y" }, { label: "Count", value: "4" }, { label: "Tag", value: "r" }]),
+    ];
+    expect(factDistribution(items)).toEqual([{ label: "Kind", values: [{ value: "x", count: 2 }, { value: "y", count: 1 }] }]);
+  });
+
+  test("Table footer prints the distribution of each categorical fact", async () => {
+    const b = realBundle;
+    const items = current(b);
+    await draw(createElement(ItemTable, { schema: b.schema, axis: b.schema.axes[0].key, items, onOpen: vi.fn() }));
+    const lines = Array.from(host.querySelectorAll(".itab-dist li")).map(li => li.textContent);
+    expect(lines).toEqual(
+      factDistribution(items).map(d => `${d.label}: ${d.values.map(v => `${v.value} ${v.count}`).join(" · ")}`),
+    );
+  });
 });

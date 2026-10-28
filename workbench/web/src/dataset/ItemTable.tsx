@@ -1,9 +1,10 @@
 // Tabela técnica da visão geral: itens × (veredito do eixo, técnicas, cada métrica do eixo, fatos),
 // em ordem de gravidade e depois de distância; cabeçalho ordena, linha abre o item (paridade #26, 41, 55, 82).
+// Rodapé: contagem por valor de cada fato categórico dos itens (paridade #33).
 import { useState } from "react";
 import { metricText } from "../contract/format";
 import type { Item, Schema, StatusKey } from "../contract/types";
-import { factLabels, tableOrder, type TableSort } from "./cohort";
+import { factDistribution, factLabels, tableOrder, type TableSort } from "./cohort";
 import { axisTechniques, TONE_COLORS } from "./strip";
 
 interface Props {
@@ -33,6 +34,7 @@ export function ItemTable({ schema, axis, items, onOpen, focus }: Props) {
   const metrics = schema.metrics.filter(m => m.axis === axis);
   const facts = factLabels(items);
   const rows = tableOrder(items, axis, schema, sort);
+  const distribution = factDistribution(items);
   const axisLabel = schema.axes.find(a => a.key === axis)?.label ?? axis;
 
   // nome sobe em ordem alfabética; as demais colunas começam pelo pior
@@ -99,6 +101,15 @@ export function ItemTable({ schema, axis, items, onOpen, focus }: Props) {
           ))}
         </tbody>
       </table>
+      {distribution.length > 0 && (
+        <ul className="itab-dist">
+          {distribution.map(d => (
+            <li key={d.label}>
+              <b>{d.label}:</b> {d.values.map(v => `${v.value} ${v.count}`).join(" · ")}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

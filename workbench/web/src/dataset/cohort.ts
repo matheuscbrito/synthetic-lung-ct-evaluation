@@ -298,3 +298,31 @@ export function factLabels(items: Item[]): string[] {
   for (const it of items) for (const f of it.facts) if (!out.includes(f.label)) out.push(f.label);
   return out;
 }
+
+export interface FactDistribution {
+  label: string;
+  values: { value: string; count: number }[];
+}
+
+const isNumber = (text: string) => text.trim() !== "" && Number.isFinite(Number(text));
+
+/**
+ * Count per value of each categorical fact (parity #33), in fact order; values most frequent first.
+ * A fact is categorical when some value is not a number and at least one value repeats.
+ */
+export function factDistribution(items: Item[]): FactDistribution[] {
+  const out: FactDistribution[] = [];
+  for (const label of factLabels(items)) {
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const fact = it.facts.find(f => f.label === label);
+      if (fact) counts.set(fact.value, (counts.get(fact.value) ?? 0) + 1);
+    }
+    const values = [...counts].map(([value, count]) => ({ value, count }));
+    const total = values.reduce((n, v) => n + v.count, 0);
+    if (values.every(v => isNumber(v.value)) || values.length === total) continue;
+    values.sort((a, b) => b.count - a.count || (a.value < b.value ? -1 : a.value > b.value ? 1 : 0));
+    out.push({ label, values });
+  }
+  return out;
+}
