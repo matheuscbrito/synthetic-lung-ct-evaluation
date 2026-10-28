@@ -89,7 +89,11 @@ function VersionsScreen({ schema, route, onRoute, onChanged }: Props) {
   const showsDataset = (origin: string) => alive.current && currentDataset.current === origin;
 
   const versions = useVersionList(dataset, rev);
-  const reference = versions.data?.find(v => v.is_reference)?.label;
+  const referenceLabel = versions.data?.find(v => v.is_reference)?.label;
+  // a reference labelled "reference" is not repeated: "against the reference", not "against the reference reference"
+  const plainReference = referenceLabel === undefined || referenceLabel === "reference";
+  const subReference = plainReference ? "the reference" : `the ${referenceLabel} reference`;
+  const noteReference = plainReference ? "the reference" : referenceLabel;
   const axes = schema.axes.map(a => a.label.toLowerCase()).join(", ");
 
   const busy = pending !== null || recalculating;
@@ -157,7 +161,7 @@ function VersionsScreen({ schema, route, onRoute, onChanged }: Props) {
       <PageHeader
         eyebrow={`History · ${schema.dataset.mode_label}`}
         title="Versions"
-        sub={`Each version is measured once against the ${reference ?? "reference"} reference`}
+        sub={`Each version is measured once against ${subReference}`}
         right={
           <>
             {schema.datasets.length > 1 && (
@@ -250,7 +254,7 @@ function VersionsScreen({ schema, route, onRoute, onChanged }: Props) {
             </div>
           </form>
           <div className="sub add-note">
-            Adding a version validates the pairs against {reference ?? "the reference"}, then measures {axes} once.
+            Adding a version validates the pairs against {noteReference}, then measures {axes} once.
           </div>
         </Card>
       </div>

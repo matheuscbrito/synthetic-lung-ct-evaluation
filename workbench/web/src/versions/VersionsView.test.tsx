@@ -262,16 +262,34 @@ test("dataset switch is hidden with one dataset and lists labels with several", 
   expect(onRoute).toHaveBeenCalledWith({ dataset: realBundle.schema.datasets[1].key, version: undefined });
 });
 
-test("header and add footnote name the reference and the axes", async () => {
-  mockApi(baseTable(stressBundle));
-  await render(stressBundle.schema);
-  const ref = stressBundle.versions.find(v => v.is_reference)!.label;
-  const axes = stressBundle.schema.axes.map(a => a.label.toLowerCase()).join(", ");
-  expect(host.querySelector(".head .sub")?.textContent).toBe(`Each version is measured once against the ${ref} reference`);
+async function copyFor(bundle: Bundle, versions: Bundle["versions"]) {
+  const k = enc(bundle.schema.dataset.key);
+  mockApi(baseTable(bundle, { [`GET /api/v2/versions?dataset=${k}`]: versions }));
+  await render(bundle.schema);
+  const axes = bundle.schema.axes.map(a => a.label.toLowerCase()).join(", ");
   const addCard = Array.from(host.querySelectorAll(".eyebrow"))
     .find(e => e.textContent === "Add version")!
     .closest(".card")!;
-  expect(addCard.lastElementChild?.textContent).toBe(`Adding a version validates the pairs against ${ref}, then measures ${axes} once.`);
+  return {
+    sub: host.querySelector(".head .sub")?.textContent,
+    note: addCard.lastElementChild?.textContent,
+    axes,
+  };
+}
+
+test("reference labelled 'reference' is not repeated in the header and the add footnote", async () => {
+  const ref = stressBundle.versions.find(v => v.is_reference)!.label;
+  expect(ref).toBe("reference");
+  const { sub, note, axes } = await copyFor(stressBundle, stressBundle.versions);
+  expect(sub).toBe("Each version is measured once against the reference");
+  expect(note).toBe(`Adding a version validates the pairs against the reference, then measures ${axes} once.`);
+});
+
+test("other reference labels keep 'against the <label> reference' and 'against <label>'", async () => {
+  const versions = stressBundle.versions.map(v => (v.is_reference ? { ...v, label: "Ruler A" } : v));
+  const { sub, note, axes } = await copyFor(stressBundle, versions);
+  expect(sub).toBe("Each version is measured once against the Ruler A reference");
+  expect(note).toBe(`Adding a version validates the pairs against Ruler A, then measures ${axes} once.`);
 });
 
 test("a late add after a dataset switch neither routes nor shows a notice, and the new screen starts empty", async () => {
