@@ -181,5 +181,11 @@ bundle = {"title": "QC Workbench · stress data", "schema": schema, "baseline": 
                         "warnings": [{"label": "unreadable files", "count": 2}] if v == "v1-base" else [], "provenance": {"run": "rs", "step": "7"} if v == "v2-rs07" else None}
                        for v, d in zip(VERS, ("2026-09-02", "2026-10-11", "2026-10-25"))],
           "detected": [{"name": "v3-rs12", "folder": "/data/sweeps/rs/0012"}]}
+# board no formato da API (§4.3): rótulo de exibição da lista de versões; a linha de base não se compara consigo
+LABEL = {v["name"]: v["label"] for v in bundle["versions"]}
+for v in bundle["board"]["versions"]:
+    v["label"] = LABEL[v["name"]]
+    if v["name"] == bundle["board"]["baseline"]:
+        v["vs_baseline"], v["cohort"] = None, []
 json.dump(bundle, open(sys.argv[1], "w"))
 print("ok", FOCUS, CMP)

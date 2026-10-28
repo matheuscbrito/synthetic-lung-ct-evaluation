@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from workbench.api import compare, data, datasets as ds
 from workbench.api.app import create_app
-from workbench.api.contract import AXES, bench, items
+from workbench.api.contract import AXES, bench, items, schema
 from workbench.api.contract import versions as cv
 from workbench.tests.conftest import DATA_OK
 
@@ -83,9 +83,19 @@ def test_counts_equal_item_verdict_tallies(body, wb):
 
 def test_scores_come_from_board_json(body, wb):
     from workbench.api import board
+    keys = {item["key"] for item in schema.indicators()}
     generators = {g["name"]: g for g in board.board_json(wb, body["baseline"])["generators"]}
     for version in body["versions"]:
-        assert version["scores"] == generators[version["name"]]["scores"]
+        expected = {key: value for key, value in generators[version["name"]]["scores"].items() if key in keys}
+        assert version["scores"] == expected
+
+
+def test_board_indicators_are_the_schema_indicators(body):
+    """Só os indicadores do schema chegam à interface (os `map_*` ficam de fora, como em `schema.indicators`)."""
+    keys = {item["key"] for item in schema.indicators()}
+    for version in body["versions"]:
+        assert set(version["scores"]) <= keys
+        assert {entry["indicator"] for entry in version["vs_baseline"] or []} <= keys
 
 
 def test_vs_baseline_results_and_shape(body):

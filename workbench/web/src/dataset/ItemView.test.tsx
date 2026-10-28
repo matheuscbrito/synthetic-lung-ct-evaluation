@@ -127,10 +127,8 @@ test("real focus item: every reason sentence, % of original for nex, compare val
   const b = realBundle;
   const focus = focusOf(b);
   const nex = focus.metrics.nex;
-  // o fixture não traz `pct`; o backend o calcula como sintética ÷ real × 100
-  const pct = (100 * nex.synthetic!) / nex.real!;
-  const items = b.items[b.current].map(it => (it.id === focus.id ? { ...it, metrics: { ...it.metrics, nex: { ...nex, pct } } } : it));
-  await render(b, { items });
+  const pct = nex.pct!;
+  await render(b);
 
   const reasons = Array.from(host.querySelectorAll(".why li")).map(li => li.textContent);
   expect(reasons).toHaveLength(focus.reasons.length);
@@ -145,8 +143,10 @@ test("real focus item: every reason sentence, % of original for nex, compare val
   expect(row.querySelector(".cur-val")?.textContent).toBe(metricText(desc("nex"), nex));
   const old = focusOf(b, b.baseline).metrics.nex;
   expect(row.querySelector(".cmp-val")?.textContent).toBe(metricText(desc("nex"), old));
-  // only nex carries pct here
-  expect(host.querySelectorAll(".mrow .pct")).toHaveLength(1);
+  // one "% of original" per reading that carries a finite pct
+  const withPct = b.schema.metrics.filter(m => Number.isFinite(focus.metrics[m.key]?.pct ?? NaN));
+  expect(withPct.length).toBeGreaterThan(0);
+  expect(host.querySelectorAll(".mrow .pct")).toHaveLength(withPct.length);
   // one metric row per metric, grouped under each axis
   expect(host.querySelectorAll(".mrow[data-metric]")).toHaveLength(b.schema.metrics.length);
   // facts

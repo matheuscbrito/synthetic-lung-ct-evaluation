@@ -43,34 +43,32 @@ describe("metricText", () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  test("value display glues % and spaces other units", () => {
+  test("value display glues %, spaces other units and prints a bare number without unit", () => {
     const sat = metric("sat31");
     expect(metricText(sat, { ...items[0].metrics.sat31, value: 1.68 })).toBe("1.7%");
+    const emd = metric("hist_emd", stressBundle);
+    const reading = stressBundle.items[stressBundle.current][0].metrics.hist_emd;
+    expect(metricText({ ...emd, display: "value" }, { ...reading, value: 0.5, z: null, ci: null })).toBe("0.500 EMD");
     const dmu = metric("delta_mu");
-    expect(metricText(dmu, { ...items[0].metrics.delta_mu, value: -0.5 })).toBe("-0.50 IQR");
+    expect(metricText({ ...dmu, unit: "" }, { ...items[0].metrics.delta_mu, value: -0.5 })).toBe("-0.50");
   });
 
-  test("available reading with no finite value or z prints n/a (real fixture)", () => {
-    const byKey = new Map(realBundle.schema.metrics.map((m) => [m.key, m]));
-    let checked = 0;
-    for (const list of Object.values(realBundle.items)) {
-      for (const it of list) {
-        for (const [key, mv] of Object.entries(it.metrics)) {
-          if (mv.available && mv.value === null && mv.z === null) {
-            expect(metricText(byKey.get(key)!, mv)).toBe("n/a");
-            checked++;
-          }
-        }
+  test("available reading with no finite value or z prints n/a", () => {
+    for (const b of Object.values(bundles)) {
+      for (const desc of b.schema.metrics) {
+        const mv = b.items[b.current][0].metrics[desc.key];
+        if (!mv) continue;
+        expect(metricText(desc, { ...mv, available: true, value: null, z: null, ci: null })).toBe("n/a");
       }
     }
-    expect(checked).toBeGreaterThan(0);
   });
 });
 
 describe("limitText", () => {
   test("per limit kind", () => {
-    expect(limitText(metric("sat31"), "reject")).toBe("–");
-    expect(limitText(metric("sat31"), "review")).toBe("> 15%");
+    const sat = metric("sat31");
+    expect(limitText({ ...sat, limits: { kind: "above", review: 15, reject: null } }, "reject")).toBe("–");
+    expect(limitText({ ...sat, limits: { kind: "above", review: 15, reject: null } }, "review")).toBe("> 15%");
     expect(limitText(metric("ll"), "review")).toBe("|z| > 1");
     expect(limitText(metric("delta_mu"), "review")).toMatch(/^\|x\| > 0\.31\d*$/);
     expect(limitText({ ...metric("ll"), limits: null }, "review")).toBe("–");
@@ -104,7 +102,8 @@ describe("reasonText", () => {
       `${m.label} is higher than real: +1.50 IQR [+1.10, +2.00], past the review limit (1).`,
     );
     const sat = metric("sat31");
-    expect(reasonText(sat, { ...base, metric: "sat31", value: 20, z: null, limit: "review", limit_value: null, direction: "higher" })).toBe(
+    const satReview = { ...sat, limits: { kind: "above" as const, review: 15, reject: null } };
+    expect(reasonText(satReview, { ...base, metric: "sat31", value: 20, z: null, limit: "review", limit_value: null, direction: "higher" })).toBe(
       `${sat.label} reads 20.0%, above the review limit (15%).`,
     );
     // edge: no value, no threshold and no direction still produce a clean sentence
@@ -157,10 +156,18 @@ describe("metricDeviation", () => {
     expect(metricDeviation(nex, withZ.metrics.nex)).toBeCloseTo(Math.abs(withZ.metrics.nex.z!));
     expect(metricDeviation(nex, { ...withZ.metrics.nex, available: false })).toBeNull();
     expect(metricDeviation(nex, undefined)).toBeNull();
-    const sat = metric("sat31");
-    const v = items[0].metrics.sat31;
-    expect(metricDeviation(sat, v)).toBeCloseTo(Math.abs(v.value!) / sat.limits!.review!);
+    const sat = { ...metric("sat31"), limits: { kind: "above" as const, review: 15, reject: 30 } };
+    const v = { ...items[0].metrics.sat31, value: 6 };
+    expect(metricDeviation(sat, v)).toBeCloseTo(6 / 15);
     expect(metricDeviation(sat, { ...v, value: null })).toBeNull();
+  });
+
+  test("a metric with only a reject limit is scaled so that the reject limit reads 2, as |z| does", () => {
+    const sat = { ...metric("sat31"), limits: { kind: "above" as const, review: null, reject: 15 } };
+    const v = { ...items[0].metrics.sat31, value: 7.5, z: null };
+    expect(metricDeviation(sat, v)).toBeCloseTo(1);
+    expect(metricDeviation(sat, { ...v, value: 30 })).toBeCloseTo(4);
+    expect(metricDeviation({ ...sat, limits: null }, v)).toBeNull();
   });
 
   test("worst is the largest metricDeviation of the axis and ignores unavailable readings", () => {

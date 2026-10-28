@@ -142,7 +142,7 @@ describe("Interval", () => {
   }
   const inside = (cx: number, b: { a: number; z: number }) => cx >= b.a - 1e-6 && cx <= b.z + 1e-6;
 
-  // a posição é a do valor; a cor é a do status do payload (que pode vir do IC e não da faixa)
+  // a posição é a do valor; a cor é a do status do payload (que pode vir do IC e não da faixa), senão a da faixa
   test.each(Object.keys(bundles) as ("real" | "stress")[])("%s: the point sits in the band holding its value, in its status", name => {
     const b = bundles[name];
     const desc = b.schema.inspectors.find(d => d.chart === "interval")!;
@@ -151,7 +151,8 @@ describe("Interval", () => {
     const holding = bands.filter(x => p.value! >= x.band.from && p.value! <= x.band.to);
     expect(holding.length).toBeGreaterThan(0);
     expect(holding.some(x => inside(cx, x))).toBe(true);
-    expect(status).toBe(p.status);
+    // sem status no payload, o ponto toma o status da faixa que contém o valor
+    expect(status).toBe(p.status ?? holding[0].band.status);
   });
 
   test("the point sits inside the band of its status", () => {

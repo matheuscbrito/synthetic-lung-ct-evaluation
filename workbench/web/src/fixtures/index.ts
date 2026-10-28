@@ -1,4 +1,5 @@
-// Bundles de fixtures (gerados por docs/planning/mockups-v3/bundle_real.py e bundle_stress.py) tipados pelo contrato.
+// Bundles de fixtures tipados pelo contrato: real.json sai das rotas do contrato (workbench/web/scripts/make_real_fixture.py);
+// stress.json sai de docs/planning/mockups-v3/bundle_stress.py.
 import type {
   Board,
   DetectedRun,

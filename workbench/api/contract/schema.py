@@ -169,7 +169,7 @@ def indicators() -> list[dict]:
              "better": "higher" if "aprovada" in item["key"] else "lower" if item["ideal"] == 0 else "closer",
              "ideal": item["ideal"],
              "min_change": item["min_change"]}
-            for item in board.indicators_json() if not item["key"].startswith("map_")]
+            for item in board.indicators_json() if item["key"] in bench.indicator_keys()]
 
 
 def _limits(key: str, cal: dict) -> dict:

@@ -56,11 +56,19 @@ def cohort_entry(stat: dict) -> dict:
                        {"label": "n", "value": str(stat["n"])}]}
 
 
-def _vs_baseline(entries: list[dict] | None) -> list[dict] | None:
+def indicator_keys() -> set[str]:
+    """Indicadores que a interface mostra: os de `board.indicators_json` sem os de mapa regional (`map_*`).
+
+    `schema.indicators` lista estes mesmos; `scores` e `vs_baseline` do placar são filtrados por eles.
+    """
+    return {item["key"] for item in board.indicators_json() if not item["key"].startswith("map_")}
+
+
+def _vs_baseline(entries: list[dict] | None, keys: set[str]) -> list[dict] | None:
     if entries is None:
         return None
     return [{"indicator": e["indicator"], "gain": e["gain"], "ci": e["ci"], "result": RESULT[e["result"]]}
-            for e in entries]
+            for e in entries if e["indicator"] in keys]
 
 
 def board_contract(wb: data.Workbench, baseline: str | None = None) -> dict:
@@ -69,6 +77,7 @@ def board_contract(wb: data.Workbench, baseline: str | None = None) -> dict:
     baseline = baseline or default_baseline(history)
     source = board.board_json(wb, baseline)  # versão desconhecida: 404
     meta = cv.load_meta(Path(wb.history_dir))
+    keys = indicator_keys()
     versions = []
     for generator in source["generators"]:
         name = generator["name"]
@@ -81,8 +90,8 @@ def board_contract(wb: data.Workbench, baseline: str | None = None) -> dict:
             "is_reference": is_reference,
             "provenance": (meta.get(name) or {}).get("provenance"),
             "counts": {axis: dict(generator["counts"][axis]) for axis, _ in AXES},
-            "scores": generator["scores"],
-            "vs_baseline": _vs_baseline(generator["vs_baseline"]),
+            "scores": {key: value for key, value in generator["scores"].items() if key in keys},
+            "vs_baseline": _vs_baseline(generator["vs_baseline"], keys),
             "cohort": [] if is_baseline else [cohort_entry(compare.cohort(wb, name)["nex_test"])],
         })
     return {"n_items": source["n_cases"], "baseline": baseline, "versions": versions}

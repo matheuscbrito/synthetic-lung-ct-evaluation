@@ -2,6 +2,9 @@
 
 All domain knowledge (metric limits, run labels, outcome words, notebook scopes) lives here,
 never in render_v3.py.  usage: MOCK_API=... python bundle_real.py out.json
+
+Historical: it reads the pre-contract routes (/api/slices, /api/tools/*, /api/optimizers…), removed in F12.
+The app fixture now comes from the contract routes: workbench/web/scripts/make_real_fixture.py.
 """
 import base64, json, os, sys, urllib.parse, urllib.request
 

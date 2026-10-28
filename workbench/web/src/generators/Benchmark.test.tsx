@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { Board, Schema } from "../contract/types";
+import type { Schema } from "../contract/types";
 import { realBundle, stressBundle, type Bundle } from "../fixtures";
 import type { Route } from "../route";
 import { clearContractCache } from "../contract/client";
@@ -25,22 +25,8 @@ afterEach(async () => {
   host.remove();
 });
 
-/** The fixture board in the API shape: labels from the versions list; baseline row without comparison. */
-function apiBoard(b: Bundle): Board {
-  const base = b.schema.dataset.default_baseline;
-  return {
-    ...b.board,
-    versions: b.board.versions.map(v => ({
-      ...v,
-      label: b.versions.find(x => x.name === v.name)?.label ?? v.name,
-      vs_baseline: v.name === base ? null : v.vs_baseline,
-      cohort: v.name === base ? [] : v.cohort,
-    })),
-  };
-}
-
 function props(b: Bundle, over: Partial<BenchmarkProps> = {}): BenchmarkProps {
-  const board = apiBoard(b);
+  const board = b.board;
   const baseline = b.schema.dataset.default_baseline;
   const axis = b.schema.axes[0].key;
   const items = b.items[b.current] ?? [];
@@ -89,7 +75,7 @@ test("five synthetic axes: stacked status bars instead of chips", async () => {
   const base = stressBundle.schema;
   const axes = ["a1", "a2", "a3", "a4", "a5"].map(k => ({ key: k, label: k.toUpperCase() }));
   const schema: Schema = { ...base, axes };
-  const board = apiBoard(stressBundle);
+  const board = stressBundle.board;
   const counts = Object.values(board.versions[0].counts)[0];
   const wide = {
     ...board,
@@ -230,7 +216,7 @@ test("GeneratorBenchmark: unknown route baseline falls back to the default; load
   const b = realBundle;
   const key = b.schema.dataset.key;
   const base = b.schema.dataset.default_baseline;
-  const board = apiBoard(b);
+  const board = b.board;
   const current = defaultCurrent(board.versions, base, undefined)!;
   const axis = b.schema.axes[0].key;
   const calls: string[] = [];
@@ -271,7 +257,7 @@ test("GeneratorBenchmark: unknown route baseline falls back to the default; load
 });
 
 function stubApi(b: Bundle, fail: Record<string, string>) {
-  const board = apiBoard(b);
+  const board = b.board;
   const base = b.schema.dataset.default_baseline;
   const current = defaultCurrent(board.versions, base, undefined)!;
   const axis = b.schema.axes[0].key;
@@ -344,7 +330,7 @@ test("GeneratorBenchmark: an items error still lists transitions with stable fal
 
 test("caption and chips hide inconclusive; stacked bars keep every status", async () => {
   const inc = realBundle.schema.statuses.find(x => x.key === "inconclusive")!;
-  const board = apiBoard(realBundle);
+  const board = realBundle.board;
   // the fixture has no inconclusive counts: add some so the filter is exercised
   const withInc = {
     ...board,

@@ -90,12 +90,18 @@ function severity(schema: Schema, status: StatusKey | undefined): number {
   return schema.statuses.find((s) => s.key === status)?.severity ?? 0;
 }
 
-/** Deviation of one reading, normalised: |z|, or |value| ÷ review limit; null when unread or unavailable. */
+/**
+ * Deviation of one reading, normalised: |z|, or |value| ÷ review limit; with only a reject limit, the reject
+ * limit reads 2 (as on the |z| scale, review 1 and reject 2). Null when unread, unavailable or without limits.
+ */
 export function metricDeviation(desc: MetricDesc, v: MetricValue | undefined): number | null {
   if (!v || v.available === false) return null;
   if (finite(v.z)) return Math.abs(v.z);
+  if (!finite(v.value)) return null;
   const review = desc.limits?.review;
-  if (finite(v.value) && finite(review) && review !== 0) return Math.abs(v.value) / review;
+  if (finite(review) && review !== 0) return Math.abs(v.value) / review;
+  const reject = desc.limits?.reject;
+  if (finite(reject) && reject !== 0) return (2 * Math.abs(v.value)) / reject;
   return null;
 }
 
