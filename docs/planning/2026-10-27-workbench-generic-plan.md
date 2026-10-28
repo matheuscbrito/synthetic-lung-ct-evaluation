@@ -257,7 +257,7 @@ branches in the renderer. The row-by-row v3 audit records generic adaptations an
 - [x] **Step 3:** both suites green: `.venv/bin/python -m pytest workbench/tests -q`; `cd workbench/web && npx vitest run && npm run build`.
 - [x] **Step 4:** run the app against the real API and the stress fixture (Vite dev server with a fixture mock) and compare each screen with the v3 mockups; walk the 96 parity rows and tick each in `docs/planning/2026-10-26-streamlit-parity.md` (new column "v3").
 - [x] **Step 5 (local):** commit `Remove rotas e telas antigas e documenta o contrato do workbench`; prepare the current PR title/body locally (no LLM agent, generic contract, parity).
-- [ ] **Publication, deferred by controller:** push and update PR #11 title/description only after the researcher's explicit ok, as required by the F12 controller addendum. No remote mutation in this completion run.
+- [x] **Publication:** researcher authorized publication on 2026-10-28. Pushed the completed branch and updated PR #11 title/description. Merge remains a separate action.
 
 Completion evidence (2026-10-28): [F12+B7 review](../reports/2026-10-28-workbench-f12-b7-review.md),
 [proposed PR body](../reports/2026-10-28-workbench-pr11-body.md), and the v3 column of the parity inventory.

@@ -94,3 +94,13 @@ O título proposto é “Workbench de QC: contrato genérico, paridade e inspeto
 O corpo proposto está em `2026-10-28-workbench-pr11-body.md`. Depois do envio, consultar
 novamente mergeabilidade/checks e concluir a revisão/merge no GitHub. Não houve push,
 edição remota do PR nem merge nesta sessão.
+
+
+## Publicação autorizada — 2026-10-28
+
+Após a conclusão local, o pesquisador instruiu “Publique”. Os 63 commits pendentes foram
+publicados até `3fab9d2`, e o título e a descrição do
+[PR #11](https://github.com/matheuscbrito/synthetic-lung-ct-evaluation/pull/11) foram atualizados
+com o corpo preparado. A consulta confirmou o head remoto `3fab9d259844be5f8863761d7e63660e548f24f0`,
+PR aberto, sem reviews ou checks registrados; a mergeabilidade estava sendo recalculada
+(`UNKNOWN`). Este registro documental acompanha a publicação. Não houve merge.
