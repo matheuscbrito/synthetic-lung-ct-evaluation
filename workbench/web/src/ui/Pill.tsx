@@ -1,8 +1,8 @@
-import type { Status } from "../api";
+import type { StatusKey } from "../contract/types";
 import { COLOR } from "../status";
 
 interface Props {
-  status: Status;
+  status: StatusKey;
   label?: string;
   className?: string;
 }

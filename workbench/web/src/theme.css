@@ -42,7 +42,7 @@ body {
   box-sizing: border-box;
 }
 
-/* casca: janela com trilho, área principal e coluna do agente */
+/* casca: janela com trilho e área principal */
 .app-stage {
   height: 100vh;
   padding: 26px;
@@ -55,13 +55,8 @@ body {
   border-radius: 22px;
   box-shadow: 0 20px 50px -30px #0003;
   display: grid;
-  grid-template-columns: 76px 1fr 0px;
+  grid-template-columns: 76px 1fr;
   overflow: hidden;
-  transition: grid-template-columns 0.45s var(--ease-shell);
-}
-
-.win.agent-open {
-  grid-template-columns: 76px 1fr 340px;
 }
 
 .rail {
@@ -155,20 +150,6 @@ body {
   stroke-width: 1.4;
 }
 
-/* Slice selecionado: corpo escuro fora dos círculos; só o contorno dos círculos fica branco */
-.nav.on .icon-slice {
-  fill-opacity: 1;
-}
-
-.icon-slice .ring {
-  fill: none;
-}
-
-/* mesma cor do fundo do botão selecionado (.nav.on .ib): os anéis parecem recortes */
-.nav.on .icon-slice .ring {
-  stroke: #e6e2db;
-}
-
 .nav:active .ib {
   transform: scale(0.94);
 }
@@ -178,10 +159,6 @@ body {
   outline-offset: 2px;
 }
 
-.rail .sp {
-  flex: 1;
-}
-
 .shell-main {
   padding: 30px 38px;
   overflow: auto;
@@ -189,29 +166,6 @@ body {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-}
-
-aside.agent {
-  border-left: 1px solid var(--line);
-  background: #f6f3ee;
-  display: flex;
-  flex-direction: column;
-  min-width: 340px;
-  overflow: hidden;
-}
-
-.ahead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 22px;
-  border-bottom: 1px solid var(--line);
-  font-weight: 600;
-}
-
-.agent-empty {
-  margin: 16px 22px;
-  color: var(--ink3);
 }
 
 /* tipografia */
@@ -383,23 +337,6 @@ h1 {
   color: #6b6b66;
 }
 
-.kpis {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--card);
-  margin-bottom: 20px;
-}
-
-.kpis > div {
-  padding: 20px 24px;
-}
-
-.kpis > div + div {
-  border-left: 1px solid var(--line);
-}
-
 .big {
   font: 500 34px/1.1 var(--font-ui);
   letter-spacing: -0.02em;
@@ -412,20 +349,16 @@ h1 {
   font-weight: 400;
 }
 
-/* ajuste para telas estreitas: a coluna do agente sai, o trilho continua */
+/* ajuste para telas estreitas: o trilho continua */
 @media (max-width: 900px) {
   .app-stage {
     padding: 12px;
   }
 
-  .win,
-  .win.agent-open {
+  .win {
     grid-template-columns: 76px 1fr;
   }
 
-  aside.agent {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
