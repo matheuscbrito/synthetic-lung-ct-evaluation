@@ -100,3 +100,14 @@ test("the overlay asks the inspector once per item and never sends compare", asy
   });
   expect(inspect.some(url => url.includes("compare="))).toBe(false);
 });
+
+test("column images carry the dataset of the schema", async () => {
+  stubFetch([]);
+  await render({ items: b.compare_items });
+
+  const srcs = Array.from(host.querySelectorAll<HTMLImageElement>(".ccol img")).map(img => img.getAttribute("src")!);
+  expect(srcs).toHaveLength(b.compare_items.length);
+  for (const src of srcs) {
+    expect(new URLSearchParams(src.split("?")[1]).get("dataset")).toBe(b.schema.dataset.key);
+  }
+});

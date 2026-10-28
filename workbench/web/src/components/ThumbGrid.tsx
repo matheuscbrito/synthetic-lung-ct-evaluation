@@ -68,7 +68,7 @@ export function ThumbGrid({ schema, version, items, axis, caption, selected, onO
           else onOpen(it.id);
         }}
       >
-        <img src={imageUrl(version, it.id, "synthetic", 128)} alt="" width={96} height={96} loading="lazy" />
+        <img src={imageUrl(version, it.id, "synthetic", 128, false, schema.dataset.key)} alt="" width={96} height={96} loading="lazy" />
         <span className="meta">
           <span className="mono">{it.label}</span>
           <span className="dot" style={{ background: statusColor(schema, status) }} aria-hidden="true" />

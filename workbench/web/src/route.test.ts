@@ -27,6 +27,12 @@ describe("route hash", () => {
     expect(toHash({ section: "dataset", tab: "overview" })).toBe("#/dataset/overview");
   });
 
+  test("empty dataset (or any empty scalar) counts as absent", () => {
+    const r = parseHash("#/dataset/overview?dataset=&version=&item=x");
+    expect(r).toEqual({ section: "dataset", tab: "overview", item: "x" });
+    expect(toHash({ section: "dataset", tab: "overview", dataset: "" })).toBe("#/dataset/overview");
+  });
+
   test("unknown section falls back to dataset/overview", () => {
     expect(parseHash("#/nope/whatever")).toEqual({ section: "dataset", tab: "overview" });
   });

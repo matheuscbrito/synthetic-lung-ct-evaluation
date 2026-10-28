@@ -220,3 +220,12 @@ test("compare version items load from /api/items and stack a second matrix", asy
     vi.unstubAllGlobals();
   }
 });
+
+test("thumbnails carry the dataset of the schema", async () => {
+  await render(stressBundle);
+  const srcs = tiles().map(t => t.querySelector("img")!.getAttribute("src")!);
+  expect(srcs.length).toBeGreaterThan(0);
+  for (const src of srcs) {
+    expect(new URLSearchParams(src.split("?")[1]).get("dataset")).toBe(stressBundle.schema.dataset.key);
+  }
+});

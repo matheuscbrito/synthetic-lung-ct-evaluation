@@ -36,8 +36,9 @@ export function parseHash(hash: string): Route {
   const route: Route = { section: sectionPart as Section, tab };
   const params = new URLSearchParams(search);
   for (const key of SCALARS) {
+    // parâmetro vazio (`dataset=`) vale como ausente: nunca vira `?dataset=` nas chamadas à API
     const value = params.get(key);
-    if (value !== null) route[key] = value;
+    if (value) route[key] = value;
   }
   const items = params.getAll("items");
   if (items.length > 0) route.items = items;
@@ -48,7 +49,7 @@ export function toHash(r: Route): string {
   const params = new URLSearchParams();
   for (const key of SCALARS) {
     const value = r[key];
-    if (value !== undefined) params.set(key, value);
+    if (value) params.set(key, value);
   }
   for (const id of r.items ?? []) params.append("items", id);
   const search = params.toString();

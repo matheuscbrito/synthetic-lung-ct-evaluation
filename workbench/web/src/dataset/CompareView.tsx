@@ -113,7 +113,7 @@ function Column({ schema, item, color, version, kind }: {
         <b>{item.label}</b>
         {item.group && <span className="sub">{item.group}</span>}
       </div>
-      <img src={imageUrl(version, item.id, kind, undefined, true)} alt={`${item.label} ${kind}`} draggable={false} />
+      <img src={imageUrl(version, item.id, kind, undefined, true, schema.dataset.key)} alt={`${item.label} ${kind}`} draggable={false} />
       <div className="vp">
         {schema.axes.map(axis => {
           const status = item.verdicts[axis.key] ?? "inconclusive";
