@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { clearContractCache } from "../contract/client";
 import { realBundle } from "../fixtures";
 import type { Route } from "../route";
-import { GeneratorNotebook } from "./Notebook.tsx";
+import { GeneratorNotebook } from "./Notebook";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

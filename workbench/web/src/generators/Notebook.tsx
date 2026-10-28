@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useContract } from "../contract/client";
 import { signed, toneOf } from "../contract/format";
+import { num } from "../format";
 import type { Experiment, Experiments, Schema } from "../contract/types";
 import { TONE_COLORS } from "../dataset/strip";
 import type { Route } from "../route";
@@ -17,7 +18,7 @@ import {
   trajectoryLayout,
   trajectoryPaths,
   type ChartBox,
-} from "./notebook";
+} from "./experiments";
 import "./notebook.css";
 
 const BOX: ChartBox = { width: 560, height: 190, left: 40, right: 60, top: 12, bottom: 26 };
@@ -240,6 +241,9 @@ function Trajectory({
   const layout = trajectoryLayout(data.experiments, paths, data.scopes, goal, BOX);
   const plotted = layout.paths.some(p => p.length > 0);
   const unit = data.objective.unit === "%" ? "%" : "";
+  // gridline labels get decimals only when the step is below 1, so neighbouring labels never repeat
+  const step = layout.ticks.length > 1 ? layout.ticks[1] - layout.ticks[0] : 1;
+  const tickDigits = step >= 1 ? 0 : Math.min(3, Math.ceil(-Math.log10(step)));
   return (
     <div className="card nb-traj">
       <div className="eyebrow ink">Trajectory · {data.objective.label}</div>
@@ -251,7 +255,7 @@ function Trajectory({
             <g key={v}>
               <line className="nb-grid-line" x1={BOX.left} x2={BOX.width - BOX.right} y1={layout.y(v)} y2={layout.y(v)} />
               <text className="nb-axis" x={BOX.left - 6} y={layout.y(v) + 4} textAnchor="end">
-                {v.toFixed(0)}
+                {v.toFixed(tickDigits)}
                 {unit}
               </text>
             </g>
@@ -260,7 +264,7 @@ function Trajectory({
             <g>
               <line className="nb-goal" x1={BOX.left} x2={BOX.width - BOX.right} y1={layout.goalY} y2={layout.goalY} />
               <text className="nb-axis" x={BOX.width - BOX.right} y={layout.goalY - 5} textAnchor="end">
-                goal {goal}
+                goal {num(goal, Number.isInteger(goal) ? 0 : 1)}
                 {unit}
               </text>
             </g>
@@ -283,7 +287,7 @@ function Trajectory({
                       cx={q.x}
                       cy={q.y}
                       r={on ? 6 : 4}
-                      style={{ fill: on ? stroke : "#fffefc", stroke }}
+                      style={{ fill: on ? stroke : "var(--card)", stroke }}
                       onClick={() => onRoute({ exp: q.id })}
                       onKeyDown={ev => {
                         if (ev.key === "Enter" || ev.key === " ") onRoute({ exp: q.id });
@@ -308,8 +312,8 @@ function Trajectory({
 function SectionsCard({ data }: { data: Experiments }) {
   return (
     <div className="card nb-lessons">
-      {data.sections.map(section => (
-        <div key={section.title} className="nb-section">
+      {data.sections.map((section, si) => (
+        <div key={si} className="nb-section">
           <div className="eyebrow ink">{section.title}</div>
           <ul>
             {section.items.map((item, i) => (

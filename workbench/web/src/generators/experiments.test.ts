@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import type { Experiment } from "../contract/types";
 import { realBundle } from "../fixtures";
-import { filterExperiments, lastScore, lineage, selectedId, trajectoryLayout, trajectoryPaths } from "./notebook";
+import { filterExperiments, lastScore, lineage, selectedId, trajectoryLayout, trajectoryPaths } from "./experiments";
 
 const exps = realBundle.experiments!.experiments;
 const scopes = realBundle.experiments!.scopes;

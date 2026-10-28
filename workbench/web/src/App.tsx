@@ -6,7 +6,7 @@ import { CompareView } from "./dataset/CompareView";
 import { DatasetItem } from "./dataset/ItemView";
 import { DatasetOverview } from "./dataset/Overview";
 import { GeneratorBenchmark } from "./generators/Benchmark";
-import { GeneratorNotebook } from "./generators/Notebook.tsx";
+import { GeneratorNotebook } from "./generators/Notebook";
 import { GeneratorOptimizers } from "./generators/Optimizers";
 import { useRoute, type Route, type Section } from "./route";
 import { Shell } from "./shell/Shell";
