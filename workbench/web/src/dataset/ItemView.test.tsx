@@ -249,3 +249,78 @@ test("DatasetItem: an id with spaces round-trips into /api/items, /api/inspect a
   }
   expect(host.querySelector(".crumbs b")?.textContent).toBe(focusOf(b).label);
 });
+
+test("DatasetItem: switching the compare version keeps the screen while the new items load", async () => {
+  const b = realBundle;
+  const key = b.schema.dataset.key;
+  const other = b.versions.find(v => v.name !== b.current && v.name !== b.schema.dataset.default_baseline)!.name;
+  let release: () => void = () => {};
+  const gate = new Promise<void>(r => (release = r));
+  stubFetch(b);
+  const base = globalThis.fetch as unknown as (url: string) => Promise<unknown>;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const u = new URL(url, "http://test.invalid");
+      if (u.pathname === "/api/items" && u.searchParams.get("version") === other) await gate;
+      return base(url);
+    }),
+  );
+  const routeOf = (baseline?: string): Route => ({ section: "dataset", tab: "item", item: b.focus, version: b.current, baseline });
+  const draw = (r: Route) => root.render(<DatasetItem schema={b.schema} route={r} onRoute={vi.fn()} />);
+  await act(async () => draw(routeOf()));
+  await settle();
+
+  const second = b.schema.inspectors[1];
+  const tabNamed = (text: string) =>
+    Array.from(host.querySelectorAll<HTMLButtonElement>('[aria-label="Inspector"] button')).find(x => x.textContent === text)!;
+  await act(async () => tabNamed(second.label).click());
+  await settle();
+  expect(tabNamed(second.label).getAttribute("aria-pressed")).toBe("true");
+
+  await act(async () => draw(routeOf(other)));
+  await settle();
+  // the compare items are still loading: the screen stays, with the chosen tab
+  expect(calls.some(c => c.startsWith(`/api/items?dataset=${key}&version=${encodeURIComponent(other)}`))).toBe(true);
+  expect(host.querySelector(".filmstrip")).not.toBeNull();
+  expect(tabNamed(second.label).getAttribute("aria-pressed")).toBe("true");
+
+  await act(async () => release());
+  await settle();
+  expect(tabNamed(second.label).getAttribute("aria-pressed")).toBe("true");
+  expect(host.querySelectorAll(".panes .pane")[1].textContent).toContain(label(b, other));
+});
+
+test("verdict panel hides the compare column when the compare version lacks the item", async () => {
+  const b = realBundle;
+  await render(b, { route: {} });
+  expect(host.querySelectorAll(".mrow .cmp-val").length).toBeGreaterThan(0);
+  await act(async () =>
+    root.render(
+      <ItemView
+        schema={b.schema}
+        versions={b.versions}
+        version={b.current}
+        items={b.items[b.current]}
+        compare={b.baseline}
+        compareItems={[]}
+        route={{ section: "dataset", tab: "item", item: b.focus }}
+        onRoute={vi.fn()}
+      />,
+    ),
+  );
+  expect(host.querySelectorAll(".mrow .cmp-val")).toHaveLength(0);
+  expect(host.querySelector(".mhead")).toBeNull();
+});
+
+test("compare and current pane captions carry one status dot per axis", async () => {
+  const b = stressBundle;
+  await render(b);
+  const panes = host.querySelectorAll(".panes .pane");
+  const dots = (p: Element) => Array.from(p.querySelectorAll(".tri .dot")).map(d => d.getAttribute("title"));
+  const statusLabel = (k: string) => b.schema.statuses.find(s => s.key === k)!.label;
+  const expected = (it: Item) => b.schema.axes.map(a => `${a.label}: ${statusLabel(it.verdicts[a.key])}`);
+  expect(dots(panes[0])).toEqual([]);
+  expect(dots(panes[1])).toEqual(expected(focusOf(b, b.baseline)));
+  expect(dots(panes[2])).toEqual(expected(focusOf(b)));
+});

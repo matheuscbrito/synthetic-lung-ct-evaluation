@@ -101,6 +101,15 @@
   cursor: default;
 }
 
+.item-view .mrow.solo {
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+}
+
+.item-view .pane .tri {
+  display: inline-flex;
+  gap: 4px;
+}
+
 .item-view .mhead {
   margin-top: 14px;
   padding: 0 8px;

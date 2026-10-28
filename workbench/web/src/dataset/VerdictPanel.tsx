@@ -2,7 +2,7 @@
 // versão comparada difere, o bloco "Why" (razões por eixo), as linhas de métrica por eixo com o valor da versão
 // comparada numa coluna discreta e os fatos livres do item. Tudo vem do contrato.
 import { metricText, reasonText } from "../contract/format";
-import type { Item, MetricValue, Schema, StatusKey } from "../contract/types";
+import type { Item, MetricDesc, MetricValue, Schema, StatusKey } from "../contract/types";
 import { Pill } from "../ui/Pill";
 import { statusColor } from "./strip";
 
@@ -17,22 +17,21 @@ interface Props {
 
 const finite = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x);
 
-function MetricRow({ schema, metricKey, label, current, previous }: {
+function MetricRow({ schema, desc, current, previous }: {
   schema: Schema;
-  metricKey: string;
-  label: string;
+  desc: MetricDesc;
   current: MetricValue | undefined;
+  /** Compare version's text; null hides the column. */
   previous: string | null;
 }) {
-  const desc = schema.metrics.find(m => m.key === metricKey)!;
   const pct = current?.available !== false ? current?.pct : null;
   return (
-    <div className="mrow" data-metric={metricKey}>
+    <div className={previous === null ? "mrow solo" : "mrow"} data-metric={desc.key}>
       <span className="mlabel">
-        {label}
+        {desc.label}
         {finite(pct) && <span className="pct">{`${Math.round(pct)}% of original`}</span>}
       </span>
-      <span className="mono cmp-val">{previous ?? ""}</span>
+      {previous !== null && <span className="mono cmp-val">{previous}</span>}
       <span className="mono cur-val">{metricText(desc, current)}</span>
       <i className="dot" style={{ background: statusColor(schema, current?.status ?? "inconclusive") }} aria-hidden="true" />
     </div>
@@ -96,12 +95,14 @@ export function VerdictPanel({ schema, item, compareItem, compareLabel }: Props)
         )}
       </details>
 
-      <div className="mhead">
-        <span />
-        <span className="eyebrow">{compareLabel}</span>
-        <span className="eyebrow">Current</span>
-        <span />
-      </div>
+      {compareItem && (
+        <div className="mhead">
+          <span />
+          <span className="eyebrow">{compareLabel}</span>
+          <span className="eyebrow">Current</span>
+          <span />
+        </div>
+      )}
       {schema.axes.map(axis => (
         <div key={axis.key} className="mgroup">
           <div className="eyebrow gc">{axis.label}</div>
@@ -111,8 +112,7 @@ export function VerdictPanel({ schema, item, compareItem, compareLabel }: Props)
               <MetricRow
                 key={m.key}
                 schema={schema}
-                metricKey={m.key}
-                label={m.label}
+                desc={m}
                 current={item.metrics[m.key]}
                 previous={compareItem ? metricText(m, compareItem.metrics[m.key]) : null}
               />

@@ -1,7 +1,7 @@
 // Dataset › Item (slide "Slice" dos mockups v3): migalhas, abas do dataset, eixo, faixa de miniaturas (pior
 // primeiro), tríptico original / versão comparada / versão atual com janela compartilhada e contorno opcional,
 // inspetores do esquema e o painel de veredito. Tudo vem do contrato; nada aqui conhece nomes de métricas.
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { imageUrl } from "../api";
 import { InspectorChart } from "../charts";
 import { useContract } from "../contract/client";
@@ -33,7 +33,7 @@ interface PaneProps {
   contour: string | null;
   alt: string;
   caption: string;
-  sub?: string;
+  sub?: ReactNode;
   view: View;
   setView: (update: (v: View) => View) => void;
 }
@@ -90,9 +90,24 @@ function Pane({ src, contour, alt, caption, sub, view, setView }: PaneProps) {
       </div>
       <figcaption className="cap">
         <span>{caption}</span>
-        {sub && <span className="sub">{sub}</span>}
+        {sub}
       </figcaption>
     </figure>
+  );
+}
+
+// Um ponto por eixo com a cor do status do item (tri do mockup); sem item na versão, nada.
+function AxisDots({ schema, item }: { schema: Schema; item: Item | undefined }) {
+  if (!item) return null;
+  const statusLabel = (k: string) => schema.statuses.find(s => s.key === k)?.label ?? k;
+  return (
+    <span className="tri">
+      {schema.axes.map(a => {
+        const status = item.verdicts[a.key] ?? "inconclusive";
+        const title = `${a.label}: ${statusLabel(status)}`;
+        return <i key={a.key} className="dot" title={title} aria-label={title} style={{ background: statusColor(schema, status) }} />;
+      })}
+    </span>
   );
 }
 
@@ -105,7 +120,7 @@ function Filmstrip({ items, current, axis, schema, version, onSelect }: {
   version: string;
   onSelect: (id: string) => void;
 }) {
-  const ids = items.map(it => it.id);
+  const ids = useMemo(() => items.map(it => it.id), [items]);
   const currentRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -119,7 +134,7 @@ function Filmstrip({ items, current, axis, schema, version, onSelect }: {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ids.join("\u0000"), current, onSelect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ids, current, onSelect]);
 
   useEffect(() => {
     currentRef.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
@@ -191,7 +206,8 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
   const noun = schema.dataset.item;
   const key = schema.dataset.key;
   const axis = schema.axes.some(a => a.key === route.axis) ? route.axis! : focusAxis(items, schema);
-  const ordered = orderItems(items, axis, schema);
+  const ordered = useMemo(() => orderItems(items, axis, schema), [items, axis, schema]);
+  const onSelect = useCallback((id: string) => onRoute({ item: id }), [onRoute]);
   const item = ordered.find(it => it.id === route.item) ?? ordered[0];
   const [view, setView] = useState<View>(IDENTITY);
   const [contour, setContour] = useState(true);
@@ -238,7 +254,7 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
         axis={axis}
         schema={schema}
         version={version}
-        onSelect={id => onRoute({ item: id })}
+        onSelect={onSelect}
       />
 
       <div className="sgrid">
@@ -265,15 +281,15 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
 
           <div className="panes">
             <Pane src={img(version, "real")} contour={overlay} alt={`${item.label} original`}
-              caption="Original" sub="shared window" view={view} setView={setView} />
+              caption="Original" sub={<span className="sub">shared window</span>} view={view} setView={setView} />
             {compare ? (
               <Pane src={img(compare, "synthetic")} contour={overlay} alt={`${item.label} ${compareLabel}`}
-                caption={`Synthetic · ${compareLabel}`} view={view} setView={setView} />
+                caption={`Synthetic · ${compareLabel}`} sub={<AxisDots schema={schema} item={compareItem} />} view={view} setView={setView} />
             ) : (
               <div className="pane pane-empty sub">No other version to compare.</div>
             )}
             <Pane src={img(version, "synthetic")} contour={overlay} alt={`${item.label} ${labelOf(version)}`}
-              caption={`Synthetic · ${labelOf(version)}`} view={view} setView={setView} />
+              caption={`Synthetic · ${labelOf(version)}`} sub={<AxisDots schema={schema} item={item} />} view={view} setView={setView} />
           </div>
 
           {inspector && (
@@ -322,20 +338,23 @@ function Loaded({ schema, route, onRoute, versions, version }: DatasetItemProps 
   const cur = useItems(schema, version);
   // sem versão comparável, repete a atual (resposta já em cache) e não mostra coluna de comparação
   const cmp = useItems(schema, compare ?? version);
-  const error = cur.error ?? cmp.error;
-  if (error) return <p className="error">{error}</p>;
-  if (!cur.data || !cmp.data) return <p className="sub">Loading…</p>;
+  if (cur.error) return <p className="error">{cur.error}</p>;
+  if (!cur.data) return <p className="sub">Loading…</p>;
+  // a tela não espera os itens da versão comparada: trocar "Compare with" mantém aba, contorno e zoom
   return (
-    <ItemView
-      schema={schema}
-      versions={versions}
-      version={version}
-      items={cur.data.items}
-      compare={compare}
-      compareItems={compare ? cmp.data.items : []}
-      route={route}
-      onRoute={onRoute}
-    />
+    <>
+      {compare && cmp.error && <p className="error">{cmp.error}</p>}
+      <ItemView
+        schema={schema}
+        versions={versions}
+        version={version}
+        items={cur.data.items}
+        compare={compare}
+        compareItems={compare ? cmp.data?.items ?? [] : []}
+        route={route}
+        onRoute={onRoute}
+      />
+    </>
   );
 }
 
