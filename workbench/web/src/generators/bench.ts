@@ -1,18 +1,7 @@
 // Lógica pura do benchmark de geradores (contrato §4.3; porta de slide_bench em docs/planning/mockups-v3/render_v3.py).
 // Nada aqui conhece nomes de eixos, indicadores ou versões: tudo vem do esquema e do placar.
-import type { Addons, Board, BoardVersion, GainResult, Schema, StatusKey, Tone, Transition, VsBaseline } from "../contract/types";
+import type { Addons, BoardVersion, GainResult, Schema, StatusKey, Tone, Transition, VsBaseline } from "../contract/types";
 import type { Tab } from "../route";
-
-/** Board row as the API sends it: `label` and per-indicator `scores` ([value, low, high]) beside the §4.3 fields. */
-export interface BenchVersion extends BoardVersion {
-  label?: string;
-  scores?: Record<string, (number | null)[] | null>;
-}
-
-/** Board as the API sends it (rows carry `label` and `scores`). */
-export interface BenchBoard extends Omit<Board, "versions"> {
-  versions: BenchVersion[];
-}
 
 export type GeneratorTab = Extract<Tab, "bench" | "runs" | "exp">;
 
@@ -86,16 +75,23 @@ export function defaultCurrent(versions: BoardVersion[], baseline: string, wante
   return (synth[synth.length - 1] ?? others[others.length - 1])?.name;
 }
 
-/** Baseline row first, then the board order. */
-export function orderVersions<V extends BoardVersion>(versions: V[], baseline: string): V[] {
-  return [...versions.filter(v => v.name === baseline), ...versions.filter(v => v.name !== baseline)];
+const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/** Baseline row first, then the current version, then the rest by label (mockup `slide_bench`). */
+export function orderVersions<V extends BoardVersion>(versions: V[], baseline: string, current?: string): V[] {
+  const rank = (v: V) => (v.name === baseline ? 0 : v.name === current ? 1 : 2);
+  return [...versions].sort((a, b) => rank(a) - rank(b) || byCodePoint(a.label, b.label) || byCodePoint(a.name, b.name));
 }
 
-/** Status chips shown per axis cell: statuses by severity that have a count somewhere on the board. */
+/** Status hidden from the chips and their caption (mockup `slide_bench`); the stacked bar keeps every status. */
+export const CHIP_HIDDEN: StatusKey = "inconclusive";
+
+/** Status chips shown per axis cell: statuses by severity, except `CHIP_HIDDEN`, that have a count somewhere on the board. */
 export function axisStatuses(versions: BoardVersion[], schema: Schema): StatusKey[] {
   return [...schema.statuses]
     .sort((a, b) => a.severity - b.severity)
     .map(s => s.key)
+    .filter(k => k !== CHIP_HIDDEN)
     .filter(k => versions.some(v => Object.values(v.counts).some(c => (c[k] ?? 0) > 0)));
 }
 

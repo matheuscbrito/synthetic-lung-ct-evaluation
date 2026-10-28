@@ -81,23 +81,33 @@ test("defaultCurrent: route version when valid and not the baseline, else newest
   expect(defaultCurrent(vs.filter(v => v.name === base), base, undefined)).toBeUndefined();
 });
 
-test("orderVersions: baseline first, then the rest in board order", () => {
-  const vs = stressBundle.board.versions;
-  const base = stressBundle.schema.dataset.default_baseline;
-  const out = orderVersions(vs, base).map(v => v.name);
-  expect(out[0]).toBe(base);
-  expect(out.slice(1)).toEqual(vs.filter(v => v.name !== base).map(v => v.name));
+test("orderVersions: baseline, then current, then the rest by label", () => {
+  const b = realBundle;
+  const base = b.schema.dataset.default_baseline;
+  const vs = b.board.versions.map(v => ({ ...v, label: b.versions.find(x => x.name === v.name)?.label ?? v.name }));
+  const cur = defaultCurrent(vs, base, b.current)!;
+  const out = orderVersions(vs, base, cur);
+  expect(out.map(v => v.name).slice(0, 2)).toEqual([base, cur]);
+  const rest = out.slice(2).map(v => v.label);
+  expect(rest).toEqual([...rest].sort());
+  expect(out).toHaveLength(vs.length);
+  // without a current version: baseline first, the rest by label
+  const noCur = orderVersions(vs, base);
+  expect(noCur[0].name).toBe(base);
+  expect(noCur.slice(1).map(v => v.label)).toEqual(noCur.slice(1).map(v => v.label).sort());
 });
 
-test("axisStatuses: statuses by severity, dropping those with no count anywhere", () => {
+test("axisStatuses: statuses by severity without inconclusive, dropping those with no count anywhere", () => {
   const schema = realBundle.schema;
   const vs = realBundle.board.versions;
   const out = axisStatuses(vs, schema);
   const present = schema.statuses
+    .filter(s => s.key !== "inconclusive")
     .filter(s => vs.some(v => Object.values(v.counts).some(c => (c[s.key] ?? 0) > 0)))
     .sort((a, b) => a.severity - b.severity)
     .map(s => s.key);
   expect(out).toEqual(present);
+  expect(out).not.toContain("inconclusive");
 });
 
 test("clearDifferences keeps only improved/worse; null vs_baseline gives none", () => {

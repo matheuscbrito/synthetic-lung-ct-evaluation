@@ -4,7 +4,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useContract } from "../contract/client";
 import { signed, toneOf } from "../contract/format";
-import type { Item, ItemsResponse, Runs, Schema, StatusKey, Transition, VersionInfo } from "../contract/types";
+import type { Board, Item, ItemsResponse, Runs, Schema, StatusKey, Transition, VersionInfo } from "../contract/types";
 import { TONE_COLORS } from "../dataset/strip";
 import type { Route } from "../route";
 import { Seg } from "../ui/Seg";
@@ -21,7 +21,6 @@ import {
   resultStatus,
   scoreText,
   transitionSummary,
-  type BenchBoard,
   type TransitionFilter,
 } from "./bench";
 import { GeneratorTabs } from "./GeneratorTabs";
@@ -65,13 +64,15 @@ function StatusBar({ schema, counts }: { schema: Schema; counts: Partial<Record<
 
 export interface BenchmarkProps {
   schema: Schema;
-  board: BenchBoard;
+  board: Board;
   baseline: string;
   /** Version compared with the baseline; undefined when the board has no other version. */
   current: string | undefined;
   axis: string;
   /** Transitions baseline → current on `axis`; null while loading. */
   transitions: Transition[] | null;
+  /** Error of the transitions request, shown in the transitions card. */
+  transitionsError?: string | null;
   /** Items of the current version by id (labels of the transitions list). */
   items: Record<string, Item>;
   /** Optimizer runs that exist (provenance link only for these). */
@@ -79,12 +80,23 @@ export interface BenchmarkProps {
   onRoute: (patch: Partial<Route>) => void;
 }
 
-export function Benchmark({ schema, board, baseline, current, axis, transitions, items, runKeys, onRoute }: BenchmarkProps) {
+export function Benchmark({
+  schema,
+  board,
+  baseline,
+  current,
+  axis,
+  transitions,
+  transitionsError = null,
+  items,
+  runKeys,
+  onRoute,
+}: BenchmarkProps) {
   const ds = schema.dataset;
   const noun = ds.item;
   const axes = schema.axes;
   const compact = axes.length > CHIP_AXES_MAX;
-  const versions = orderVersions(board.versions, baseline);
+  const versions = orderVersions(board.versions, baseline, current);
   const shown = axisStatuses(board.versions, schema);
   const label = (name: string | undefined) => board.versions.find(v => v.name === name)?.label ?? name ?? "";
   const cur = board.versions.find(v => v.name === current);
@@ -127,7 +139,7 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
             }}
           >
             <div>
-              <b>{v.label ?? v.name}</b>
+              <b>{v.label}</b>
               {(v.subtitle || run) && (
                 <div className="sub">
                   {v.subtitle}
@@ -231,7 +243,7 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
             <th>Indicator</th>
             <th>Ideal</th>
             {versions.map(v => (
-              <th key={v.name}>{v.label ?? v.name}</th>
+              <th key={v.name}>{v.label}</th>
             ))}
             {cur && <th>{`Change vs ${label(baseline)}`}</th>}
           </tr>
@@ -297,7 +309,10 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
     </div>
   );
 
-  const summary = transitions ? transitionSummary(transitions) : null;
+  const summary = transitions && !transitionsError ? transitionSummary(transitions) : null;
+  // índice estável (na lista completa ordenada) para o rótulo de reserva, independente do filtro
+  const ordered = transitions ? orderTransitions(transitions, schema) : [];
+  const fallbackIndex = new Map(ordered.map((x, i) => [x.id, i + 1]));
   const listed = transitions ? orderTransitions(filterTransitions(transitions, filter), schema) : [];
   const filters: { value: TransitionFilter; label: string }[] = [
     { value: "all", label: "All" },
@@ -308,6 +323,8 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
 
   let transitionBody: ReactNode;
   if (!cur) transitionBody = <div className="sub gb-empty">No other version to compare with {label(baseline)}.</div>;
+  else if (transitionsError)
+    transitionBody = <div className="error gb-empty">{`Transitions unavailable: ${transitionsError}`}</div>;
   else if (!transitions) transitionBody = <div className="sub gb-empty">Loading…</div>;
   else if (!listed.length)
     transitionBody = (
@@ -335,7 +352,7 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
           }}
         >
           <span>
-            <b>{it?.label ?? `${noun.singular} ${listed.indexOf(x) + 1}`}</b>
+            <b>{it?.label ?? `${noun.singular} ${fallbackIndex.get(x.id)}`}</b>
             {ds.group_by && it?.group && <span className="sub"> {it.group}</span>}
           </span>
           <span className="gb-ba">
@@ -412,7 +429,7 @@ export function Benchmark({ schema, board, baseline, current, axis, transitions,
             <select aria-label="Baseline" value={baseline} onChange={e => onRoute({ baseline: e.target.value })}>
               {board.versions.map(v => (
                 <option key={v.name} value={v.name}>
-                  {v.label ?? v.name}
+                  {v.label}
                 </option>
               ))}
             </select>
@@ -466,9 +483,13 @@ function WithCurrent({ props, current }: { props: Omit<Loaded, "transitions" | "
   });
   const items = useContract<ItemsResponse>("/api/items", { dataset, version: current });
   const byId = items.data ? Object.fromEntries(items.data.items.map(i => [i.id, i])) : {};
-  // a lista só aparece com os rótulos dos itens; erro de transições vira lista vazia com a tela intacta
-  const list = transitions.error ? [] : transitions.data && items.data ? transitions.data : null;
-  return <Ready props={{ ...props, current, transitions: list, items: byId }} />;
+  // a lista espera os rótulos dos itens; se /api/items falhar, lista com rótulos de reserva.
+  // erro de transições aparece no cartão de transições, com o resto da tela intacto
+  const labelsDone = Boolean(items.data || items.error);
+  const list = transitions.data && labelsDone ? transitions.data : null;
+  return (
+    <Ready props={{ ...props, current, transitions: list, transitionsError: transitions.error ?? null, items: byId }} />
+  );
 }
 
 function WithBoard({ schema, baseline, route, onRoute }: { schema: Schema; baseline: string } & PageProps) {

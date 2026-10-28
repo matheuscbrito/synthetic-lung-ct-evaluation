@@ -270,12 +270,16 @@ export interface Provenance {
 
 export interface BoardVersion {
   name: string;
+  /** Display name of the version; the UI never shows `name`. */
+  label: string;
   subtitle: string;
   is_reference: boolean;
   provenance: Provenance | null;
   counts: Record<string, Partial<Record<StatusKey, number>>>;
   vs_baseline: VsBaseline[] | null;
   cohort: CohortResult[];
+  /** Per-indicator score `[value, low, high]` (95% CI); null when the indicator has no reading. */
+  scores?: Record<string, (number | null)[] | null>;
 }
 
 export interface Board {

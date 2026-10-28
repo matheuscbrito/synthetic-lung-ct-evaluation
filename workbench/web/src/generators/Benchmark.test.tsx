@@ -2,12 +2,12 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { Schema } from "../contract/types";
+import type { Board, Schema } from "../contract/types";
 import { realBundle, stressBundle, type Bundle } from "../fixtures";
 import type { Route } from "../route";
 import { clearContractCache } from "../contract/client";
 import { Benchmark, GeneratorBenchmark, type BenchmarkProps } from "./Benchmark";
-import { defaultCurrent, transitionSummary, type BenchBoard } from "./bench";
+import { defaultCurrent, transitionSummary } from "./bench";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -26,7 +26,7 @@ afterEach(async () => {
 });
 
 /** The fixture board in the API shape: labels from the versions list; baseline row without comparison. */
-function apiBoard(b: Bundle): BenchBoard {
+function apiBoard(b: Bundle): Board {
   const base = b.schema.dataset.default_baseline;
   return {
     ...b.board,
@@ -143,6 +143,7 @@ test("real: better/worse pills per version and baseline tag", async () => {
   expect(rows).toHaveLength(p.board.versions.length);
   expect(rows[0].textContent).toContain(p.board.versions.find(v => v.name === p.baseline)!.label);
   expect(rows[0].querySelector(".gb-base")).toBeTruthy();
+  expect(rows[1].classList.contains("on")).toBe(true);
   const cur = p.board.versions.find(v => v.name === p.current)!;
   const better = cur.vs_baseline!.filter(v => v.result === "improved").length;
   const worse = cur.vs_baseline!.filter(v => v.result === "worse").length;
@@ -267,4 +268,100 @@ test("GeneratorBenchmark: unknown route baseline falls back to the default; load
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+function stubApi(b: Bundle, fail: Record<string, string>) {
+  const board = apiBoard(b);
+  const base = b.schema.dataset.default_baseline;
+  const current = defaultCurrent(board.versions, base, undefined)!;
+  const axis = b.schema.axes[0].key;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const path = url.split("?")[0];
+      if (fail[path]) return { ok: false, status: 500, statusText: fail[path], json: async () => ({ detail: fail[path] }) };
+      const body =
+        path === "/api/v2/versions"
+          ? b.versions
+          : path === "/api/v2/board"
+            ? board
+            : path === "/api/v2/transitions"
+              ? b.transitions[axis]
+              : path === "/api/items"
+                ? { version: current, items: b.items[current] }
+                : path === "/api/runs"
+                  ? b.runs
+                  : null;
+      if (body === null) throw new Error(`unexpected ${url}`);
+      return { ok: true, status: 200, statusText: "OK", json: async () => body };
+    }),
+  );
+  return { axis };
+}
+
+async function mountApi(b: Bundle) {
+  const route: Route = { section: "generators", tab: "bench" };
+  await act(async () => root.render(<GeneratorBenchmark schema={b.schema} route={route} onRoute={vi.fn()} />));
+  for (let i = 0; i < 6; i++) await act(async () => new Promise(r => setTimeout(r, 0)));
+}
+
+test("GeneratorBenchmark: a transitions error shows an error line, not an empty verdict list", async () => {
+  clearContractCache();
+  stubApi(realBundle, { "/api/v2/transitions": "boom" });
+  try {
+    await mountApi(realBundle);
+    const card = host.querySelector(".gb-right")!;
+    expect(card.querySelector(".error")).toBeTruthy();
+    expect(card.textContent).not.toContain("changed verdict");
+    expect(card.querySelector(".gb-tsum")).toBeNull();
+    expect(host.querySelectorAll(".gb-xr")).toHaveLength(0);
+    // the rest of the screen is intact
+    expect(host.querySelectorAll(".gb-trow")).toHaveLength(realBundle.board.versions.length);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("GeneratorBenchmark: an items error still lists transitions with stable fallback labels", async () => {
+  clearContractCache();
+  const { axis } = stubApi(realBundle, { "/api/items": "boom" });
+  try {
+    await mountApi(realBundle);
+    const t = realBundle.transitions[axis];
+    const s = transitionSummary(t);
+    const labels = () => Array.from(host.querySelectorAll(".gb-xr b")).map(b => b.textContent);
+    expect(labels()).toHaveLength(s.worsened + s.improved);
+    const noun = realBundle.schema.dataset.item.singular;
+    expect(labels()[0]).toBe(`${noun} 1`);
+    const all = labels();
+    // filtering keeps each item's fallback label
+    await click(button("Improved"));
+    expect(labels()).toEqual(all.slice(s.worsened));
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("caption and chips hide inconclusive; stacked bars keep every status", async () => {
+  const inc = realBundle.schema.statuses.find(x => x.key === "inconclusive")!;
+  const board = apiBoard(realBundle);
+  // the fixture has no inconclusive counts: add some so the filter is exercised
+  const withInc = {
+    ...board,
+    versions: board.versions.map(v => ({
+      ...v,
+      counts: Object.fromEntries(Object.entries(v.counts).map(([k, c]) => [k, { ...c, inconclusive: 3 }])),
+    })),
+  };
+  await render(props(realBundle, { board: withInc }));
+  expect(host.querySelector(".gb-caption")!.textContent).not.toContain(inc.label);
+  const titles = Array.from(host.querySelectorAll(".gb-cnt")).map(c => c.getAttribute("title"));
+  expect(titles.length).toBeGreaterThan(0);
+  expect(titles).not.toContain(inc.label);
+
+  const axes = ["a1", "a2", "a3", "a4", "a5"].map(k => ({ key: k, label: k.toUpperCase() }));
+  const counts = Object.values(withInc.versions[0].counts)[0];
+  const wide = { ...withInc, versions: withInc.versions.map(v => ({ ...v, counts: Object.fromEntries(axes.map(a => [a.key, counts])) })) };
+  await render(props(realBundle, { schema: { ...realBundle.schema, axes }, board: wide, axis: "a1", transitions: [] }));
+  expect(host.querySelector(".gb-sbar")!.getAttribute("aria-label")).toContain(`${inc.label} 3`);
 });
