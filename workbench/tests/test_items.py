@@ -1,6 +1,7 @@
 """Itens do contrato genérico (§4.1): `item_json` e `GET /api/items` batem com `data.slice_json`."""
 import pytest
 
+from frameworks.texture_evaluator import regional
 from workbench.api import data, datasets as ds
 from workbench.api.contract import AXES
 from workbench.api.contract import items
@@ -95,7 +96,25 @@ def test_facts(slices):
         assert values["Density"].startswith(s["density"]["status"].replace("_", " "))
         if s["noise_roi_count"] is not None:
             assert values["Noise ROIs"] == str(s["noise_roi_count"])
-        assert values["Pairing"] in {"Same anatomy", "Mask only"}
+        assert values["Pairing"].startswith(("Same anatomy", "Mask only"))
+
+
+def test_pairing_caveat_uses_judge_threshold(monkeypatch):
+    monkeypatch.setattr(regional, "PAIR_MIN_CORRELATION", 0.73)
+    assert "below 0.73" in items._pairing("same_anatomy")
+    assert "suspicious pair" in items._pairing("same_anatomy")
+    assert "no spatial comparison" in items._pairing("mask_only")
+    assert items._pairing(None) == "n/a"
+
+
+def test_air_peak_note_is_context_only_and_hidden_without_reading(slices):
+    source = dict(next(m for m in slices[0]["metrics"] if m["key"] == "nps_air"))
+    source.update(value=0.8, available=True, peak_sigmas=4.26)
+    out = items._metric(source)
+    assert out["note"] == "Peak: 4.3 × natural noise"
+    assert out["value"] == source["value"] and out["status"] == source["status"]
+    assert items._metric({**source, "peak_sigmas": None})["note"] is None
+    assert items._metric({**source, "available": False})["note"] is None
 
 
 def test_density_fact_format():

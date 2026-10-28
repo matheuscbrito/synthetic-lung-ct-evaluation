@@ -228,7 +228,7 @@ def router(datasets: dict) -> APIRouter:
         if not ds.NAME_PATTERN.fullmatch(name):
             raise HTTPException(400, "invalid name: use only letters, digits, dot, hyphen and underscore")
         contract_versions.check_label(body.label)
-        with ds.ADMIN_LOCK:
+        with contract_versions.edit_meta(history_dir) as meta:
             history = placar.load_history(history_dir)
             if history is None or not history.get("versions"):
                 raise HTTPException(400, f"{dataset} has not been evaluated yet: use POST /api/datasets/{dataset}/init")
@@ -244,9 +244,8 @@ def router(datasets: dict) -> APIRouter:
                 placar.write_outputs(history_dir, placar.build_board(history_dir))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
-        # fora do lock: save_meta toma o próprio ADMIN_LOCK (threading.Lock não é reentrante)
-        provenance = body.provenance or contract_versions.detected_provenance(folder)
-        contract_versions.save_meta(history_dir, name, body.label, provenance)
+            provenance = body.provenance or contract_versions.detected_provenance(folder)
+            meta[name] = {"label": body.label, "provenance": provenance}
         return {"message": message, "name": name}
 
     @api.delete("/api/versions/{name}")
@@ -256,13 +255,13 @@ def router(datasets: dict) -> APIRouter:
         wb.entry(name)  # desconhecida: 404
         if name == wb.baseline:
             raise HTTPException(400, "the reference version cannot be removed")
-        with ds.ADMIN_LOCK:
+        with contract_versions.edit_meta(Path(cfg["history"])) as meta:
             try:
                 placar.remove_version(Path(cfg["history"]), name)
                 placar.write_outputs(Path(cfg["history"]), placar.build_board(Path(cfg["history"])))
             except (placar.PlacarError, FileNotFoundError, NotADirectoryError, ValueError) as exc:
                 raise HTTPException(400, str(exc)) from exc
-        contract_versions.drop_meta(Path(cfg["history"]), name)  # fora do lock, como em add_version
+            meta.pop(name, None)
         return {"message": f"version removed: {name}"}
 
     @api.post("/api/refresh")

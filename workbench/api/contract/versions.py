@@ -2,15 +2,17 @@
 
 Rótulo e origem ficam num arquivo lateral `<histórico>/workbench.json` (`{"versions": {nome: {label, provenance}}}`);
 o `historico.json` congelado nunca é editado. A escrita é atômica (arquivo temporário + `os.replace`) e sempre
-sob `datasets.ADMIN_LOCK`: quem já tem o lock (rotas de add/remove) chama `save_meta`/`drop_meta` depois de soltá-lo.
+sob `datasets.ADMIN_LOCK`: add/remove usam `edit_meta` para validar o arquivo antes de mudar o histórico
+e manter o mesmo lock até a gravação dos metadados.
 """
 from __future__ import annotations
 
 import json
 import os
 import re
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterator
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -49,24 +51,35 @@ def load_meta(history_dir: Path) -> dict:
     if not path.exists():
         return {}
     try:
-        versions = json.loads(path.read_text(encoding="utf-8")).get("versions", {})
+        versions = json.loads(path.read_text(encoding="utf-8")).get("versions")
     except (OSError, ValueError, AttributeError) as error:
         raise PlacarError(f"workbench.json ilegível em {history_dir}: {error}") from error
     if not isinstance(versions, dict):
         raise PlacarError(f"workbench.json sem o mapa de versões em {history_dir}")
+    for name, entry in versions.items():
+        if (not isinstance(entry, dict)
+                or (entry.get("label") is not None and not isinstance(entry["label"], str))
+                or (entry.get("provenance") is not None and not isinstance(entry["provenance"], dict))):
+            raise PlacarError(f"workbench.json com metadados inválidos para {name!r} em {history_dir}")
     return versions
 
 
-def _write_meta(history_dir: Path, mutate: Callable[[dict], None]) -> None:
-    """Lê, altera e grava o arquivo lateral de forma atômica, sob `ADMIN_LOCK` (não chamar com o lock tomado)."""
+@contextmanager
+def edit_meta(history_dir: Path) -> Iterator[dict]:
+    """Valida antes da mutação; mantém o lock até gravar. Não chamar com `ADMIN_LOCK` tomado."""
     with ds.ADMIN_LOCK:
         versions = load_meta(history_dir)
-        mutate(versions)
+        yield versions
         path = _meta_path(history_dir)
         path.parent.mkdir(parents=True, exist_ok=True)
         temp = path.with_name(path.name + ".tmp")
         temp.write_text(json.dumps({"versions": versions}, indent=2, ensure_ascii=False), encoding="utf-8")
         os.replace(temp, path)
+
+
+def _write_meta(history_dir: Path, mutate: Callable[[dict], None]) -> None:
+    with edit_meta(history_dir) as versions:
+        mutate(versions)
 
 
 def save_meta(history_dir: Path, name: str, label: str | None, provenance: dict | None) -> None:
@@ -159,13 +172,13 @@ def router(datasets: dict) -> APIRouter:
 
     @api.patch("/api/versions/{name}")
     def patch_version(name: str, body: VersionPatch, dataset: str = Query(DEFAULT)):
-        wb = _wb(dataset)
-        wb.entry(name)  # desconhecida: 404
         if "label" in body.model_fields_set:
             check_label(body.label)
         fields = body.model_fields_set
-
-        def mutate(versions: dict) -> None:
+        history_dir = Path(ds.config(datasets, dataset)["history"])
+        with edit_meta(history_dir) as versions:
+            wb = _wb(dataset)
+            wb.entry(name)  # desconhecida: 404; sob o mesmo lock que add/remove
             entry = {"label": None, "provenance": None, **(versions.get(name) or {})}
             if "label" in fields:
                 entry["label"] = body.label
@@ -173,7 +186,6 @@ def router(datasets: dict) -> APIRouter:
                 entry["provenance"] = body.provenance
             versions[name] = entry
 
-        _write_meta(Path(wb.history_dir), mutate)
         return next(row for row in versions_contract(wb, load_meta(Path(wb.history_dir))) if row["name"] == name)
 
     return api

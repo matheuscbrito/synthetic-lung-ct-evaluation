@@ -59,6 +59,8 @@ def router(datasets: dict) -> APIRouter:
         source = result["source"]
         if not source["exists"]:
             raise HTTPException(status_code=404, detail="CADERNO.md not found")
+        if result.get("error"):
+            raise HTTPException(status_code=422, detail="Notebook could not be read")
         parsed = result["parsed"] or {"rows": [], "metrics": [], "learned": [], "next": []}
         rows = parsed["rows"]
         best = next((row["id"] for row in rows if row["best"]), None)

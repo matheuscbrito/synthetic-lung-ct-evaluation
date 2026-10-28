@@ -31,6 +31,13 @@ def test_missing_notebook_is_404(monkeypatch, tmp_path):
     assert _client(monkeypatch, tmp_path).get("/api/experiments").status_code == 404
 
 
+def test_unreadable_notebook_reports_error_instead_of_empty_success(monkeypatch, tmp_path):
+    (tmp_path / "CADERNO.md").write_bytes(b"\xff\xfe")
+    response = _client(monkeypatch, tmp_path).get("/api/experiments")
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Notebook could not be read"
+
+
 def test_source_and_objective(monkeypatch, tmp_path):
     (tmp_path / "CADERNO.md").write_text(FIXTURE, encoding="utf-8")
     body = _client(monkeypatch, tmp_path).get("/api/experiments").json()

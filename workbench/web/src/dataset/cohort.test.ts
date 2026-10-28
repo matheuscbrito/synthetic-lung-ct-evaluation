@@ -192,6 +192,20 @@ test("Charts: one strip chart per axis metric, null points skipped, click opens;
   expect(onOpen).toHaveBeenCalledWith(pt.dataset.id);
 });
 
+test("chart tooltips preserve server-provided measurement context without metric-specific rendering", async () => {
+  const b = stressBundle;
+  const axis = b.schema.axes[0].key;
+  const metric = b.schema.metrics.find(m => m.axis === axis)!;
+  const original = current(b).find(it => finite(it.metrics[metric.key]?.z))!;
+  const note = "Peak: 4.3 × reference fluctuation";
+  const item = { ...original, metrics: { ...original.metrics, [metric.key]: { ...original.metrics[metric.key], real: 0.1, synthetic: 0.2, note } } };
+  const schema = { ...b.schema, metrics: [{ ...metric, description: "Zero is the reference; grey bars are uncertainty." }] };
+  await draw(createElement(CohortCharts, { schema, axis, items: [item], onOpen: vi.fn() }));
+  expect(host.querySelector("svg.cohort-strip circle.pt title")?.textContent).toContain(note);
+  expect(host.querySelector("svg.cohort-scatter circle.pt title")?.textContent).toContain(note);
+  expect(host.querySelector(".cohort-desc")?.textContent).toBe(schema.metrics[0].description);
+});
+
 test("Table: one row per item in severity order, metric text and row click", async () => {
   const b = stressBundle;
   const onOpen = vi.fn();

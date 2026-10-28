@@ -75,7 +75,7 @@ function StripChart({ schema, metric, panel, other, focus, onOpen }: {
             <circle key={p.id} className={focused ? "pt focus" : "pt"} data-id={p.id} data-status={p.status}
               cx={X(p.index)} cy={Y(p.y)} r={focused ? r * 2 : r} fill={STATUS_DOT[p.status]}
               onClick={() => onOpen(p.id)}>
-              <title>{`${it.label} · ${metricText(metric, it.metrics[metric.key])}`}</title>
+              <title>{[it.label, metricText(metric, it.metrics[metric.key]), it.metrics[metric.key]?.note].filter(Boolean).join(" · ")}</title>
             </circle>
           );
         })}
@@ -136,7 +136,8 @@ function ScatterChart({ schema, metric, panel, other, scale, focus, onOpen }: {
           return (
             <circle key={p.id} className={focused ? "pt focus" : "pt"} data-id={p.id} data-status={p.status}
               cx={P(p.x)} cy={Yp(p.y)} r={focused ? 6 : 3.6} fill={STATUS_DOT[p.status]} onClick={() => onOpen(p.id)}>
-              <title>{`${byId.get(p.id)!.label} · real ${fmt(p.x)} · synthetic ${fmt(p.y)}`}</title>
+              <title>{[byId.get(p.id)!.label, `real ${fmt(p.x)}`, `synthetic ${fmt(p.y)}`,
+                byId.get(p.id)!.metrics[metric.key]?.note].filter(Boolean).join(" · ")}</title>
             </circle>
           );
         })}

@@ -13,7 +13,7 @@ export const BAND_FILL = "#f0efec";
 // Divergente (diferença, z, log2 ratio): dois polos opostos e meio neutro.
 export const DIVERGING = { neg: "#2a78d6", mid: "#f0efec", pos: "#e34948" };
 
-// Sequencial de um tom só, do claro ao escuro (matrizes GLCM, mapas de janela NEx).
+// Sequencial de um tom só, do claro ao escuro (painéis de matriz, mapas de janela).
 export const SEQUENTIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
 
 // Cinza do excedente além das 8 séries.

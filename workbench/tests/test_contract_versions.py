@@ -223,3 +223,31 @@ def test_add_with_bad_label_is_400_and_adds_nothing(tmp_history, tmp_path):
     r = client.post("/api/versions", json={"name": "Dsr-bad", "folder": str(folder), "label": "../x"})
     assert r.status_code == 400
     assert "Dsr-bad" not in by_name(get_versions(client))
+
+
+@pytest.mark.parametrize("operation", ["add", "remove"])
+@pytest.mark.parametrize("contents", [
+    "{broken",
+    "null",
+    "{}",
+    '{"versions": []}',
+    '{"versions": {"Dsr-copy": []}}',
+    '{"versions": {"Dsr-copy": {"label": 12}}}',
+    '{"versions": {"Dsr-copy": {"provenance": []}}}',
+])
+def test_invalid_sidecar_blocks_history_mutation(tmp_history, tmp_path, operation, contents):
+    """A rejected admin request must preserve both scientific history and CSVs."""
+    sidecar = tmp_history / cv.META_FILE
+    sidecar.write_text(contents, encoding="utf-8")
+    folder = write_detected_run(tmp_path / "new-run", optimizer="gp", step=12) if operation == "add" else None
+    before = {path.relative_to(tmp_history): path.read_bytes()
+              for path in tmp_history.rglob("*") if path.is_file()}
+    client = TestClient(create_app(tmp_history))
+    if operation == "add":
+        response = client.post("/api/versions", json={"name": "New-run", "folder": str(folder)})
+    else:
+        response = client.delete("/api/versions/Dsr-copy")
+    assert response.status_code == 409, response.text
+    after = {path.relative_to(tmp_history): path.read_bytes()
+             for path in tmp_history.rglob("*") if path.is_file()}
+    assert after == before

@@ -7,6 +7,7 @@ import { Seg } from "../ui/Seg";
 interface Props {
   payload: ImagePayload;
   options?: InspectorOption[];
+  onOptionsChange?: (chosen: Record<string, string>) => void;
 }
 
 const BASE = "http://workbench.invalid";
@@ -33,7 +34,7 @@ function initial(url: string, options: InspectorOption[]): Record<string, string
   return out;
 }
 
-export function ImageFigure({ payload, options = [] }: Props) {
+export function ImageFigure({ payload, options = [], onOptionsChange }: Props) {
   const [chosen, setChosen] = useState(() => initial(payload.url, options));
   const src = withOptions(payload.url, chosen);
   return (
@@ -43,7 +44,11 @@ export function ImageFigure({ payload, options = [] }: Props) {
           {options.filter(o => o.choices.length > 0).map(o => (
             <Seg key={o.key} small label={o.label} value={chosen[o.key] ?? o.choices[0].key}
               options={o.choices.map(c => ({ value: c.key, label: c.label }))}
-              onChange={v => setChosen(prev => ({ ...prev, [o.key]: v }))} />
+              onChange={v => {
+                const next = { ...chosen, [o.key]: v };
+                setChosen(next);
+                onOptionsChange?.(next);
+              }} />
           ))}
         </div>
       )}

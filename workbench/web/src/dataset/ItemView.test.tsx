@@ -102,6 +102,48 @@ test("stress focus item: one verdict column per axis and one inspector tab per i
   expect(host.querySelector(".crumbs b")?.textContent).toBe(focusOf(b).label);
 });
 
+test("image option changes reload the matching caption and retain the other chosen options", async () => {
+  const desc = {
+    key: "maps", label: "Maps", chart: "image" as const, compare: false,
+    options: [
+      { key: "map", label: "Map", choices: [{ key: "mean", label: "Mean" }, { key: "spread", label: "Spread" }] },
+      { key: "scale", label: "Scale", choices: [{ key: "fixed", label: "Fixed" }, { key: "auto", label: "Auto" }] },
+    ],
+  };
+  const b: Bundle = {
+    ...stressBundle,
+    schema: { ...stressBundle.schema, inspectors: [desc] },
+    inspect: { maps: { url: "/api/inspect/maps.png?map=mean&scale=fixed", caption: "Mean, fixed scale" } },
+  };
+  await render(b);
+  expect(host.querySelector(".toolcard figcaption")?.textContent).toBe("Mean, fixed scale");
+  stubFetch(b, url => {
+    const u = new URL(url, "http://test.invalid");
+    if (u.pathname !== "/api/inspect/maps") return null;
+    return {
+      status: 200,
+      body: { url: `/api/inspect/maps.png?${u.searchParams}`, caption: `${u.searchParams.get("map")}, ${u.searchParams.get("scale")} scale` },
+    };
+  });
+  const choose = async (text: string) => {
+    const button = Array.from(host.querySelectorAll<HTMLButtonElement>(".toolcard button")).find(b => b.textContent === text)!;
+    await act(async () => button.click());
+    await settle();
+  };
+  await choose("Spread");
+  expect(host.querySelector(".toolcard figcaption")?.textContent).toBe("spread, fixed scale");
+  await choose("Auto");
+  expect(host.querySelector(".toolcard figcaption")?.textContent).toBe("spread, auto scale");
+  const requested = new URL(calls[calls.length - 1], "http://test.invalid");
+  expect(requested.searchParams.get("map")).toBe("spread");
+  expect(requested.searchParams.get("scale")).toBe("auto");
+  expect(requested.searchParams.get("dataset")).toBe(b.schema.dataset.key);
+  expect(requested.searchParams.get("item")).toBe(b.focus);
+  const image = new URL(host.querySelector(".toolcard img")!.getAttribute("src")!, "http://test.invalid");
+  expect(image.searchParams.get("map")).toBe("spread");
+  expect(image.searchParams.get("scale")).toBe("auto");
+});
+
 test("verdict pills show previous → current when the compare version differs", async () => {
   const b = stressBundle;
   await render(b);

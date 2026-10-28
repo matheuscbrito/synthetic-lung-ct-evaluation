@@ -31,6 +31,24 @@ def test_axes_and_statuses(client):
     assert all(s["label"] for s in body["statuses"])
 
 
+def test_noise_method_and_chart_guidance_reach_schema(client):
+    body = _schema(client)
+    guide = next(a["guide"] for a in body["axes"] if a["key"] == "noise")
+    for explanation in ("32 × 32", "overlap by at most 25%", "plane", "subtracted", "Fine anatomy can remain"):
+        assert explanation in guide
+    descriptions = {m["key"]: m["description"] for m in body["metrics"]}
+    for key in ("nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nex"):
+        assert "Zero is the original" in descriptions[key]
+        assert "95% bootstrap interval" in descriptions[key]
+    assert "positive means stronger" in descriptions["nps_quantity"]
+    assert "positive means finer" in descriptions["nps_grain"]
+    assert "positive means more concentrated in wide" in descriptions["nps_low_band"]
+    assert "positive means more concentrated in fine" in descriptions["nps_high_band"]
+    assert "crosses zero stays green" in descriptions["nps_quantity"]
+    assert "never rejects" in descriptions["nex"]
+    assert "0.3%" in descriptions["nps_air"] and "policy limits, not clinical" in descriptions["nps_air"]
+
+
 def test_metric_limits_from_calibration(client):
     body = _schema(client)
     wb = data.load(HISTORY_DIR)

@@ -1,7 +1,7 @@
 # QC Workbench — generic UI contract (design)
 
-Date: 2026-10-27 · Status: proposal, awaiting validation through the two v3 mockups ·
-Builds on: `2026-10-26-workbench-parity-design.md`
+Date: 2026-10-27 · Status: shipped on `feature/qc-workbench` (updated 2026-10-28, task F12, to match
+the code) · Builds on: `2026-10-26-workbench-parity-design.md`
 
 ## 1. Problem
 
@@ -33,12 +33,13 @@ that data (the "stress" mockup, §6).
 
 ```jsonc
 {
-  "datasets": [{"key": "Dsr", "label": "Dsr", "mode_label": "same anatomy", "has_history": true}],
+  "datasets": [{"key": "Dsr", "label": "Same anatomy", "mode_label": "same anatomy", "has_history": true}, …],
   "dataset": {
-    "key": "Dsr", "label": "Dsr", "mode_label": "same anatomy",
+    "key": "Dsr", "label": "Same anatomy", "mode_label": "same anatomy",   // label: descriptive, never the key
     "item": {"singular": "slice", "plural": "slices"},       // UI nouns
-    "group_by": {"key": "patient", "label": "Patient"} | null, // optional grouping
-    "reference_version": "Dsr", "default_baseline": "Dsr-baseline"
+    "group_by": {"key": "patient", "label": "Patient", "note": "…"} | null, // optional grouping (+ caveat)
+    "reference_version": "Dsr", "default_baseline": "Dsr-baseline",
+    "has_history": true, "stale": false
   },
   "statuses": [                                              // ordinal vocabulary
     {"key": "approved", "label": "Approved", "tone": "good", "severity": 0},
@@ -47,13 +48,13 @@ that data (the "stress" mockup, §6).
     {"key": "rejected", "label": "Rejected", "tone": "bad", "severity": 3}
   ],
   "axes": [{"key": "texture", "label": "Texture", "guide": "…"}, …],  // verdict axes, any count ≥ 1; guide = "how to read" copy
-  "techniques": [{"key": "glcm", "label": "GLCM"}, …],
+  "techniques": [{"key": "GLCM", "label": "GLCM"}, {"key": "quantity", "label": "NPS quantity"}, …],
   "metrics": [{
-    "key": "nex", "label": "NEx", "axis": "texture", "technique": "nex",
+    "key": "nex", "label": "NEx", "axis": "texture", "technique": "NEx",
     "display": "z" | "value",           // z: deviation in IQR with optional CI
     "unit": "IQR" | "%" | "…",
     "decimals": 2,
-    "limits": {"review": 1, "reject": 2, "kind": "abs_z" | "above" | "below"} | null,
+    "limits": {"review": 1 | null, "reject": 2 | null, "kind": "abs_z" | "abs_value" | "above" | "below"} | null,
     "repeatability": 0.38 | null,       // shown in "How to read"
     "description": "…" | null           // ⓘ text, optional
   }, …],
@@ -61,7 +62,8 @@ that data (the "stress" mockup, §6).
     "key": "spectrum", "label": "Spectrum",
     "chart": "curves" | "bars" | "interval" | "matrix" | "image",
     "compare": true,                     // can overlay several versions/items
-    "options": [{"key": "layer", "label": "Layer", "choices": [{"key": "…", "label": "…"}]}]  // optional, e.g. figure or map layer
+    "options": [{"key": "layer", "label": "Layer", "choices": [{"key": "…", "label": "…"}]}],  // [] when none
+    "description": "…" | null
   }, …],
   "indicators": [{                       // generator-level scores (benchmark)
     "key": "nex", "label": "NEx", "axis": "texture", "unit": "% of slices",
@@ -71,6 +73,13 @@ that data (the "stress" mockup, §6).
   "addons": {"optimizers": true, "experiments": true}       // Generators tabs shown only when true
 }
 ```
+
+Technique keys are exactly the keys of `items[].techniques[axis]` (today `GLCM`, `Wavelet`, `NEx`
+on texture and brightness, and `quantity`, `grain`, `low_band`, `high_band`, `air` on noise); the
+UI joins them by key and shows only `label`. Indicators are the board indicators without the
+regional-map ones (`map_*`), and `/api/board` filters `scores` and `vs_baseline` to these same keys.
+A metric may have only a reject limit (Sat31: `above`, `review: null`, `reject: 15`); the UI then
+ranks it with the reject limit read as 2 on the |z| scale.
 
 Status keys are a fixed wire vocabulary (`approved`, `inconclusive`,
 `review`, `rejected`); only their labels change per deployment ("Pass",
@@ -92,7 +101,8 @@ nouns come from `item` and `group_by`; thresholds shown anywhere come from
   "techniques": {"<axis>": {"<technique>": "<status>"}},
   "metrics": {"<metric>": {"value": 1.2, "z": 0.4, "ci": [-0.3, 1.1] | null,
                             "real": 0.18, "synthetic": 0.17, "pct": 89.7 | null,   // synthetic as % of real
-                            "status": "approved", "available": true}},
+                            "status": "approved", "available": true,
+                            "note": "Peak: 4.3 × natural noise" | null}}, // optional measurement context
   "reasons": [{"axis": "noise", "metric": "nps_air", "status": "review",
                "value": 1.3, "z": null, "ci": null, "limit": "review",
                "limit_value": 0.5, "direction": "higher", "note": null}],
@@ -102,6 +112,15 @@ nouns come from `item` and `group_by`; thresholds shown anywhere come from
 
 `facts` replaces one-off fields (`noise_roi_count`, `wavelet_type`,
 `density`): free label/value pairs the UI lists without knowing them.
+The Pairing fact also states the judge's correlation threshold for suspicious
+same-anatomy pairs, or the no-spatial-comparison caveat for mask-only pairs.
+`metrics[*].note` is optional server-provided context appended to cohort and
+scatter point tooltips. Today it carries the air-spot peak in multiples of the
+CT's natural noise; it is null when unavailable and never changes the verdict.
+Metric descriptions include direction, zero/reference, status-band and
+bootstrap-interval explanations; the noise guide includes plane removal,
+ROI overlap and residual-anatomy caveats. The air description explains the
+approximately 0.3% Gaussian tail above 3σ and distinguishes policy from clinical limits.
 
 ### 4.2 Inspectors — `GET /api/inspect/{inspector}?dataset=&version=&item=&compare=`
 
@@ -111,37 +130,56 @@ One payload per chart type, independent of the metric family:
 |---|---|
 | `curves` | `{x: {label, scale}, y: {label, scale: "linear"\|"log"}, band: {label, x[], lo[], hi[]} \| null, markers: [{x, label}], series: [{label, role: "real"\|"version"\|"item", x[], y[]}]}` |
 | `bars` | `{y: {label}, zero: 0, bars: [{label, value, ci?}], note?}` |
-| `interval` | `{value, ci, label, bands: [{from, to, status}]}` |
-| `matrix` | `{rows[], cols[], panels: [{label, values[][]}], scale: {label}}` |
-| `image` | `{url, caption}` (PNG rendered by the backend; options go in the query) |
+| `interval` | `{value, ci, label, bands: [{from, to, status}], status?}` (without `status` the point takes the status of the band holding `value`) |
+| `matrix` | `{rows[], cols[], panels: [{label, values[][]}], scale: {label}}` (`null` cells are drawn as n/a) |
+| `image` | `{url, caption}`; `url` is `/api/inspect/{key}.png?dataset=&version=&item=&compare=&<options>` |
 
-Today's tools map as: spectrum → `curves`; wavelet → `bars`; NEx → `interval`;
-GLCM → `matrix`; NEx windows → `matrix`; technique figures, regional maps
-and the NPS/air figure → `image` (with `options`).
+Today's inspectors (keys in schema order): `spectrum` → `curves` (the only one with
+`compare: true`; series labelled by version label, band "Real slices P5–P95", Nyquist marker);
+`glcm` and `nex_windows` → `matrix`; `nex` → `interval`; `wavelet` → `bars`; `figure` (option
+`technique`), `map` (options `layer` and `compared`) and `noise_figure` (NPS and air test) → `image`.
+The NEx interval bands are review / approved / review: `[-4, -1]` review, `[-1, 1]` approved,
+`[1, 4]` review (NEx alone never rejects; ±4 only bounds the drawing).
+
+Errors: unknown inspector 404; an option outside its `choices` 400; unknown version or item 404;
+an item where the measure cannot be taken (empty or too small lung, e.g. GLCM without neighbour
+pairs) 422 with `"<label> cannot be measured on this slice: …"`. The UI shows these as text in the
+inspector card.
 
 ### 4.3 Benchmark — `GET /api/board?dataset=&baseline=`
 
 ```jsonc
 {"n_items": 37, "baseline": "Dsr-baseline", "versions": [{
-  "name": "Dsr-gpbo11", "subtitle": "same anatomy", "is_reference": false,
-  "provenance": {"run": "gp", "step": 11} | null,
+  "name": "Dsr-gpbo11", "label": "GP-BO #11",
+  "subtitle": "" | "ruler reference",                      // "ruler reference" only on the reference row
+  "is_reference": false,
+  "provenance": {"run": "gp", "step": "11"} | null,
   "counts": {"<axis>": {"<status>": 36}},
-  "vs_baseline": [{"indicator": "nex", "gain": 16.2, "ci": [5.4, 29.7], "result": "improved" | "worse" | "same" | "small"}],
+  "scores": {"<indicator>": [value, low, high] | null},
+  "vs_baseline": [{"indicator": "nex", "gain": 16.2, "ci": [5.4, 29.7], "result": "improved" | "worse" | "same" | "small"}] | null,
   "cohort": [{"test": "nex_shift", "result": {"label": "No systematic deviation", "status": "approved"},
-              "detail": [{"label": "p", "value": "0.89"}, {"label": "n", "value": "35"}]}]
+              "detail": [{"label": "p", "value": "0.89"}, {"label": "median z", "value": "-0.12"}, {"label": "n", "value": "35"}]}]
 }]}
 ```
 
-`GET /api/transitions?…&axis=` stays as is, with `axis` taking any key from
-`schema.axes`.
+The baseline row has `vs_baseline: null` and `cohort: []`. Without `baseline=` the default is the
+lab baseline (first version whose name ends in `-baseline`), else the history default; it equals
+`schema.dataset.default_baseline`. Cohort result labels: "Systematic deviation: NEx tends to be
+higher|lower" (review, p < 0.05), "No systematic deviation" (approved), "Too few values to test"
+(inconclusive, n < 10); `p` prints with 3 decimals when below 0.05, else 2; missing values print
+`n/a`.
+
+`GET /api/transitions?dataset=&before=&after=&axis=` returns `[{id, before, after, change:
+"improved" | "worsened" | "same", became_approved}]` over the common items; `axis` is any key from
+`schema.axes` (other values 400, unknown version 404).
 
 ### 4.4 Optimizer runs (Generators › Optimizers) — `GET /api/runs`
 
 ```jsonc
-{"sources": [{"label": "lung-agent-lab", "path": "…", "exists": true}],
+{"sources": [{"label": "lung-agent-lab logs", "path": "…", "exists": true}],
  "objective": {"label": "Improvement vs start", "unit": "%", "goal": 15 | null, "higher_is_better": true},
  "budget_axis": {"label": "cases generated"},
- "params": [{"key": "steps", "label": "steps", "kind": "int"}, …],   // union over runs
+ "params": [{"key": "steps", "label": "steps"}, …],   // only the keys that vary across steps of the runs
  "runs": [{
    "key": "gp", "label": "GP-BO",
    "summary": {"best": 44.2, "evaluated": 41, "used": 269, "budget": 269 | null},
@@ -154,7 +192,8 @@ and the NPS/air figure → `image` (with `options`).
 ```
 
 Only optimizers in use are sent (the retired LLM agent is dropped by the
-adapter). The screen has no cards: a curve of best score vs budget (one
+adapter); runs carry no `state` field. `best_params` may also hold keys that
+never vary (today `sampler`), which are not step columns. The screen has no cards: a curve of best score vs budget (one
 line per run) and a compact ranking table, one row per run, sorted by best
 score (best, budget spent to reach it, configurations evaluated, used /
 budget; best parameters on hover). Clicking a row highlights its curve and
@@ -167,8 +206,8 @@ are translated in the adapter, not in the UI).
 
 ```jsonc
 {"source": {"label": "CADERNO.md", "path": "…"},
- "objective": {"label": "Improvement vs baseline", "unit": "%", "goal": 15 | null},
- "scopes": [{"key": "5", "label": "5 slices"}, {"key": "10", "label": "10 slices"}, {"key": "37", "label": "37 slices"}],
+ "objective": {"label": "Improvement vs baseline", "unit": "%", "goal": 15},
+ "scopes": [{"key": "5", "label": "5 slices"}, {"key": "7", "label": "7 slices"}, {"key": "10", "label": "10 slices"}, {"key": "37", "label": "37 slices"}],
  "experiments": [{"id": "M12", "parent": "M11" | null, "change": "eta 0,40",
                   "outcome": {"status": "approved", "label": "Better"},
                   "scores": {"5": 25.3, "10": 24.1, "37": 23.1}, "is_best": true,
@@ -178,23 +217,31 @@ are translated in the adapter, not in the UI).
               {"title": "Next search", "items": [{"head": null, "body": "…"}]}]}
 ```
 
-The notebook is read-only; ids and texts are passed through untouched. No
+A missing notebook answers 404 (and `schema.addons.experiments` is false, so the tab is hidden); a
+notebook without the attempts table answers an empty `experiments` list. The notebook is
+read-only; ids and texts are passed through untouched. No
 author field: experiments are one list in source order, lineage comes only
 from `parent`. The trajectory chart plots the lineage of the best experiment
 plus the lineage of the latest experiment outside it.
 
 ### 4.6 Versions — `GET /api/versions?dataset=`
 
-`{name, label, is_reference, added, mode_label, n_items, n_common, warnings: [{label, count}], provenance}`;
-detected runs and add/remove/init keep their current routes. `provenance`
-(`{run, step}`) is recorded in the history when a version is added from a
-detected run (the run's report names its optimizer and step); versions added
-by hand have `null`. It is never inferred from the version name.
+`{name, label, is_reference, added, mode_label, n_items, n_common, warnings: [{label, count}], provenance}`
+(`warnings` holds "suspicious pairs" when the history counts any). Detected runs
+(`GET /api/versions/detected`), add (`POST /api/versions` with `{folder, name?, label?, provenance?}`),
+remove (`DELETE /api/versions/{name}`), relabel (`PATCH /api/versions/{name}` with `label` and/or
+`provenance`; `null` clears) and `POST /api/datasets/{name}/init` complete the set. `provenance`
+(`{run, step}`) is recorded when a version is added from a detected run: the run folder's
+`report.json` keys `optimizer` and `step` become `run` and `step` (missing or null → no
+provenance); versions added by hand have `null`. It is never inferred from the version name.
 
 Labels and provenance live in a workbench sidecar next to the history
 (`<history>/workbench.json`, `{"versions": {"<name>": {"label", "provenance"}}}`);
 the frozen `historico.json` is never edited. Default label: `reference` for
-the ruler reference, `baseline` for the default baseline, else the name.
+the ruler reference, `baseline` for the lab baseline (first version whose name
+ends in `-baseline`, else the history default when it is not the reference),
+else the name. Labels are 1–40 characters from letters, digits, space, `#`,
+`.`, `-`, `_` (400 otherwise).
 
 `label` is what the UI shows everywhere: `reference`, `baseline` or the
 synthesis id (an experiment id such as M12, or an optimizer step such as
@@ -209,6 +256,9 @@ informal names, and only in the dataset switch.
 - Items: grouped by `group_by` when present, flat grid otherwise; grids
   virtualise beyond ~150 tiles; nouns from `item`. The deviation strip shows
   one bar per item up to 60 items and a status-stacked histogram above that.
+- Overview Table mode: one row per item; its footer lists, for each
+  categorical fact (some value is not a number and some value repeats), the
+  count per value, most frequent first.
 - Metrics: one row per metric of the axis; value text from `display`,
   `unit`, `decimals`; "How to read" is the table of `metrics` with limits and
   repeatability.
@@ -245,12 +295,20 @@ half the row empty (→ full width).
 If a screen in (2) looks wrong or needs special code, the contract or the
 UI rule is still bound to today's data.
 
-## 7. Backend impact (after validation)
+## 7. Backend (as shipped)
 
-- New: `schema.py` (descriptors), adapter layer `adapters/placar.py`,
-  `adapters/lab_runs.py`, `adapters/caderno.py`; routes `/api/schema`,
-  `/api/items`, `/api/inspect/{key}`, `/api/runs`, `/api/experiments`.
-- Changed: board (`versions[]`, `provenance`, generic `cohort`), transitions
-  (`axis`), versions (`warnings`, `provenance`).
-- Current routes stay until the new frontend lands, then are removed.
+- Contract modules in `workbench/api/contract/` (`schema`, `items`, `versions`,
+  `inspect`, `bench`, `runs`, `experiments`), each exposing `router(datasets)`
+  and registered by `contract.include(app, datasets)`. They adapt the existing
+  helpers (`data.slice_json`, `board.board_json`, `compare`, `tools`,
+  `optimizers`, `notebook`, `calibration`) without recalculating anything.
+- Routes: `/api/schema`, `/api/items`, `/api/inspect/{key}` and
+  `/api/inspect/{key}.png`, `/api/board`, `/api/transitions`, `/api/runs`,
+  `/api/experiments`, `/api/versions` (GET, POST, PATCH, DELETE),
+  `/api/versions/detected`, `/api/datasets`, `/api/datasets/{name}/init`,
+  `/api/status`, `/api/refresh`, `/api/image/{version}/{item}/{kind}.png`.
+- Removed in F12: `/api/slices`, the old `/api/board` and `/api/transitions`,
+  `/api/cohort`, `/api/tools/*`, `/api/figure/*`, `/api/calibration`,
+  `/api/optimizers`, `/api/optimizers/notebook`, `/api/agent/notebook` and the
+  old `GET /api/versions`; the interim `/api/v2/*` routes lost their prefix.
 - Frozen judge untouched; `CADERNO.md` untouched.

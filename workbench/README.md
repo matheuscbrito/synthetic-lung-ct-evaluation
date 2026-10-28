@@ -1,141 +1,171 @@
 # QC workbench
 
-Painel de controle de qualidade das sintéticas de CT pulmonar. Substitui o painel Streamlit
-`frameworks/texture_evaluator/ui_placar.py` (que segue disponível como legado até o aceite do
-pesquisador). Mostra, por corte, o veredito de brilho e o veredito de textura, separados.
+Painel de controle de qualidade das imagens sintéticas de TC pulmonar, com API FastAPI e
+interface Vite + React + TypeScript. Consome o histórico do avaliador e mantém separados os
+vereditos de brilho, textura e ruído. As métricas caracterizam diferenças neste conjunto;
+nenhuma aprovação certifica equivalência clínica ou utilidade downstream.
 
-- `workbench/api/`: API FastAPI sobre o histórico do placar de cada dataset.
-- `workbench/web/`: front Vite + React + TypeScript.
-- `workbench/tests/`: testes da API (pytest).
+O front usa o [contrato genérico](../docs/planning/2026-10-27-workbench-generic-contract.md):
+rótulos, eixos, técnicas, métricas, limites e inspetores vêm de `/api/schema`. A implementação
+fica em `api/contract/`, os tipos em `web/src/contract/types.ts` e o cliente em
+`web/src/contract/client.ts`. O código de interface não contém nomes específicos de métricas,
+datasets ou pesquisadores; `web/src/genericity.test.ts` verifica essa regra em TS, TSX e CSS,
+excetuando fixtures e testes.
 
-## Datasets
+## Dados e escopo científico
 
-Toda rota de dados aceita `dataset=Dsr|Dgen` (Dsr é o padrão). Dataset desconhecido responde 404.
-Cada dataset tem o seu próprio histórico; nenhum corte ou versão é misturado entre eles.
+A frente experimental vigente usa **Dsr**. A configuração também preserva Dgen como suporte
+legado, separado do histórico Dsr; sua presença no seletor não autoriza novas análises com
+esse conjunto. De `dados/Dgen` reutilizam-se as máscaras correspondentes aos cortes Dsr.
+O conjunto mamográfico antigo permanece apenas como histórico e não entra nesta bancada.
 
-| Dataset | Pasta da referência | Máscaras | Histórico | Modo |
+| Chave interna | Rótulo na interface | Pasta de imagens | Máscaras | Histórico |
 |---|---|---|---|---|
-| `Dsr` | `dados/Dsr` | `dados/Dgen` | `outputs/placar/` (referência `Dsr`, versões `Dsr-baseline` e `Dsr-gpbo11`, 37 cortes cada) | mesma anatomia |
-| `Dgen` | `dados/Dgen` | `dados/Dgen` | `outputs/placar_dgen/` (ainda não existe) | somente máscara |
+| `Dsr` | Same anatomy | `dados/Dsr` | `dados/Dgen` | `outputs/placar` |
+| `Dgen` | Mask only | `dados/Dgen` | `dados/Dgen` | `outputs/placar_dgen` |
 
-- `GET /api/datasets` lista os dois, com `has_history`, `stale` e `n_versions`.
-- Um dataset sem histórico não tem versões nem placar; as rotas de dados respondem 404.
-- A primeira avaliação de um dataset é `POST /api/datasets/{nome}/init`: a pasta de referência vira o
-  histórico. Se o histórico já existe, responde 409. O Dgen só ganha histórico por essa rota.
-- Versões novas são descobertas em `GET /api/versions/detected` (execuções completas do agente que ainda
-  não estão no histórico) e entram por `POST /api/versions`.
-
-## Variáveis de ambiente
-
-| Variável | Padrão | Uso |
-|---|---|---|
-| `LUNG_AGENT_LAB` | `../lung-agent-lab` | Pasta do laboratório do agente. Lê `CADERNO.md` (`/api/agent/notebook`). |
-| `LUNG_AGENT_RUNS` | `../lung-agent-lab/runs/real` | Execuções do agente procuradas por `/api/versions/detected`. |
-| `OPTIMIZER_RESULTS` | `$LUNG_AGENT_LAB/resultados/otimizador-real` | Logs `*-log.jsonl` e resumos `*-resumo.json` dos otimizadores (`/api/optimizers`). |
-
-O lab é somente leitura: o workbench nunca escreve nele.
-
-## Endpoints
-
-Todos são `GET`, exceto onde indicado. Os erros da própria API têm `detail` em inglês; a mensagem de
-`PlacarError` do framework passa como veio, em português.
-
-- Datasets e histórico: `GET /api/datasets`, `POST /api/datasets/{nome}/init`, `GET /api/status`
-  (`stale`, `has_history`, `baseline`, `reference`, `token`).
-- Versões: `GET /api/versions` (nome, modo e `mode_code`, `n_cases`, `added`, `is_baseline`, `reference`,
-  `suspicious_pairs`, `n_common`), `GET /api/versions/detected`, `POST /api/versions`,
-  `DELETE /api/versions/{nome}`, `POST /api/refresh`. `POST /api/versions` vale para Dsr e Dgen: o
-  Streamlit oferecia a adição só para Dsr; aqui é intencional.
-- Cortes: `GET /api/slices?version=` traz, por corte, `brightness`, `texture` e `noise` (cada um com
-  `verdict` e `techniques`), `why` (motivos por grupo, com `limit`, `limit_value`, `direction` e `note`),
-  `metrics` (valor, `z`, IC 95% em `z_low`/`z_high`, `certain`), `noise_roi_count`, `noise_available`,
-  `wavelet_energy`, `density`, `wavelet_type` e `wavelet_type_code` (`preserved`, `blurred`, `noise`,
-  `lost_contrast`, `gained_contrast`, `saturated`). `pair_mode` vem com `mode_code` (`same_anatomy` ou
-  `mask_only`). `pct_of_original` é `null` para Sat31, Δμ e manchas do ar. Valores ausentes ou não
-  finitos saem como `null`.
-- Imagens: `GET /api/image/{versão}/{corte}/{real|synthetic|diff|contour}.png` (`size`, `window`).
-- Ferramentas por corte: `GET /api/tools/{versão}/{corte}/spectrum`, `/glcm`, `/nex`, `/wavelet`.
-- Placar: `GET /api/board?baseline=` (contagens, medianas de |z|, escores e comparação com a linha de base).
-  `indicators` traz rótulo, grupo, unidade (em inglês), `ideal` e `min_change` de cada indicador, e
-  `scores` tem só esses indicadores. A referência padrão é a `reference` do histórico (se existir e
-  estiver nas versões); sem ela, a primeira versão. Cada gerador traz `mode_code`.
-  Os IC de `vs_baseline` usam um `default_rng(0)` novo por par de versões: são determinísticos, mas podem
-  diferir um pouco da tabela de pares adjacentes do Streamlit.
-- Calibração: `GET /api/calibration` (réguas do histórico, Sat31 e limites de |z|, constantes do juiz).
-- Comparações: `GET /api/transitions?before=&after=&verdict=brightness|texture|noise` e
-  `GET /api/cohort?version=` (teste de Wilcoxon do NEx e tipos de wavelet, em `wavelet_types` e
-  `wavelet_type_codes`). A mediana do NEx sai só com n ≥ 10; o sentido, só quando o teste é sistemático.
-- Figuras (PNG): `GET /api/figure/{corte}/technique/{técnica}.png`,
-  `GET /api/figure/{corte}/map/{camada}.png?compared=`, e `GET /api/figure/{corte}/nps.png?versions=`.
-  Para o NPS e o teste do ar (`nps.png`), passe sempre `versions=<referência>,<comparada>`: sem isso a
-  figura usa a referência da linha de base e a última versão do histórico. Nomes repetidos, mais de
-  duas versões ou corte que não pode ser carregado respondem 400 ou 404.
-- Otimizadores: `GET /api/optimizers` (GP-BO, Nelder-Mead e o agente aposentado; curva, resumo e
-  passos; `skipped` conta linhas e arquivos ilegíveis) e `GET /api/optimizers/notebook`.
-- Agente: `GET /api/agent/notebook` (`CADERNO.md` do lab, interpretado por regra quando possível).
-
-## Estado do front
-
-O front (`workbench/web`) ainda não usa as rotas de paridade acima: a paridade de interface com o
-Streamlit está pendente, e esta API é o que ela vai consumir. Não há agente LLM no produto: o
-agente é só o laboratório externo que gera execuções, lido pelo workbench.
-
-## Instalação
-
-Na raiz do repositório:
-
-```bash
-uv pip install --python .venv/bin/python -r workbench/requirements.txt
-npm --prefix workbench/web install
-```
-
-## Execução
-
-```bash
-bash workbench/dev.sh
-```
-
-Sobe a API (uvicorn, porta 8000) e o front (Vite, porta 5173, com `/api` redirecionado para a API).
-Abra http://localhost:5173. O script pode ser chamado de qualquer diretório.
+As rotas vinculadas a um dataset aceitam `?dataset=<chave>`; sem parâmetro, usam Dsr.
+Datasets desconhecidos respondem 404. O schema e o status também descrevem datasets sem
+histórico; as rotas que precisam de versões avaliadas respondem 404. `/api/runs` e
+`/api/experiments` leem fontes externas ao histórico e não são filtradas por dataset.
 
 ## Interface
 
-- Tema claro único. Os tokens de cor, raio e tipografia estão em `workbench/web/src/theme.css`
-  e seguem o deck de mockups (`docs/planning/2026-10-23-qc-workbench-mockups.html`).
-- Fontes são self-hosted via `@fontsource` (Inter, Instrument Serif e JetBrains Mono), importadas
-  em `workbench/web/src/main.tsx`. Nada é carregado de CDN em tempo de execução.
-- A coluna do agente (e a tela Agent) são cascas de UI: não há backend de agente conectado.
-  Mostram só estados vazios ("No runs yet"); nenhuma conversa ou resultado é inventado.
-- Preferências do agente ficam no `localStorage` do navegador: `wb.agent.open` (coluna aberta,
-  `1` ou `0`) e `wb.agent.model` (modelo escolhido no seletor). Se o navegador bloquear o
-  armazenamento, valem só para a sessão da página.
-- `prefers-reduced-motion: reduce` desliga as animações por keyframes e transições.
-- Os gráficos de espectro ocupam a largura do cartão (`Plot` com `fill`); os demais usam largura fixa.
+- **Dataset:** visão geral em grade, gráficos, matriz ou tabela; filtros e ordenação; detalhe
+  de um item; comparação de itens e inspetores definidos pelo schema.
+- **Generators:** benchmark e transições contra a linha de base; abas Optimizers e Notebook
+  aparecem conforme `schema.addons`. O método de agente aposentado fica fora dos runs.
+- **Versions:** versões avaliadas, avisos, referência da régua, rótulos e proveniência;
+  descoberta e adição de execuções, edição do rótulo, remoção com confirmação e recálculo.
 
-## Testes
+As rotas do navegador usam hash, por exemplo `#/dataset/overview`,
+`#/generators/bench`, `#/generators/runs`, `#/generators/exp` e `#/versions/overview`.
+Os parâmetros preservam dataset, versão, linha de base, eixo e itens selecionados.
+Sem histórico aparece a ação Evaluate; histórico desatualizado oferece Recalculate.
+O produto não possui chat, seletor de modelo nem execução de agente LLM. O laboratório é
+uma fonte de artefatos externos, lida sem alteração.
 
-```bash
-.venv/bin/pytest workbench/tests -q
-npm --prefix workbench/web test -- --run
+O tema claro e os tokens ficam em `web/src/theme.css`. Inter, Instrument Serif e JetBrains
+Mono são servidas localmente por `@fontsource`; `prefers-reduced-motion` reduz as animações.
+As referências visuais são os mockups v3
+[real](../docs/planning/2026-10-27-workbench-mockups-v3-real.html) e
+[stress](../docs/planning/2026-10-27-workbench-mockups-v3-stress.html).
+O [inventário de paridade](../docs/planning/2026-10-26-streamlit-parity.md) registra os requisitos
+de comparação com o Streamlit; a existência de fixtures não substitui o aceite visual.
+
+## Endpoints do contrato
+
+Todos são GET, salvo método explícito. A documentação interativa do FastAPI fica em `/docs`.
+Os formatos completos estão no documento do contrato.
+
+| Rota | Resposta ou operação |
+|---|---|
+| `/api/schema?dataset=` | Descritores da interface, datasets, estado do histórico e addons |
+| `/api/items?dataset=&version=` | Itens, vereditos por eixo/técnica, métricas, motivos e fatos |
+| `/api/inspect/{key}?dataset=&version=&item=&compare=` | Payload `curves`, `bars`, `interval`, `matrix` ou `image`; opções vêm do schema |
+| `/api/inspect/{key}.png` | PNG do inspetor de imagem, com os mesmos parâmetros e opções |
+| `/api/board?dataset=&baseline=` | Benchmark: `n_items`, `baseline`, `versions` com contagens, scores, comparações e testes de coorte |
+| `/api/transitions?dataset=&before=&after=&axis=` | Transições dos itens comuns no eixo selecionado |
+| `/api/runs` | Fontes, objetivo, parâmetros variáveis e runs de otimizadores |
+| `/api/experiments` | Experimentos, linhagem, escores, tabelas e seções de `CADERNO.md`; 404 se ausente, 422 se ilegível |
+| `/api/versions?dataset=` | `name`, `label`, `is_reference`, `added`, `mode_label`, `n_items`, `n_common`, `warnings`, `provenance` |
+| `/api/versions/detected?dataset=` | Execuções completas ainda fora do histórico |
+| `POST /api/versions?dataset=` | Adiciona `{folder, name?, label?, provenance?}`; devolve `{message, name}` |
+| `PATCH /api/versions/{name}?dataset=` | Altera `label` e/ou `provenance`; `null` limpa o campo |
+| `DELETE /api/versions/{name}?dataset=` | Remove versão e seus metadados; protege a referência |
+| `/api/datasets` | Estado e número de versões de cada dataset configurado |
+| `POST /api/datasets/{name}/init` | Primeira avaliação; 409 se o histórico já existir |
+| `/api/status?dataset=` | `stale`, `has_history`, `baseline`, `reference`, `token` |
+| `POST /api/refresh?dataset=` | Recalcula as versões do histórico; 404 se não houver histórico |
+| `/api/image/{version}/{item}/{kind}.png?dataset=` | `real`, `synthetic`, `diff` ou `contour`; aceita `size` e `window` (`pair` ou `reference`) |
+
+As rotas provisórias `/api/v2/*` perderam o prefixo. Foram removidas as rotas legadas
+`/api/slices`, `/api/cohort`, `/api/tools/*`, `/api/figure/*`, `/api/calibration`,
+`/api/optimizers*` e `/api/agent/notebook`. `/api/board`, `/api/transitions` e o GET de
+`/api/versions` agora devolvem os formatos do contrato, sem compatibilidade com os payloads antigos.
+
+Erros da API usam `detail`. Dataset, versão ou item desconhecido responde 404; opções de
+inspetor inválidas respondem 400; leitura inviável de uma medida responde 422. Erros de
+histórico (`PlacarError`) respondem 409 e podem conservar texto em português. Valores não
+finitos são serializados como `null`, apresentados como ausência de leitura.
+
+## Fontes externas e variáveis de ambiente
+
+Defina as variáveis antes de iniciar a API. Caminhos relativos são relativos ao diretório
+do processo; os padrões abaixo são resolvidos a partir da raiz do repositório.
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `LUNG_AGENT_LAB` | `../lung-agent-lab` | Lê `CADERNO.md` para `/api/experiments` |
+| `LUNG_AGENT_RUNS` | `../lung-agent-lab/runs/real` | Procura `*/report.json` para `/api/versions/detected`; padrão independente de `LUNG_AGENT_LAB` |
+| `OPTIMIZER_RESULTS` | `$LUNG_AGENT_LAB/resultados/otimizador-real` | Lê `*-log.jsonl` e `*-resumo.json` para `/api/runs` |
+
+A descoberta exige `report.json` com `completed` verdadeiro e `cases[].case_id` exatamente
+iguais aos IDs de referência do histórico. Pastas já adicionadas ficam de fora. Ao adicionar,
+a API também confere os cortes da pasta e rejeita cortes ausentes, extras e pastas duplicadas.
+O `name` omitido usa o nome da pasta.
+
+Rótulos e proveniência ficam em `<histórico>/workbench.json`, separados dos campos do juiz:
+
+```json
+{"versions": {"nome-interno": {"label": "GP-BO #11", "provenance": {"run": "gp", "step": "11"}}}}
 ```
 
-Verificação de build do front (checagem de tipos e build de produção):
+O rótulo aceita de 1 a 40 caracteres: letras ASCII, dígitos, espaço, `#`, `.`, `-`, `_`.
+Sem rótulo explícito, a referência vira `reference`, a primeira versão terminada em
+`-baseline` vira `baseline` (com fallback para a linha de base do histórico quando distinta
+da referência), e as demais mantêm o nome interno.
+
+Na adição, uma proveniência explícita tem prioridade. Sem ela, a API lê `optimizer` e
+`step` do `report.json` da pasta e grava `{run: optimizer, step: String(step)}`; se faltar
+um dos campos, grava `null`. Isso vale também para uma pasta digitada manualmente que
+contenha esse relatório. A proveniência nunca é inferida do nome da versão. PATCH pode
+alterar ou limpar os metadados depois. O sidecar é gravado atomicamente sob o lock de
+administração; um arquivo ilegível responde 409.
+
+## Instalação e execução
+
+Na raiz do repositório, use o ambiente Python do avaliador, com as dependências científicas
+descritas no [README principal](../README.md), e instale as dependências adicionais do painel:
 
 ```bash
+uv pip install --python .venv/bin/python -r workbench/requirements.txt
+npm --prefix workbench/web ci
+bash workbench/dev.sh
+```
+
+O script sobe uvicorn na porta 8000 e Vite na 5173, com `/api` encaminhado para a API.
+Abra http://localhost:5173. O script pode ser chamado de qualquer diretório.
+
+Para testar a mesma interface com o contrato fictício de 180 imagens, dois eixos e um
+otimizador, use `bash workbench/dev.sh --stress` no lugar da execução normal. Essa API
+serve apenas o fixture versionado, com imagens explicitamente marcadas como placeholders,
+e rejeita operações de escrita. Os mockups ficam em `http://localhost:8000/mockups/real`
+e `http://localhost:8000/mockups/stress` nesse modo. Não execute os dois modos simultaneamente.
+
+## Verificação
+
+```bash
+.venv/bin/python -m pytest workbench/tests -q
+npm --prefix workbench/web test -- --run
 npm --prefix workbench/web run build
 ```
 
-## Regras
+Os testes de API usam históricos temporários; não devem gravar nos `outputs/` reais.
+O build faz a checagem TypeScript antes de gerar os arquivos de produção.
+`web/src/fixtures/real.json` pode ser regenerado, somente por leitura das rotas reais, com
+`.venv/bin/python workbench/web/scripts/make_real_fixture.py`. O stress vem de
+`docs/planning/mockups-v3/bundle_stress.py`; ambos são dados de verificação, sem uso como
+evidência científica.
 
-- O workbench **não edita o juiz**: `frameworks/texture_evaluator/**` e `wavelet/src/**` são
-  congelados (tag `juiz-v1`). O workbench só importa esse código; não recalcula vereditos, usa as
-  funções de `frameworks/texture_evaluator/decision.py`.
-- Brilho e textura são dois vereditos separados, nunca fundidos.
-- Cada dataset lê só o seu histórico (`outputs/placar` para Dsr, `outputs/placar_dgen` para Dgen).
-- Valores não finitos (NaN, infinito) chegam à API como `null` e aparecem como "–" na tela.
-- Versão ou corte inexistente responde HTTP 404; histórico com régua faltando aparece como
-  desatualizado (`/api/status` com `stale: true`), e a tela oferece só a ação de recalcular.
-- Só quatro rotas gravam no histórico de um dataset (`historico.json`): `POST /api/datasets/{nome}/init`,
-  `POST /api/versions`, `DELETE /api/versions/{nome}` e `POST /api/refresh`. Refresh em dataset sem
-  histórico responde 404. As demais são somente leitura.
-- Os testes nunca gravam em `outputs/`: usam cópias temporárias do histórico real.
+## Limites de escrita
+
+O workbench não altera o código do juiz (`frameworks/texture_evaluator/**` e `wavelet/src/**`,
+congelados em `juiz-v1`), nem os arquivos do laboratório externo. Reutiliza as funções do
+framework para avaliação, vereditos e figuras. Brilho, textura e ruído permanecem separados.
+
+Init, add, remove e refresh escrevem no histórico e nas saídas do dataset por meio do
+framework. Add e remove também atualizam `workbench.json`; PATCH escreve somente nesse
+sidecar, sem modificar `historico.json`. As demais rotas são de leitura. As referências
+de dados recebidos continuam sendo artefatos externos auditados, sem atribuição de autoria
+pela simples presença nesta pasta.

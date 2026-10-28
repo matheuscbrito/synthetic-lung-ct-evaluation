@@ -144,6 +144,8 @@ export interface MetricValue {
   pct?: number | null;
   status: StatusKey;
   available: boolean;
+  /** Optional server-provided measurement context, shown in chart tooltips. */
+  note?: string | null;
 }
 
 export interface Reason {

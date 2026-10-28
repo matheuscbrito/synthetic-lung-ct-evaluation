@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
+from frameworks.texture_evaluator import regional
 from workbench.api import data, datasets as ds, reasons
 from workbench.api.contract import AXES, DATASET_LABEL
 
@@ -32,12 +33,15 @@ def _available(metric: dict) -> bool:
 
 def _metric(metric: dict) -> dict:
     available = _available(metric)
+    # ui_placar.py: air_chart tooltip (pico em múltiplos do ruído natural da própria CT).
+    peak = metric.get("peak_sigmas")
+    note = f"Peak: {peak:.1f} × natural noise" if available and peak is not None else None
     return {"value": metric["value"] if available else None,
             "z": metric["z"] if available else None,
             "ci": _ci(metric["z_low"], metric["z_high"]) if available else None,
             "real": metric["real"], "synthetic": metric["synthetic"],
             "pct": metric["pct_of_original"] if available else None,
-            "status": metric["status"], "available": available}
+            "status": metric["status"], "available": available, "note": note}
 
 
 def _reason(axis: str, entry: dict, available: bool) -> dict:
@@ -61,6 +65,11 @@ def _density(density: dict) -> str:
 
 
 def _pairing(mode_code: str | None) -> str:
+    # ui_placar.py:1563; threshold comes from the frozen judge, never a UI constant.
+    if mode_code == "same_anatomy":
+        return f"Same anatomy · correlation below {regional.PAIR_MIN_CORRELATION:g} flags a suspicious pair"
+    if mode_code == "mask_only":
+        return "Mask only · no spatial comparison: matching contours do not imply matching anatomy"
     return NA if mode_code is None else DATASET_LABEL.get(mode_code.replace("_", " "), mode_code)
 
 

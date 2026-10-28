@@ -449,6 +449,28 @@ main {
   background: #000;
 }
 
+.compare-view .ccol > img {
+  height: 190px;
+  object-fit: contain;
+}
+
+.compare-view .cscroll {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+.compare-view .crow {
+  grid-template-columns: minmax(0, 1fr) auto 8px;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .compare-view .cscroll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .chead {
   display: flex;
   align-items: center;

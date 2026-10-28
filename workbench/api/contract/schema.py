@@ -59,6 +59,9 @@ AXIS_GUIDE = {
         "outside the body is smooth in the original, so any spot there was invented by the generator; up to "
         "0.5% of the air is approved, up to 2% asks for review, above is rejected (policy limits, not clinical "
         "ones). If fewer than 4 lung regions fit, the lung is inconclusive and the slice is at least reviewed."
+        " Regions have little vessel or edge content and overlap by at most 25%. A smooth plane is fitted "
+        "and subtracted in each region; its residual is the fluctuation used for NPS. Fine anatomy can "
+        "remain, so this is a local estimate, not a phantom noise measurement."
     ),
 }
 
@@ -79,12 +82,36 @@ METRIC_DESCRIPTION = {
     "wavelet_entropy": "Variation and complexity of the distribution of detail across scales.",
     "nex": "Excess or lack of structure near the resolution limit, compared with the slice's own original; "
            "more than 1 IQR of difference asks for review.",
-    "nps_quantity": "Total strength of the local pixel fluctuation in the lung; more quantity means a more intense noise map.",
+    "nps_quantity": "Total strength of the local pixel fluctuation in the lung; positive means stronger fluctuation, negative weaker.",
     "nps_grain": "Width of the noise patterns: positive means finer grain, negative means coarser grain.",
-    "nps_low_band": "Share of the noise in slow, wide patterns.",
-    "nps_high_band": "Share of the noise in fast, small patterns (fine grain).",
-    "nps_air": "Percent of the air outside the body with spots stronger than 3× the CT's natural noise, which the original does not have.",
+    "nps_low_band": "Share of the noise in slow, wide patterns; positive means more concentrated in wide patterns, negative less.",
+    "nps_high_band": "Share of the noise in fast, small patterns; positive means more concentrated in fine grain, negative less.",
+    "nps_air": "Percent of the air outside the body with spots stronger than 3× the CT's natural noise, which the original does not have. "
+               "For Gaussian natural fluctuation, about 0.3% of pixels exceed 3× its standard deviation. "
+               "Green up to 0.5%, yellow up to 2%, red above; these are policy limits, not clinical limits.",
 }
+
+
+def metric_description(key: str, display: str) -> str:
+    """Chart captions translated from ui_placar.py:1377,1401,1429,1474–1497,1517–1521."""
+    text = METRIC_DESCRIPTION.get(key, "")
+    if display == "z":
+        text += (" Each point is a slice: synthetic minus its own original, in IQR of the real CTs. "
+                 "Zero is the original. Positive and negative indicate direction, not quality. "
+                 "Grey bars, when present, are the 95% bootstrap interval; grey points are inconclusive. ")
+        if key == "nex":
+            text += ("Green is within ±1 IQR; yellow asks for review only beyond ±1 IQR when the interval "
+                     "excludes zero. NEx never rejects on its own.")
+        else:
+            text += "Green is within ±1 IQR, yellow between 1 and 2, red beyond 2 IQR."
+            if key.startswith("nps_"):
+                text += " A point whose interval crosses zero stays green even beyond a limit."
+    elif key == "delta_mu":
+        text += (" Zero means equal lung means; positive is brighter, negative darker. "
+                 "Green is inside the review limits, yellow between review and reject limits, red beyond them.")
+    elif key == "sat31":
+        text += " Green is at most 15%; above 15% is red directly, with no yellow band."
+    return text
 
 # Rótulos em inglês das escolhas de figura e de camada (ui_placar.py:1000-1010; visual.MAP_LAYERS)
 FIGURE_LABEL = {
@@ -142,7 +169,7 @@ def inspectors() -> list[dict]:
         {"key": "glcm", "label": "GLCM", "chart": "matrix", "compare": False, "options": [],
          "description": "Co-occurrence of neighbouring tones on the 32-tone scale, real and synthetic."},
         {"key": "nex", "label": "NEx", "chart": "interval", "compare": False, "options": [],
-         "description": "Near-Nyquist excess of the slice against the P5–P95 band of the real slices."},
+         "description": "Near-Nyquist excess relative to the slice's own original, in IQR of the real CTs, with its bootstrap interval."},
         {"key": "nex_windows", "label": "NEx windows", "chart": "matrix", "compare": False, "options": [],
          "description": "NEx of each 32 px lung window, real and synthetic."},
         {"key": "wavelet", "label": "Wavelet", "chart": "bars", "compare": False, "options": [],
@@ -207,16 +234,17 @@ def metric_descriptors(calibration_body: dict, slices: list[dict]) -> list[dict]
     for index, metric in enumerate(slices[0]["metrics"]):
         key = metric["key"]
         has_z = any(_finite(s["metrics"][index]["z"]) for s in slices)
+        display = "z" if has_z and key != "delta_mu" else "value"
         out.append({
             "key": key, "label": metric["label"], "axis": metric["group"],
             "technique": metric_technique(metric, keys),
-            "display": "z" if has_z and key != "delta_mu" else "value",
+            "display": display,
             # Δμ é diferença crua de tom (régua de 32 tons): o rótulo "IQR" de data.py não vale para ele
             "unit": "" if key == "delta_mu" else metric["unit"],
             "decimals": 1 if metric["unit"] == "%" else 2,
             "limits": _limits(key, calibration_body),
             "repeatability": _repeatability(key, calibration_body),
-            "description": METRIC_DESCRIPTION.get(key),
+            "description": metric_description(key, display),
         })
     return out
 

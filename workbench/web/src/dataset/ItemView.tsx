@@ -180,13 +180,16 @@ function Inspector({ schema, desc, version, compare, item }: {
   compare: string | undefined;
   item: string;
 }) {
-  const params: Record<string, string> = { dataset: schema.dataset.key, version, item };
+  const [options, setOptions] = useState<Record<string, string>>({});
+  const params: Record<string, string> = { dataset: schema.dataset.key, version, item, ...options };
   if (desc.compare && compare) params.compare = `${compare},${version}`;
   const res = useContract<InspectorPayload>(`/api/inspect/${encodeURIComponent(desc.key)}`, params);
   if (res.error) return <p className="error">{res.error}</p>;
   if (!res.data) return <p className="sub">Loading…</p>;
   const wide = desc.chart === "curves" || desc.chart === "bars";
-  return <InspectorChart desc={desc} payload={res.data} {...(wide ? { width: 960, height: 215 } : {})} />;
+  // Request the complete payload again: its caption belongs to the selected options, just like its image.
+  return <InspectorChart desc={desc} payload={res.data} onOptionsChange={setOptions}
+    {...(wide ? { width: 960, height: 215 } : {})} />;
 }
 
 export interface ItemViewProps {

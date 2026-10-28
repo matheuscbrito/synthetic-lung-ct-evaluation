@@ -11,5 +11,7 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    // CSS fica vazio nos testes, exceto quando importado como texto (?raw): a guarda de generalidade lê os .css
+    css: { include: [/\.css\?raw$/] },
   },
 });

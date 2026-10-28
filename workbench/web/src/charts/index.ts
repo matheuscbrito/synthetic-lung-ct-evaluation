@@ -27,9 +27,10 @@ export interface InspectorChartProps {
   colors?: Record<string, string>;
   width?: number;
   height?: number;
+  onOptionsChange?: (chosen: Record<string, string>) => void;
 }
 
-function chart({ desc, payload, colors, width, height }: InspectorChartProps): ReactElement | null {
+function chart({ desc, payload, colors, width, height, onOptionsChange }: InspectorChartProps): ReactElement | null {
   switch (desc.chart) {
     case "curves":
       return createElement(Curves, { payload: payload as CurvesPayload, colors, width, height });
@@ -45,6 +46,7 @@ function chart({ desc, payload, colors, width, height }: InspectorChartProps): R
         key: (payload as ImagePayload).url,
         payload: payload as ImagePayload,
         options: desc.options,
+        onOptionsChange,
       });
     default:
       return null;

@@ -35,3 +35,7 @@ outputs/
 .superpowers/
 # frontend (Vite)
 workbench/web/dist/
+
+# evidências locais do workbench (contêm imagens e snapshots do dataset)
+docs/reports/workbench-f12-b7-2026-10-28/*.jpg
+docs/reports/workbench-f12-b7-2026-10-28/*.txt

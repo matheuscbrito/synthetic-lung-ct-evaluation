@@ -244,13 +244,25 @@
 
 ### Task F12 [Opus]: Cleanup, guard and docs (with B7)
 
+**Controller ruling retained for completion:** parity row #21's GLCM–Wavelet agreement count is
+parked because that specific cross-technique sentence is not expressible by the approved
+generic contract. The LL chart and uncertainty bars remain required and implemented. Report
+the parked agreement sentence explicitly; do not mark it covered or recreate metric-name
+branches in the renderer. The row-by-row v3 audit records generic adaptations and evidence.
+
 **Files:** Create `web/src/genericity.test.ts`. Delete every file no longer imported (old `api.ts` types, `definitions*`, `slices*`, `status*`, `board*`, `components/*` not reused, `tools/*`, `views/*`). Backend (B7): remove `/api/slices`, `/api/board`, `/api/transitions`, `/api/cohort`, `/api/tools/*`, `/api/optimizers*`, `/api/agent/notebook`, `/api/versions` (old GET; renamed `/api/v2/*` routes drop the `v2` prefix), and their tests; update `workbench/README.md` (contract, routes, env vars `LUNG_AGENT_LAB`, `LUNG_AGENT_RUNS`, `OPTIMIZER_RESULTS`, the `workbench.json` sidecar, `report.json` provenance keys).
 
-- [ ] **Step 1:** `genericity.test.ts` reads every `src/**/*.{ts,tsx,css}` except `fixtures/` and `*.test.*` and asserts no match of `/\b(Dsr|Dgen|NEx|GLCM|NPS|Wavelet|GP-BO|Nelder|CADERNO|patient|Matheus|Lucas)\b/`.
-- [ ] **Step 2:** run → fix offenders → pass.
-- [ ] **Step 3:** both suites green: `.venv/bin/python -m pytest workbench/tests -q`; `cd workbench/web && npx vitest run && npm run build`.
-- [ ] **Step 4:** run the app against the real API and the stress fixture (Vite dev server with a fixture mock) and compare each screen with the v3 mockups; walk the 96 parity rows and tick each in `docs/planning/2026-10-26-streamlit-parity.md` (new column "v3").
-- [ ] **Step 5:** commit `Remove rotas e telas antigas e documenta o contrato do workbench`; update PR #11 title/description (no LLM agent, generic contract, parity).
+- [x] **Step 1:** `genericity.test.ts` reads every `src/**/*.{ts,tsx,css}` except `fixtures/` and `*.test.*` and asserts no match of `/\b(Dsr|Dgen|NEx|GLCM|NPS|Wavelet|GP-BO|Nelder|CADERNO|patient|Matheus|Lucas)\b/`.
+- [x] **Step 2:** run → fix offenders → pass.
+- [x] **Step 3:** both suites green: `.venv/bin/python -m pytest workbench/tests -q`; `cd workbench/web && npx vitest run && npm run build`.
+- [x] **Step 4:** run the app against the real API and the stress fixture (Vite dev server with a fixture mock) and compare each screen with the v3 mockups; walk the 96 parity rows and tick each in `docs/planning/2026-10-26-streamlit-parity.md` (new column "v3").
+- [x] **Step 5 (local):** commit `Remove rotas e telas antigas e documenta o contrato do workbench`; prepare the current PR title/body locally (no LLM agent, generic contract, parity).
+- [ ] **Publication, deferred by controller:** push and update PR #11 title/description only after the researcher's explicit ok, as required by the F12 controller addendum. No remote mutation in this completion run.
+
+Completion evidence (2026-10-28): [F12+B7 review](../reports/2026-10-28-workbench-f12-b7-review.md),
+[proposed PR body](../reports/2026-10-28-workbench-pr11-body.md), and the v3 column of the parity inventory.
+Final whole-branch review and correction round completed locally; no remaining confirmed blocker.
+This completion does not certify clinical equivalence or literal one-to-one recreation of the legacy UI.
 
 ---
 
