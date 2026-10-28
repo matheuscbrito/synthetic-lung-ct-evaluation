@@ -223,14 +223,16 @@ export function setImageToken(token: number | null): void {
 }
 
 // reference: janela de intensidade da real do corte, igual em todas as versões (comparações lado a lado).
+// dataset: omitido usa o dataset padrão do backend.
 export function imageUrl(
   version: string,
   caseId: string,
   kind: "real" | "synthetic" | "diff" | "contour",
   size?: number,
   reference = false,
+  dataset?: string,
 ): string {
-  const params: Params = { size: size || undefined, window: reference ? "reference" : undefined };
+  const params: Params = { size: size || undefined, window: reference ? "reference" : undefined, dataset };
   if (imageToken !== null) params.v = imageToken;
   return `/api/image/${enc(version)}/${enc(caseId)}/${kind}.png${query(params)}`;
 }

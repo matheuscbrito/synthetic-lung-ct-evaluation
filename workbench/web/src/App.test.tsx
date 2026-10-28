@@ -103,3 +103,46 @@ test("a stale dataset shows Recalculate and its click refreshes that dataset", a
   await flush();
   expect(calls.some(c => c.method === "POST" && c.url === "/api/refresh?dataset=X")).toBe(true);
 });
+
+// fetch pelo caminho: status, esquema, versões, itens e inspetores vêm do bundle real
+function mockBundle() {
+  const b = realBundle;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, method: init?.method ?? "GET" });
+      const u = new URL(url, "http://test.invalid");
+      let body: unknown;
+      if (u.pathname === "/api/status") body = { stale: false, has_history: true, baseline: b.baseline, token: 7 };
+      else if (u.pathname === "/api/schema") body = b.schema;
+      else if (u.pathname === "/api/v2/versions") body = b.versions;
+      else if (u.pathname === "/api/items") {
+        const version = u.searchParams.get("version")!;
+        body = { version, items: b.items[version] };
+      } else if (u.pathname.startsWith("/api/inspect/")) body = b.inspect[decodeURIComponent(u.pathname.slice(13))];
+      else throw new Error(`unexpected ${url}`);
+      return respond(body);
+    }),
+  );
+}
+
+test("the item tab renders the item screen for the route item", async () => {
+  const b = realBundle;
+  window.location.hash = `#/dataset/item?item=${encodeURIComponent(b.focus)}&version=${encodeURIComponent(b.current)}`;
+  mockBundle();
+  await act(async () => root.render(<App />));
+  await flush();
+  await flush();
+  expect(host.querySelector(".item-view .crumbs b")?.textContent).toBe(b.items[b.current].find(i => i.id === b.focus)!.label);
+  expect(host.querySelector(".placeholder")).toBeNull();
+});
+
+test("the compare tab renders the compare screen", async () => {
+  window.location.hash = "#/dataset/compare";
+  mockBundle();
+  await act(async () => root.render(<App />));
+  await flush();
+  await flush();
+  expect(host.querySelector(".compare-view")).not.toBeNull();
+  expect(host.querySelector(".placeholder")).toBeNull();
+});

@@ -12,8 +12,5 @@
     "resolveJsonModule": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src", "vite.config.ts"],
-  "exclude": [
-    "src/views/SliceView.tsx"
-  ]
+  "include": ["src", "vite.config.ts"]
 }

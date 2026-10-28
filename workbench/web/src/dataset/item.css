@@ -1,0 +1,151 @@
+/* Dataset › Item: tríptico, linha de comparação, abas dos inspetores e painel de veredito (slide "Slice"). */
+.item-view .cmprow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.item-view .cmprow .seg {
+  margin: 0;
+}
+
+.item-view .contour-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.item-view .panes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.item-view .pane .cap {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.item-view .pane-empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+}
+
+.item-view .itabs .seg {
+  margin: 0;
+}
+
+.item-view .vpills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.item-view .vpills .ui-pill.prev {
+  opacity: 0.6;
+}
+
+.item-view .vpills .arrow {
+  font-style: normal;
+  color: var(--ink3);
+}
+
+.item-view .why {
+  margin-top: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.item-view .why summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.item-view .why .wg {
+  margin-top: 10px;
+}
+
+.item-view .why ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-view .why li {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.item-view .mhead,
+.item-view .mrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 14px;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+}
+
+.item-view .mhead {
+  margin-top: 14px;
+  padding: 0 8px;
+}
+
+.item-view .mhead .eyebrow {
+  margin: 0;
+  text-align: right;
+}
+
+.item-view .eyebrow.gc {
+  margin: 14px 0 4px;
+}
+
+.item-view .mlabel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.item-view .mrow .pct {
+  font-size: 11.5px;
+  color: var(--ink3);
+}
+
+.item-view .mrow .cmp-val {
+  color: var(--ink3);
+  text-align: right;
+}
+
+.item-view .mrow .cur-val {
+  text-align: right;
+}
+
+.item-view .fact {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 7px 8px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+@media (max-width: 800px) {
+  .item-view .panes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
