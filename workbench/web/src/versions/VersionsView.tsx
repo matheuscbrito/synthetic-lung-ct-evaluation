@@ -1,8 +1,9 @@
 // Dataset-independent history screen (mockups v3, slide "Versions"): versions, detected runs and add form.
-// Everything comes from the contract. Writes clear the contract cache and remount the lists (`rev`),
-// so every read is refetched; a late response after a dataset switch never reaches the new screen.
+// Everything comes from the contract. Writes clear the contract cache and bump `rev`, which refetches the
+// versions and remounts the detected-runs list. The screen is keyed by dataset, so switching dataset starts
+// with empty fields and notices; a late response for the previous dataset is dropped.
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { del, patch, post } from "../api";
+import { del, get, patch, post } from "../api";
 import { clearContractCache, useContract } from "../contract/client";
 import type { DetectedRun, Schema, VersionInfo } from "../contract/types";
 import type { Route } from "../route";
@@ -58,7 +59,12 @@ interface Props {
   onChanged: () => void;
 }
 
-export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
+// one screen per dataset: switching dataset remounts it, so form, notices and in-flight responses stay local
+export function VersionsView(props: Props) {
+  return <VersionsScreen key={props.schema.dataset.key} {...props} />;
+}
+
+function VersionsScreen({ schema, route, onRoute, onChanged }: Props) {
   const dataset = schema.dataset.key;
   const item = schema.dataset.item.plural;
   const [rev, setRev] = useState(0);
@@ -71,12 +77,20 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
   const [recalculating, setRecalculating] = useState(false);
   const [recalcError, setRecalcError] = useState<string | null>(null);
   const alive = useRef(false);
+  const currentDataset = useRef(dataset);
+  currentDataset.current = dataset;
   useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
     };
   }, []);
+  // a response may update the screen only while it is mounted and still shows the dataset it was sent for
+  const showsDataset = (origin: string) => alive.current && currentDataset.current === origin;
+
+  const versions = useVersionList(dataset, rev);
+  const reference = versions.data?.find(v => v.is_reference)?.label;
+  const axes = schema.axes.map(a => a.label.toLowerCase()).join(", ");
 
   const busy = pending !== null || recalculating;
 
@@ -88,33 +102,36 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
   };
 
   const add = async (body: AddBody): Promise<boolean> => {
+    const origin = dataset;
     setPending(body.label ?? body.name ?? "New version");
     setFormError(null);
     setNotice(null);
     try {
-      const done = await post<NewVersion>(`/api/versions?dataset=${enc(dataset)}`, body);
+      const done = await post<NewVersion>(`/api/versions?dataset=${enc(origin)}`, body);
+      // the write happened on `origin` even if the user moved on: caches are refreshed either way
       wrote();
-      if (alive.current) {
+      if (showsDataset(origin)) {
         onRoute({ version: done.name });
         setNotice(done.message);
       }
       return true;
     } catch (e) {
-      if (alive.current) setFormError(message(e));
+      if (showsDataset(origin)) setFormError(message(e));
       return false;
     } finally {
-      if (alive.current) setPending(null);
+      if (showsDataset(origin)) setPending(null);
     }
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const origin = dataset;
     const done = await add({
       name: name.trim() || undefined,
       folder: folder.trim(),
       label: id.trim() || undefined,
     });
-    if (done && alive.current) {
+    if (done && showsDataset(origin)) {
       setName("");
       setFolder("");
       setId("");
@@ -122,15 +139,16 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
   };
 
   const recalculate = async () => {
+    const origin = dataset;
     setRecalculating(true);
     setRecalcError(null);
     try {
-      await post(`/api/refresh?dataset=${enc(dataset)}`);
+      await post(`/api/refresh?dataset=${enc(origin)}`);
       wrote();
     } catch (e) {
-      if (alive.current) setRecalcError(message(e));
+      if (showsDataset(origin)) setRecalcError(message(e));
     } finally {
-      if (alive.current) setRecalculating(false);
+      if (showsDataset(origin)) setRecalculating(false);
     }
   };
 
@@ -139,7 +157,7 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
       <PageHeader
         eyebrow={`History · ${schema.dataset.mode_label}`}
         title="Versions"
-        sub="Each version is measured once with the frozen ruler"
+        sub={`Each version is measured once against the ${reference ?? "reference"} reference`}
         right={
           <>
             {schema.datasets.length > 1 && (
@@ -165,6 +183,7 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
         <div className="vleft">
           <VersionLists
             key={rev}
+            versions={versions}
             dataset={dataset}
             item={item}
             selected={route.version}
@@ -230,13 +249,45 @@ export function VersionsView({ schema, route, onRoute, onChanged }: Props) {
               )}
             </div>
           </form>
+          <div className="sub add-note">
+            Adding a version validates the pairs against {reference ?? "the reference"}, then measures {axes} once.
+          </div>
         </Card>
       </div>
     </div>
   );
 }
 
+interface VersionsState {
+  data: VersionInfo[] | null;
+  error: string | null;
+}
+
+// Versions of one dataset, read again for each revision. Not cached, so a write is always seen.
+function useVersionList(dataset: string, rev: number): VersionsState {
+  const key = `${dataset}#${rev}`;
+  const [state, setState] = useState<{ key: string } & VersionsState | null>(null);
+  useEffect(() => {
+    let live = true;
+    get<VersionInfo[]>("/api/v2/versions", { dataset }).then(
+      data => {
+        if (live) setState({ key, data, error: null });
+      },
+      (e: unknown) => {
+        if (live) setState({ key, data: null, error: message(e) });
+      },
+    );
+    return () => {
+      live = false;
+    };
+    // key covers dataset and rev
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return { data: state?.data ?? null, error: state?.error ?? null };
+}
+
 interface ListsProps {
+  versions: VersionsState;
   dataset: string;
   item: string;
   selected: string | undefined;
@@ -247,9 +298,8 @@ interface ListsProps {
 }
 
 // Reads the versions, the detected runs and the run labels; remounted after each write.
-function VersionLists({ dataset, item, selected, pending, busy, onWrite, onAdd }: ListsProps) {
+function VersionLists({ versions, dataset, item, selected, pending, busy, onWrite, onAdd }: ListsProps) {
   const params = { dataset };
-  const versions = useContract<VersionInfo[]>("/api/v2/versions", params);
   const detected = useContract<DetectedRun[]>("/api/versions/detected", params);
   // run labels are cosmetic: without them the raw run key is shown
   const runs = useContract<{ runs: RunRef[] }>("/api/runs", {});

@@ -17,3 +17,8 @@
   margin-top: 0;
   max-width: 220px;
 }
+
+.versions-view .add-note {
+  margin-top: 14px;
+  font-size: 12.5px;
+}

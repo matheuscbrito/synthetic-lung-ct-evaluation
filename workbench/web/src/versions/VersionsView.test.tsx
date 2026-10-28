@@ -261,3 +261,42 @@ test("dataset switch is hidden with one dataset and lists labels with several", 
   await click(buttonIn(group, realBundle.schema.datasets[1].label));
   expect(onRoute).toHaveBeenCalledWith({ dataset: realBundle.schema.datasets[1].key, version: undefined });
 });
+
+test("header and add footnote name the reference and the axes", async () => {
+  mockApi(baseTable(stressBundle));
+  await render(stressBundle.schema);
+  const ref = stressBundle.versions.find(v => v.is_reference)!.label;
+  const axes = stressBundle.schema.axes.map(a => a.label.toLowerCase()).join(", ");
+  expect(host.querySelector(".head .sub")?.textContent).toBe(`Each version is measured once against the ${ref} reference`);
+  const addCard = Array.from(host.querySelectorAll(".eyebrow"))
+    .find(e => e.textContent === "Add version")!
+    .closest(".card")!;
+  expect(addCard.lastElementChild?.textContent).toBe(`Adding a version validates the pairs against ${ref}, then measures ${axes} once.`);
+});
+
+test("a late add after a dataset switch neither routes nor shows a notice, and the new screen starts empty", async () => {
+  const k1 = enc(stressBundle.schema.dataset.key);
+  let answer!: (value: unknown) => void;
+  const late = new Promise(resolve => {
+    answer = resolve;
+  });
+  mockApi({
+    ...baseTable(stressBundle, { [`POST /api/versions?dataset=${k1}`]: late }),
+    ...baseTable(realBundle),
+  });
+  const first = await render(stressBundle.schema);
+  typeInto(host.querySelector<HTMLInputElement>('input[aria-label="Folder"]')!, "/data/sweeps/rs/0014");
+  await click(buttonNamed("Add and evaluate"));
+  expect(host.querySelector(".vrow-pending")).not.toBeNull();
+
+  const second = await render(realBundle.schema);
+  expect(host.querySelector<HTMLInputElement>('input[aria-label="Folder"]')!.value).toBe("");
+  expect(host.querySelector(".vrow-pending")).toBeNull();
+
+  answer({ message: "Added late", name: "late" });
+  await flush();
+  expect(first.onRoute).not.toHaveBeenCalled();
+  expect(second.onRoute).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("Added late");
+  expect(host.querySelector('[role="status"]')).toBeNull();
+});
