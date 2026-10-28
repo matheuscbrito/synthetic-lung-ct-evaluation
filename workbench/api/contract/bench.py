@@ -1,4 +1,4 @@
-"""Benchmark do contrato genérico (§4.3): `GET /api/v2/board` e `GET /api/v2/transitions`.
+"""Benchmark do contrato genérico (§4.3): `GET /api/board` e `GET /api/transitions`.
 
 Reescreve na forma genérica o que já existe, sem recalcular nada:
 - contagens, `scores` e comparação com a linha de base vêm de `board.board_json` (memoizado);
@@ -103,11 +103,11 @@ def router(datasets: dict) -> APIRouter:
     def _wb(dataset: str) -> data.Workbench:
         return ds.wb_for(dataset, datasets)
 
-    @api.get("/api/v2/board")
+    @api.get("/api/board")
     def board_route(dataset: str = Query(DEFAULT), baseline: str | None = Query(None)):
         return board_contract(_wb(dataset), baseline)
 
-    @api.get("/api/v2/transitions")
+    @api.get("/api/transitions")
     def transitions_route(before: str = Query(...), after: str = Query(...), axis: str = Query(...),
                           dataset: str = Query(DEFAULT)):
         return transitions_contract(_wb(dataset), before, after, axis)

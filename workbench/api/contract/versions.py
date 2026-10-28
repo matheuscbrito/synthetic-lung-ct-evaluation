@@ -1,4 +1,4 @@
-"""Versões do contrato genérico (§4.6): rótulos, origem (provenance), avisos e rotas `/api/v2/versions`.
+"""Versões do contrato genérico (§4.6): rótulos, origem (provenance), avisos e rotas `/api/versions`.
 
 Rótulo e origem ficam num arquivo lateral `<histórico>/workbench.json` (`{"versions": {nome: {label, provenance}}}`);
 o `historico.json` congelado nunca é editado. A escrita é atômica (arquivo temporário + `os.replace`) e sempre
@@ -152,7 +152,7 @@ def router(datasets: dict) -> APIRouter:
     def _wb(dataset: str) -> data.Workbench:
         return ds.wb_for(dataset, datasets)
 
-    @api.get("/api/v2/versions")
+    @api.get("/api/versions")
     def list_versions(dataset: str = Query(DEFAULT)):
         wb = _wb(dataset)
         return versions_contract(wb, load_meta(Path(wb.history_dir)))

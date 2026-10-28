@@ -45,7 +45,7 @@ function mockApi(table: Record<string, unknown>) {
 function baseTable(b: Bundle, extra: Record<string, unknown> = {}, detected: unknown = b.detected) {
   const k = enc(b.schema.dataset.key);
   return {
-    [`GET /api/v2/versions?dataset=${k}`]: b.versions,
+    [`GET /api/versions?dataset=${k}`]: b.versions,
     [`GET /api/versions/detected?dataset=${k}`]: detected,
     "GET /api/runs": { runs: [{ key: "rs", label: "Random search" }] },
     ...extra,
@@ -252,7 +252,7 @@ test("dataset switch is hidden with one dataset and lists labels with several", 
   expect(host.querySelector('[aria-label="Dataset"]')).toBeNull();
 
   const k = enc(realBundle.schema.dataset.key);
-  mockApi(baseTable(realBundle, { [`GET /api/v2/versions?dataset=${k}`]: realBundle.versions }));
+  mockApi(baseTable(realBundle, { [`GET /api/versions?dataset=${k}`]: realBundle.versions }));
   const { onRoute } = await render(realBundle.schema);
   const group = host.querySelector('[aria-label="Dataset"]')!;
   expect(Array.from(group.querySelectorAll("button")).map(b => b.textContent)).toEqual(
@@ -264,7 +264,7 @@ test("dataset switch is hidden with one dataset and lists labels with several", 
 
 async function copyFor(bundle: Bundle, versions: Bundle["versions"]) {
   const k = enc(bundle.schema.dataset.key);
-  mockApi(baseTable(bundle, { [`GET /api/v2/versions?dataset=${k}`]: versions }));
+  mockApi(baseTable(bundle, { [`GET /api/versions?dataset=${k}`]: versions }));
   await render(bundle.schema);
   const axes = bundle.schema.axes.map(a => a.label.toLowerCase()).join(", ");
   const addCard = Array.from(host.querySelectorAll(".eyebrow"))

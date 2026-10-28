@@ -10,8 +10,6 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import APIRouter
-
 from frameworks.texture_evaluator import placar
 from workbench.api import notebook
 
@@ -30,8 +28,6 @@ STEP_FIELDS = (
     "reason", "case_wins", "case_losses", "rejected", "pair_issues", "new_best", "cases_generated",
     "cases_cumulative",
 )
-
-router = APIRouter()
 
 
 def _read_log(path: Path) -> tuple[list[dict], int]:
@@ -105,8 +101,8 @@ def _method(method: str, label: str, prefix: str, base: Path) -> tuple[dict | No
     return entry, skipped
 
 
-@router.get("/api/optimizers")
-def optimizers_overview():
+def overview() -> dict:
+    """Todos os métodos encontrados em RESULTS_DIR (inclusive o agente aposentado), sem números não finitos."""
     base = RESULTS_DIR
     methods, skipped = [], 0
     if base.is_dir():
@@ -120,8 +116,3 @@ def optimizers_overview():
         "methods": methods,
         "skipped": skipped,
     })
-
-
-@router.get("/api/optimizers/notebook")
-def optimizers_notebook():
-    return notebook.read_caderno(notebook.LAB_DIR)

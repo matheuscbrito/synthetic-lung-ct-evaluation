@@ -92,19 +92,12 @@ def router(datasets: dict) -> APIRouter:
 
     @api.get("/api/runs")
     def runs():
-        base = optimizers.RESULTS_DIR
-        methods = []
-        if base.is_dir():
-            for method, label, prefix in optimizers.METHODS:
-                if method in RETIRED:
-                    continue
-                entry, _ = optimizers._method(method, label, prefix, base)
-                if entry is not None:
-                    methods.append(entry)
+        overview = optimizers.overview()
+        methods = [method for method in overview["methods"] if method["method"] not in RETIRED]
         candidates = [step["candidate"] for method in methods for step in method["steps"] if step.get("candidate")]
         varying = _varying(candidates)
         return finite({
-            "sources": [{"label": "lung-agent-lab logs", "path": str(base), "exists": base.is_dir()}],
+            "sources": [{"label": "lung-agent-lab logs", **overview["source"]}],
             "objective": OBJECTIVE,
             "budget_axis": {"label": "cases generated"},
             "params": [{"key": key, "label": PARAM_LABELS[key]} for key in varying],

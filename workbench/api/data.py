@@ -216,15 +216,3 @@ def slice_json(row: dict, calibration: dict) -> dict:
         "wavelet_type": row["wavelet_verdict"],
         "wavelet_type_code": WAVELET_CODE.get(row["wavelet_verdict"]),
     }
-
-
-def versions_json(wb: Workbench) -> list[dict]:
-    reference = wb.history.get("reference")
-    return [{"name": item["name"], "mode": item["mode"], "mode_code": MODE_CODE.get(item["mode"]),
-             "n_cases": item["n_cases"], "folder": item["folder"],
-             "added": item["added"], "is_baseline": item["name"] == wb.baseline,
-             "reference": item["name"] == reference,
-             # None quando a versão é anterior ao campo: contagem desconhecida, não zero
-             "suspicious_pairs": item.get("suspicious_pairs"),
-             "n_common": wb.board["n_cases"]}
-            for item in wb.history["versions"]]

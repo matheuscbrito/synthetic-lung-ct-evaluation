@@ -13,7 +13,8 @@ from frameworks.texture_evaluator import placar
 from frameworks.texture_evaluator.placar import load_history
 from workbench.api import datasets as ds
 from workbench.api.app import create_app
-from workbench.tests.conftest import DATA_OK, HISTORY_DIR, ROOT
+from workbench.api.data import NotFound
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, ROOT, board_of, slices_of
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
@@ -117,7 +118,7 @@ def test_init_first_run_on_tmp_dataset(tmp_path):
     r = c.post("/api/datasets/Dsr/init")
     assert r.status_code == 200 and r.json()["name"] == "Dsr"
     assert (tmp_path / "placar" / "historico.json").exists()
-    assert {s["case_id"] for s in c.get("/api/slices", params={"version": "Dsr"}).json()["slices"]} == {CID, SECOND}
+    assert {it["id"] for it in c.get("/api/items", params={"version": "Dsr"}).json()["items"]} == {CID, SECOND}
     assert c.get("/api/datasets").json()[0]["n_versions"] == 1
     assert c.post("/api/datasets/Dsr/init").status_code == 409
 
@@ -192,9 +193,9 @@ def test_add_version_default_name_is_folder_name(tmp_history, tmp_path):
 
 
 def test_board_reads_dataset_history(two_datasets):
-    c = TestClient(create_app(two_datasets))
-    assert c.get("/api/board", params={"dataset": "Dsr"}).json()["baseline"] == "Dsr"
-    assert c.get("/api/figure/" + quote(CID) + "/technique/delta_mu.png", params={"dataset": "Dgen"}).status_code == 404
+    assert board_of(two_datasets, dataset="Dsr")["baseline"] == "Dsr"
+    with pytest.raises(NotFound):
+        board_of(two_datasets, dataset="Dgen")
 
 
 def _two_history_dirs(tmp_path):
@@ -219,10 +220,10 @@ def test_two_histories_are_isolated(tmp_path):
     dgen_versions = [v["name"] for v in c.get("/api/versions", params={"dataset": "Dgen"}).json()]
     assert dsr_versions == ["Dsr", "Dsr-baseline"] and dgen_versions == ["Dgen"]
     # a versão de um dataset não existe no outro
-    assert c.get("/api/slices", params={"version": "Dgen", "dataset": "Dsr"}).status_code == 404
-    assert c.get("/api/slices", params={"version": "Dsr", "dataset": "Dgen"}).status_code == 404
-    dsr_slices = c.get("/api/slices", params={"version": "Dsr", "dataset": "Dsr"}).json()["slices"]
-    dgen_slices = c.get("/api/slices", params={"version": "Dgen", "dataset": "Dgen"}).json()["slices"]
+    assert c.get("/api/items", params={"version": "Dgen", "dataset": "Dsr"}).status_code == 404
+    assert c.get("/api/items", params={"version": "Dsr", "dataset": "Dgen"}).status_code == 404
+    dsr_slices = slices_of("Dsr", datasets, "Dsr")
+    dgen_slices = slices_of("Dgen", datasets, "Dgen")
     assert dsr_slices != dgen_slices
     dsr_metrics = {s["case_id"]: s["metrics"] for s in dsr_slices}
     assert any(dsr_metrics[s["case_id"]] != s["metrics"] for s in dgen_slices)

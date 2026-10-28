@@ -1,18 +1,18 @@
-"""Figuras do workbench: seleção de versões (`versions=`), figura de NPS/ar e o dataset Dgen.
+"""Figuras do framework desenhadas pelos inspetores de imagem: subconjunto de versões, figura de NPS/ar e o
+dataset Dgen. As rotas `/api/inspect/{key}.png` estão em test_inspect.py; aqui ficam os desenhos de `board`.
 
 Só leitura do histórico real de outputs/placar; o histórico do Dgen é uma cópia temporária.
 """
 import io
-from urllib.parse import quote
 
 import pytest
-from fastapi.testclient import TestClient
+from fastapi import HTTPException
 from PIL import Image
 
 from frameworks.texture_evaluator.placar import load_history
-from workbench.api import datasets as ds
-from workbench.api.app import create_app
-from workbench.tests.conftest import DATA_OK, HISTORY_DIR
+from workbench.api import board, datasets as ds
+from workbench.api.data import NotFound
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, workbench_of
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
@@ -24,95 +24,74 @@ def real_names():
     return [item["name"] for item in load_history(HISTORY_DIR)["versions"]]
 
 
-def width(response):
-    assert response.status_code == 200, response.text
-    assert response.headers["content-type"] == "image/png"
-    assert response.content[:8] == PNG_MAGIC
-    return Image.open(io.BytesIO(response.content)).size[0]
+def width(content: bytes) -> int:
+    assert content[:8] == PNG_MAGIC
+    return Image.open(io.BytesIO(content)).size[0]
 
 
-def test_technique_versions_subset_is_honoured(client):
-    names = real_names()
-    url = f"/api/figure/{quote(CID)}/technique/delta_mu.png"
-    full = width(client.get(url))
-    one = width(client.get(url, params={"versions": names[0]}))
-    two = width(client.get(url, params={"versions": f"{names[0]},{names[1]}"}))
+def test_technique_versions_subset_is_honoured():
+    wb, names = workbench_of(), real_names()
+    full = width(board.technique_png(wb, CID, "delta_mu", names))
+    one = width(board.technique_png(wb, CID, "delta_mu", names[:1]))
+    two = width(board.technique_png(wb, CID, "delta_mu", names[:2]))
     # cada versão a mais é uma coluna a mais: a figura cresce com a seleção
     assert one < two < full
 
 
-def test_map_versions_subset_is_honoured(client):
-    names = real_names()
-    url = f"/api/figure/{quote(CID)}/map/fina.png"
-    full = width(client.get(url, params={"compared": 1}))
-    one = width(client.get(url, params={"compared": 1, "versions": names[0]}))
+def test_map_versions_subset_is_honoured():
+    wb, names = workbench_of(), real_names()
+    full = width(board.map_png(wb, CID, "fina", True, names))
+    one = width(board.map_png(wb, CID, "fina", True, names[:1]))
     assert one < full
 
 
-def test_versions_unknown_is_404(client):
-    for url in (f"/api/figure/{quote(CID)}/technique/delta_mu.png",
-                f"/api/figure/{quote(CID)}/map/fina.png",
-                f"/api/figure/{quote(CID)}/nps.png"):
-        params = {"versions": "Dsr,bogus"}
-        if "map" in url:
-            params["compared"] = 1
-        assert client.get(url, params=params).status_code == 404, url
+def test_nps_versions_unknown_is_not_found():
+    with pytest.raises(NotFound):
+        board.nps_png(workbench_of(), CID, ["Dsr", "bogus"])
 
 
-def test_nps_figure_real_case_png(client):
-    assert width(client.get(f"/api/figure/{quote(CID)}/nps.png")) >= 200
+def test_nps_figure_real_case_png():
+    assert width(board.nps_png(workbench_of(), CID, [])) >= 200
 
 
-def test_nps_figure_explicit_versions(client):
-    names = real_names()
-    url = f"/api/figure/{quote(CID)}/nps.png"
-    assert width(client.get(url, params={"versions": f"{names[0]},{names[-1]}"})) >= 200
-    assert width(client.get(url, params={"versions": names[-1]})) >= 200
+def test_nps_figure_explicit_versions():
+    wb, names = workbench_of(), real_names()
+    assert width(board.nps_png(wb, CID, [names[0], names[-1]])) >= 200
+    assert width(board.nps_png(wb, CID, [names[-1]])) >= 200
 
 
-def test_nps_figure_rejects_more_than_two_versions(client):
+def test_nps_figure_rejects_more_than_two_versions():
     names = real_names()
     if len(names) < 3:
         pytest.skip("precisa de três versões no histórico real")
-    r = client.get(f"/api/figure/{quote(CID)}/nps.png", params={"versions": ",".join(names[:3])})
-    assert r.status_code == 400
+    with pytest.raises(HTTPException) as error:
+        board.nps_png(workbench_of(), CID, names[:3])
+    assert error.value.status_code == 400
 
 
-def test_nps_figure_unknown_case_404(client):
-    assert client.get("/api/figure/nope/nps.png").status_code == 404
+def test_nps_figure_unknown_case_is_not_found():
+    with pytest.raises(NotFound):
+        board.nps_png(workbench_of(), "nope", [])
 
 
 def test_figures_dgen_dataset_path(tmp_history):
-    """Dgen com histórico próprio: as três rotas de figura respondem com o dataset pedido."""
+    """Dgen com histórico próprio: as três figuras saem do histórico do dataset pedido."""
     datasets = {"Dsr": {**ds.DATASETS["Dsr"], "history": HISTORY_DIR},
                 "Dgen": {**ds.DATASETS["Dgen"], "history": tmp_history}}
-    c = TestClient(create_app(datasets))
-    params = {"dataset": "Dgen", "versions": "Dsr"}
-    assert width(c.get(f"/api/figure/{quote(CID)}/technique/delta_mu.png", params=params)) > 0
-    assert width(c.get(f"/api/figure/{quote(CID)}/map/fina.png", params={**params, "compared": 1})) > 0
-    assert width(c.get(f"/api/figure/{quote(CID)}/nps.png", params=params)) > 0
+    wb = workbench_of(datasets, "Dgen")
+    assert width(board.technique_png(wb, CID, "delta_mu", ["Dsr"])) > 0
+    assert width(board.map_png(wb, CID, "fina", True, ["Dsr"])) > 0
+    assert width(board.nps_png(wb, CID, ["Dsr"])) > 0
 
 
-def test_figures_dgen_without_history_404(tmp_path):
+def test_figures_dgen_without_history_is_not_found(tmp_path):
     datasets = {"Dsr": {**ds.DATASETS["Dsr"], "history": HISTORY_DIR},
                 "Dgen": {**ds.DATASETS["Dgen"], "history": tmp_path / "placar_dgen"}}
-    c = TestClient(create_app(datasets))
-    assert c.get(f"/api/figure/{quote(CID)}/nps.png", params={"dataset": "Dgen"}).status_code == 404
+    with pytest.raises(NotFound):
+        workbench_of(datasets, "Dgen")
 
 
-def test_versions_only_commas_means_all(client):
-    """Lista vazia depois de limpar (só vírgulas) vale como não pedida, sem quebrar a NPS."""
-    assert width(client.get(f"/api/figure/{quote(CID)}/nps.png", params={"versions": ","})) >= 200
-    assert width(client.get(f"/api/figure/{quote(CID)}/technique/delta_mu.png", params={"versions": ","})) > 0
-
-
-def test_nps_figure_duplicate_versions_400(client):
-    names = real_names()
-    r = client.get(f"/api/figure/{quote(CID)}/nps.png", params={"versions": f"{names[0]},{names[0]}"})
-    assert r.status_code == 400 and "duplicate" in r.json()["detail"]
-
-
-def test_nps_figure_unloadable_case_is_404(client, monkeypatch):
+def test_nps_figure_unloadable_case_is_404(monkeypatch):
     from frameworks.texture_evaluator.placar import PlacarError
     from workbench.api import nps_figure
 
@@ -120,8 +99,9 @@ def test_nps_figure_unloadable_case_is_404(client, monkeypatch):
         raise PlacarError("arquivo corrompido")
 
     monkeypatch.setattr(nps_figure, "load_case", broken)
-    r = client.get(f"/api/figure/{quote(CID)}/nps.png")
-    assert r.status_code == 404 and r.json()["detail"] == f"slice could not be loaded: {CID}"
+    with pytest.raises(HTTPException) as error:
+        board.nps_png(workbench_of(), CID, [])
+    assert error.value.status_code == 404 and error.value.detail == f"slice could not be loaded: {CID}"
 
 
 def test_nps_figure_closes_figure_on_any_error(monkeypatch):

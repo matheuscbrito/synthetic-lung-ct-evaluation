@@ -240,11 +240,11 @@ test("GeneratorBenchmark: unknown route baseline falls back to the default; load
       calls.push(url);
       const path = url.split("?")[0];
       const body =
-        path === "/api/v2/versions"
+        path === "/api/versions"
           ? b.versions
-          : path === "/api/v2/board"
+          : path === "/api/board"
             ? board
-            : path === "/api/v2/transitions"
+            : path === "/api/transitions"
               ? b.transitions[axis]
               : path === "/api/items"
                 ? { version: current, items: b.items[current] }
@@ -259,8 +259,8 @@ test("GeneratorBenchmark: unknown route baseline falls back to the default; load
     const route: Route = { section: "generators", tab: "bench", baseline: "nope" };
     await act(async () => root.render(<GeneratorBenchmark schema={b.schema} route={route} onRoute={vi.fn()} />));
     for (let i = 0; i < 6; i++) await act(async () => new Promise(r => setTimeout(r, 0)));
-    expect(calls).toContain(`/api/v2/board?dataset=${key}&baseline=${encodeURIComponent(base)}`);
-    expect(calls.some(c => c.startsWith("/api/v2/transitions") && c.includes(`after=${encodeURIComponent(current)}`))).toBe(true);
+    expect(calls).toContain(`/api/board?dataset=${key}&baseline=${encodeURIComponent(base)}`);
+    expect(calls.some(c => c.startsWith("/api/transitions") && c.includes(`after=${encodeURIComponent(current)}`))).toBe(true);
     expect(calls.some(c => c.startsWith("/api/runs"))).toBe(b.schema.addons.optimizers);
     expect(host.querySelector<HTMLSelectElement>('select[aria-label="Baseline"]')!.value).toBe(base);
     const s = transitionSummary(b.transitions[axis]);
@@ -281,11 +281,11 @@ function stubApi(b: Bundle, fail: Record<string, string>) {
       const path = url.split("?")[0];
       if (fail[path]) return { ok: false, status: 500, statusText: fail[path], json: async () => ({ detail: fail[path] }) };
       const body =
-        path === "/api/v2/versions"
+        path === "/api/versions"
           ? b.versions
-          : path === "/api/v2/board"
+          : path === "/api/board"
             ? board
-            : path === "/api/v2/transitions"
+            : path === "/api/transitions"
               ? b.transitions[axis]
               : path === "/api/items"
                 ? { version: current, items: b.items[current] }
@@ -307,7 +307,7 @@ async function mountApi(b: Bundle) {
 
 test("GeneratorBenchmark: a transitions error shows an error line, not an empty verdict list", async () => {
   clearContractCache();
-  stubApi(realBundle, { "/api/v2/transitions": "boom" });
+  stubApi(realBundle, { "/api/transitions": "boom" });
   try {
     await mountApi(realBundle);
     const card = host.querySelector(".gb-right")!;

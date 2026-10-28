@@ -115,7 +115,7 @@ function mockBundle() {
       let body: unknown;
       if (u.pathname === "/api/status") body = { stale: false, has_history: true, baseline: b.baseline, token: 7 };
       else if (u.pathname === "/api/schema") body = b.schema;
-      else if (u.pathname === "/api/v2/versions") body = b.versions;
+      else if (u.pathname === "/api/versions") body = b.versions;
       else if (u.pathname === "/api/items") {
         const version = u.searchParams.get("version")!;
         body = { version, items: b.items[version] };

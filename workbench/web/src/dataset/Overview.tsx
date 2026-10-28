@@ -298,9 +298,9 @@ function OverviewItems({ schema, version, versions, route, onRoute }: ItemsProps
   );
 }
 
-/** Overview wired to the API: versions from `/api/v2/versions`, items from `/api/items`. */
+/** Overview wired to the API: versions from `/api/versions`, items from `/api/items`. */
 export function DatasetOverview({ schema, route, onRoute }: Omit<ItemsProps, "version" | "versions">) {
-  const res = useContract<VersionInfo[]>("/api/v2/versions", { dataset: schema.dataset.key });
+  const res = useContract<VersionInfo[]>("/api/versions", { dataset: schema.dataset.key });
   if (res.error) return <Message error text={res.error} />;
   if (!res.data) return <Message text="Loading…" />;
   const versions = res.data;

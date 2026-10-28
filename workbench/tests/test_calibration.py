@@ -1,31 +1,24 @@
-"""Endpoint de calibração: réguas do histórico e constantes do juiz, por dataset."""
+"""Calibração (`calibration.calibration_json`, lida por `/api/schema`): réguas do histórico e constantes do juiz."""
 import json
 import math
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from frameworks.noise_evaluator import integration
 from frameworks.texture_evaluator import placar, regional, visual
 from workbench.api import calibration, reasons
-from workbench.api import datasets as ds
 from workbench.tests.conftest import DATA_OK, HISTORY_DIR
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
 
-def client_for(history_dir, dgen_dir=None):
-    datasets = {"Dsr": {**ds.DATASETS["Dsr"], "history": history_dir},
-                "Dgen": {**ds.DATASETS["Dgen"], "history": dgen_dir or history_dir.parent / "placar_dgen_inexistente"}}
-    app = FastAPI()
-    app.include_router(calibration.router(datasets))
-    return TestClient(app)
+def body_for(history_dir):
+    return calibration.calibration_json(placar.load_history(history_dir))
 
 
 def test_calibration_matches_history_and_framework_constants(tmp_history):
     history = placar.load_history(tmp_history)
-    body = client_for(tmp_history).get("/api/calibration", params={"dataset": "Dsr"}).json()
+    body = body_for(tmp_history)
     mean_iqr = history["calibration"]["mean_iqr"]
     assert body["reference"] == history["reference"]
     assert body["n_cases"] == len(history["originals"])
@@ -45,23 +38,8 @@ def test_calibration_matches_history_and_framework_constants(tmp_history):
     assert body["map_layers"] == list(visual.MAP_LAYERS)
 
 
-def test_calibration_defaults_to_dsr(tmp_history):
-    client = client_for(tmp_history)
-    assert client.get("/api/calibration").json() == client.get("/api/calibration", params={"dataset": "Dsr"}).json()
-
-
-def test_unknown_dataset_is_404(tmp_history):
-    response = client_for(tmp_history).get("/api/calibration", params={"dataset": "Nope"})
-    assert response.status_code == 404
-
-
-def test_dataset_without_history_is_404(tmp_history):
-    response = client_for(tmp_history).get("/api/calibration", params={"dataset": "Dgen"})
-    assert response.status_code == 404
-
-
 def test_stale_history_returns_null_for_missing_reference(stale_dir):
-    body = client_for(stale_dir).get("/api/calibration").json()
+    body = body_for(stale_dir)
     assert body["nex"] == {"iqr": None, "repeatability_iqr": None}
     assert body["mean_iqr"] is not None
     assert body["air"] == {"limits": list(integration.AIR_LIMITS), "sigmas": integration.AIR_SIGMAS}
@@ -72,6 +50,6 @@ def test_non_finite_values_become_null(tmp_history):
     history = json.loads(path.read_text(encoding="utf-8"))
     history["calibration"]["nex_reference"]["repeatability_iqr"] = float("nan")
     path.write_text(json.dumps(history, allow_nan=True), encoding="utf-8")
-    body = client_for(tmp_history).get("/api/calibration").json()
+    body = body_for(tmp_history)
     assert body["nex"]["repeatability_iqr"] is None
     assert not math.isnan(body["mean_iqr"])

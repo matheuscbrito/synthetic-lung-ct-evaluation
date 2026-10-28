@@ -1,8 +1,6 @@
 """Leitura somente leitura do CADERNO.md do agente, com fixture inline (nunca o arquivo real)."""
-from fastapi.testclient import TestClient
 
 from workbench.api import notebook
-from workbench.api.app import create_app
 
 FIXTURE = """# Caderno de experimentos
 
@@ -99,19 +97,11 @@ def test_unparsable_returns_raw(tmp_path):
     assert out["raw"] == "# Caderno\n\nSem tabela de tentativas.\n"
 
 
-def test_endpoint_returns_parsed(tmp_path, monkeypatch):
+def test_read_returns_parsed(tmp_path):
     (tmp_path / "CADERNO.md").write_text(FIXTURE, encoding="utf-8")
-    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
-    body = TestClient(create_app()).get("/api/agent/notebook").json()
+    body = notebook.read_caderno(tmp_path)
     assert body["source"]["exists"] is True and body["raw"] is None
     assert [r["id"] for r in body["parsed"]["rows"]] == ["M2", "M3", "M4", "M5"]
-
-
-def test_endpoint_missing_file_is_200_not_404(tmp_path, monkeypatch):
-    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
-    response = TestClient(create_app()).get("/api/agent/notebook")
-    assert response.status_code == 200
-    assert response.json()["source"]["exists"] is False
 
 
 def parse_metrics(text):
@@ -134,12 +124,9 @@ def test_metrics_table_at_end_of_file():
     ]
 
 
-def test_unreadable_notebook_returns_error_line(tmp_path, monkeypatch):
+def test_unreadable_notebook_returns_error_line(tmp_path):
     (tmp_path / "CADERNO.md").write_bytes(b"\xff\xfe\x00bytes que nao sao utf-8 \x80\x81")
-    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
-    response = TestClient(create_app()).get("/api/agent/notebook")
-    assert response.status_code == 200
-    body = response.json()
+    body = notebook.read_caderno(tmp_path)
     assert body["source"] == {"path": str(tmp_path / "CADERNO.md"), "exists": True}
     assert body["parsed"] is None and body["raw"] is None
     assert isinstance(body["error"], str) and body["error"]

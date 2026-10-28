@@ -273,7 +273,7 @@ function useVersionList(dataset: string, rev: number): VersionsState {
   const [state, setState] = useState<{ key: string } & VersionsState | null>(null);
   useEffect(() => {
     let live = true;
-    get<VersionInfo[]>("/api/v2/versions", { dataset }).then(
+    get<VersionInfo[]>("/api/versions", { dataset }).then(
       data => {
         if (live) setState({ key, data, error: null });
       },

@@ -6,16 +6,14 @@ import math
 from collections import Counter
 
 import pytest
-from fastapi.testclient import TestClient
 
 from frameworks.noise_evaluator.integration import AIR_LABEL, AIR_LIMITS, NPS_METRICS, noise_statuses, noise_verdict
 from frameworks.texture_evaluator import decision
 from frameworks.texture_evaluator.placar import load_rows
 from workbench.api import data as wb_data
 from workbench.api import reasons
-from workbench.api.app import create_app
 from workbench.api.data import slice_json
-from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero, slices_of
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
@@ -218,8 +216,7 @@ def test_reason_notes_when_lung_not_measured(dsr_rows, calibration):
     assert notes.get("nps_air") == "air_unavailable"
 
 
-def test_slices_endpoint_exposes_new_fields(client):
-    body = client.get("/api/slices", params={"version": "Dsr"}).json()
-    first = body["slices"][0]
+def test_slice_payload_exposes_new_fields():
+    first = slices_of("Dsr")[0]
     assert {"noise", "wavelet_energy", "why", "noise_roi_count", "noise_available"} <= first.keys()
     assert all(math.isfinite(m["z"]) for m in first["metrics"] if m["z"] is not None)

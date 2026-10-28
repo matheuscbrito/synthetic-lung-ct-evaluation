@@ -6,8 +6,8 @@ ramifica por nome de métrica. Fontes (somente leitura):
 - métricas, rótulos e unidades: `data.slice_json` da primeira linha da versão de referência;
 - limites: `calibration.calibration_json` (Δμ), `reasons.SATURATION_LIMIT`, `reasons.Z_LIMITS` e
   `noise_evaluator.integration.AIR_LIMITS`;
-- inspetores: rotas `/api/tools/*` e `/api/figure/*`, com as escolhas de `visual.TECHNIQUE_FIGURES` e
-  `visual.MAP_LAYERS`;
+- inspetores: funções de `tools` e as figuras de `board` (servidas por `/api/inspect/{key}`), com as
+  escolhas de `visual.TECHNIQUE_FIGURES` e `visual.MAP_LAYERS`;
 - indicadores: `board.indicators_json` (sem os `map_*`);
 - textos de "como ler": tradução para o inglês das seções de `frameworks/texture_evaluator/ui_placar.py`
   (`show_method_cards`, linhas 909-965, e `show_texture_limits`, 347-353; paridade #83 e #90-95).
@@ -284,7 +284,7 @@ def schema_json(datasets: dict, dataset: str) -> dict:
             "key": dataset, "label": DATASET_LABEL.get(cfg["mode"], dataset), "mode_label": cfg["mode"],
             "item": dict(ITEM), "group_by": dict(GROUP_BY),
             "reference_version": history.get("reference") if history else None,
-            "default_baseline": bench.default_baseline(history) if history else None,  # mesma regra do /api/v2/board
+            "default_baseline": bench.default_baseline(history) if history else None,  # mesma regra do /api/board
             "has_history": history is not None,
             "stale": data.is_stale(history) if history else False,
         }),

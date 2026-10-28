@@ -1,13 +1,11 @@
 """Dados das ferramentas do workbench: espectro, matrizes GLCM, janelas NEx e sub-bandas wavelet."""
-from urllib.parse import quote
-
 import numpy as np
 import pytest
 
 from frameworks.texture_evaluator.glcm.src import extract_glcm
 from frameworks.texture_evaluator.run_mvp import context_from_dict
 from workbench.api import data, images
-from workbench.api.tools import glcm_matrix, nex_windows, radial_spectrum, wavelet_bands
+from workbench.api.tools import glcm_matrix, nex_windows, radial_spectrum, reference_band, wavelet_bands
 from workbench.tests.conftest import DATA_OK
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
@@ -56,15 +54,7 @@ def test_wavelet_bands_order_and_mask_pooling():
     assert all(b["energy"] > 0 for b in bands)
 
 
-def test_tool_routes(client):
-    for tool in ("spectrum", "glcm", "nex", "wavelet"):
-        assert client.get(f"/api/tools/Dsr/{quote(CID)}/{tool}").status_code == 200
-    s = client.get(f"/api/tools/Dsr/{quote(CID)}/spectrum").json()
-    assert len(s["ref_p5"]) == len(s["freq"]) == 64 and all(a <= b for a, b in zip(s["ref_p5"], s["ref_p95"]))
-    w = client.get(f"/api/tools/Dsr/{quote(CID)}/wavelet").json()["bands"]
-    assert [(b["level"], b["band"]) for b in w] == [(1, "LH"), (1, "HL"), (1, "HH"), (2, "LH"), (2, "HL"), (2, "HH")]
-
-
-def test_tool_routes_404(client):
-    assert client.get(f"/api/tools/Versao-inexistente/{quote(CID)}/spectrum").status_code == 404
-    assert client.get("/api/tools/Dsr/nope/glcm").status_code == 404
+def test_reference_band_is_ordered(client_case):
+    wb, _ = client_case
+    band = reference_band(wb)
+    assert len(band["p5"]) == len(band["p95"]) == 64 and all(a <= b for a, b in zip(band["p5"], band["p95"]))

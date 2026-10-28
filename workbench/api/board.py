@@ -1,4 +1,5 @@
-"""Placar de geradores, figuras do framework e administração de versões do workbench.
+"""Placar de geradores (base de `GET /api/board`), figuras do framework (desenhadas por
+`GET /api/inspect/{key}.png`) e administração de versões do workbench.
 
 O placar vem do `placar.build_board` (cortes comuns a todas as versões). Os vereditos
 por corte saem de `data.slice_json`, sem recalcular nada aqui. A comparação com a
@@ -17,7 +18,6 @@ matplotlib.use("Agg")  # antes de qualquer import de pyplot (feito pelo framewor
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from fastapi import APIRouter, HTTPException, Query  # noqa: E402
-from fastapi.responses import Response  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
 from frameworks.texture_evaluator import placar  # noqa: E402
@@ -168,16 +168,6 @@ def _png(fig) -> bytes:
     return buffer.getvalue()
 
 
-def _version_names(wb: Workbench, versions: str | None) -> list[str]:
-    """Versões pedidas (lista separada por vírgula, na ordem pedida); vazio ou ausente: todas. Desconhecida: 404."""
-    if versions is None or not versions.strip():
-        return list(wb.board["names"])
-    names = list(dict.fromkeys(item.strip() for item in versions.split(",") if item.strip()))
-    for name in names:
-        wb.entry(name)  # desconhecida: 404
-    return names or list(wb.board["names"])  # só vírgulas: como se não tivesse sido pedido
-
-
 def _case_rows(wb: Workbench, case_id: str, names: list[str] | None = None) -> dict[str, dict]:
     """Linha do corte em cada versão pedida (padrão: todas do placar); corte fora dos cortes comuns é 404."""
     rows = {}
@@ -208,7 +198,7 @@ def map_png(wb: Workbench, case_id: str, layer: str, compared: bool, names: list
 
 
 def nps_png(wb: Workbench, case_id: str, requested: list[str]) -> bytes:
-    """Figura de NPS e ar: `requested` tem zero, uma ou duas versões distintas (ver a rota `/api/figure/.../nps.png`)."""
+    """Figura de NPS e ar: `requested` tem zero, uma ou duas versões distintas (desenhada em `/api/inspect/noise_figure.png`)."""
     for name in requested:
         wb.entry(name)  # desconhecida: 404
     if len(requested) > 2:
@@ -226,43 +216,6 @@ def nps_png(wb: Workbench, case_id: str, requested: list[str]) -> bytes:
 
 def router(datasets: dict) -> APIRouter:
     api = APIRouter()
-
-    def _wb(dataset: str) -> Workbench:
-        return ds.wb_for(dataset, datasets)
-
-    @api.get("/api/board")
-    def board(dataset: str = Query(DEFAULT), baseline: str | None = Query(None)):
-        return board_json(_wb(dataset), baseline)
-
-    @api.get("/api/figure/{case_id}/technique/{technique}.png")
-    def technique(case_id: str, technique: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
-        wb = _wb(dataset)
-        return Response(technique_png(wb, case_id, technique, _version_names(wb, versions)), media_type="image/png")
-
-    @api.get("/api/figure/{case_id}/map/{layer}.png")
-    def map_route(case_id: str, layer: str, compared: bool = False, dataset: str = Query(DEFAULT),
-                  versions: str | None = Query(None)):
-        if layer not in MAP_LAYERS:  # antes de ler o histórico, como antes da extração
-            raise NotFound(f"unknown layer: {layer}")
-        wb = _wb(dataset)  # histórico ausente: 404
-        return Response(map_png(wb, case_id, layer, compared, _version_names(wb, versions)), media_type="image/png")
-
-    @api.get("/api/figure/{case_id}/nps.png")
-    def nps(case_id: str, dataset: str = Query(DEFAULT), versions: str | None = Query(None)):
-        """NPS e teste do ar de um corte.
-
-        `versions` tem uma ou duas versões, sem repetir nomes: a primeira é a referência e a última a comparada.
-        Clientes devem sempre passar `versions=<referência>,<comparada>`: sem isso a figura compara a referência
-        da linha de base com a última versão do histórico, e a figura muda quando uma versão entra ou sai.
-        Respostas: 400 para nomes repetidos ou mais de duas versões; 404 para versão ou corte desconhecido e
-        para corte que não pode ser carregado.
-        """
-        wb = _wb(dataset)
-        requested = [item.strip() for item in (versions or "").split(",") if item.strip()]
-        repeated = sorted({name for name in requested if requested.count(name) > 1})
-        if repeated:
-            raise HTTPException(400, f"duplicate version in versions=: {', '.join(repeated)}")
-        return Response(nps_png(wb, case_id, requested), media_type="image/png")
 
     @api.post("/api/versions")
     def add_version(body: VersionIn, dataset: str = Query(DEFAULT)):
@@ -299,7 +252,7 @@ def router(datasets: dict) -> APIRouter:
     @api.delete("/api/versions/{name}")
     def remove_version(name: str, dataset: str = Query(DEFAULT)):
         cfg = ds.config(datasets, dataset)
-        wb = _wb(dataset)
+        wb = ds.wb_for(dataset, datasets)
         wb.entry(name)  # desconhecida: 404
         if name == wb.baseline:
             raise HTTPException(400, "the reference version cannot be removed")

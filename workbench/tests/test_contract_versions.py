@@ -21,7 +21,7 @@ CONTRACT_KEYS = {"name", "label", "is_reference", "added", "mode_label", "n_item
 
 
 def get_versions(client, dataset="Dsr"):
-    return client.get("/api/v2/versions", params={"dataset": dataset}).json()
+    return client.get("/api/versions", params={"dataset": dataset}).json()
 
 
 def by_name(rows):
@@ -118,7 +118,7 @@ def test_contract_fields_and_values(tmp_history):
         assert set(row) == CONTRACT_KEYS
         assert row["added"] == item["added"]
         assert row["n_items"] == item["n_cases"]
-        assert row["n_common"] == board["n_cases"]
+        assert row["n_common"] == board["n_items"]
         assert row["mode_label"] == "Same anatomy"
         assert row["provenance"] is None
 
@@ -174,7 +174,7 @@ def test_patch_unknown_version_is_404(tmp_history):
 def test_patch_unknown_dataset_is_404(tmp_history):
     client = TestClient(create_app(tmp_history))
     assert client.patch("/api/versions/Dsr-copy", params={"dataset": "Nope"}, json={"label": "A"}).status_code == 404
-    assert client.get("/api/v2/versions", params={"dataset": "Nope"}).status_code == 404
+    assert client.get("/api/versions", params={"dataset": "Nope"}).status_code == 404
 
 
 def test_meta_survives_removal_of_another_version(tmp_history):

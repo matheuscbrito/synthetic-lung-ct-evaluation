@@ -358,10 +358,10 @@ function Loaded({ schema, route, onRoute, versions, version }: DatasetItemProps 
   );
 }
 
-/** Item wired to the API: versions from `/api/v2/versions`, items from `/api/items`, charts from `/api/inspect`. */
+/** Item wired to the API: versions from `/api/versions`, items from `/api/items`, charts from `/api/inspect`. */
 export function DatasetItem(props: DatasetItemProps) {
   const { schema, route } = props;
-  const res = useContract<VersionInfo[]>("/api/v2/versions", { dataset: schema.dataset.key });
+  const res = useContract<VersionInfo[]>("/api/versions", { dataset: schema.dataset.key });
   if (res.error) return <p className="error">{res.error}</p>;
   if (!res.data) return <p className="sub">Loading…</p>;
   const versions = res.data;

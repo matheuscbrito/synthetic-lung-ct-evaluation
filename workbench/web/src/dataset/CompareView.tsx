@@ -210,10 +210,10 @@ function Items(props: Props & { version: string; versionLabel: string }) {
   return <Body {...props} items={res.data.items} />;
 }
 
-/** Compare wired to the API: versions from `/api/v2/versions`, items from `/api/items`, overlay from `/api/inspect`. */
+/** Compare wired to the API: versions from `/api/versions`, items from `/api/items`, overlay from `/api/inspect`. */
 export function CompareView(props: Props) {
   const { schema, route } = props;
-  const res = useContract<VersionInfo[]>("/api/v2/versions", { dataset: schema.dataset.key });
+  const res = useContract<VersionInfo[]>("/api/versions", { dataset: schema.dataset.key });
   if (res.error) return <p className="error">{res.error}</p>;
   if (!res.data) return <p className="sub">Loading…</p>;
   const versions = res.data;

@@ -32,7 +32,7 @@ function stubFetch(calls: string[]) {
       calls.push(url);
       const path = new URL(url, "http://workbench.test");
       let body: unknown;
-      if (path.pathname === "/api/v2/versions") body = b.versions;
+      if (path.pathname === "/api/versions") body = b.versions;
       else if (path.pathname === "/api/items") body = { version: path.searchParams.get("version"), items: b.items[b.current] };
       else if (path.pathname.startsWith("/api/inspect/")) body = b.inspect[path.pathname.split("/").pop()!];
       else throw new Error(`unexpected ${url}`);

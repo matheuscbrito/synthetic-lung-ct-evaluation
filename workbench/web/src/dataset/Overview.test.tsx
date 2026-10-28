@@ -137,7 +137,7 @@ test("DatasetOverview loads versions, opens the newest non-reference version and
     "fetch",
     vi.fn(async (url: string) => {
       calls.push(url);
-      const body = url.startsWith("/api/v2/versions")
+      const body = url.startsWith("/api/versions")
         ? b.versions
         : url.startsWith("/api/items")
           ? { version: latest.name, items: b.items[latest.name] }
@@ -151,7 +151,7 @@ test("DatasetOverview loads versions, opens the newest non-reference version and
       root.render(<DatasetOverview schema={b.schema} route={{ section: "dataset", tab: "overview" }} onRoute={vi.fn()} />),
     );
     for (let i = 0; i < 4; i++) await act(async () => new Promise(r => setTimeout(r, 0)));
-    expect(calls).toContain(`/api/v2/versions?dataset=${key}`);
+    expect(calls).toContain(`/api/versions?dataset=${key}`);
     expect(calls).toContain(`/api/items?dataset=${key}&version=${encodeURIComponent(latest.name)}`);
     const select = host.querySelector<HTMLSelectElement>('select[aria-label="Version"]')!;
     expect(select.selectedOptions[0].textContent).toBe(latest.label);

@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from workbench.api.app import create_app
-from workbench.api.data import patient, slice_json, slice_label
-from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero
+from workbench.api.data import NotFound, patient, slice_json, slice_label
+from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, nonzero, slices_of
 from frameworks.texture_evaluator.placar import load_rows
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
@@ -20,17 +20,17 @@ def calibration():
     return json.loads((HISTORY_DIR / "historico.json").read_text(encoding="utf-8"))["calibration"]
 
 
-def test_counts_match_framework(client):
+def test_counts_match_framework():
     rows = load_rows(HISTORY_DIR, "Dsr")
-    body = client.get("/api/slices", params={"version": "Dsr"}).json()
-    assert body["n_cases"] == len(rows)
+    slices = slices_of("Dsr")
+    assert len(slices) == len(rows)
     expected = framework_counts(rows)
-    assert nonzero(Counter(s["texture"]["verdict"] for s in body["slices"])) == expected["texture"]
-    assert nonzero(Counter(s["brightness"]["verdict"] for s in body["slices"])) == expected["brightness"]
+    assert nonzero(Counter(s["texture"]["verdict"] for s in slices)) == expected["texture"]
+    assert nonzero(Counter(s["brightness"]["verdict"] for s in slices)) == expected["brightness"]
 
 
-def test_slice_schema(client):
-    s = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"][0]
+def test_slice_schema():
+    s = slices_of("Dsr")[0]
     assert [m["key"] for m in s["metrics"]] == ["delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
                                                 "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
                                                 "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nps_air"]
@@ -49,18 +49,17 @@ def test_nan_becomes_null():
     assert nex["value"] is None and nex["z"] is None
 
 
-def test_unknown_version_404(client):
-    assert client.get("/api/slices", params={"version": "nope"}).status_code == 404
+def test_unknown_version_is_not_found():
+    with pytest.raises(NotFound):
+        slices_of("nope")
 
 
 def test_versions_and_status(client):
     v = client.get("/api/versions").json()
     history = json.loads((HISTORY_DIR / "historico.json").read_text(encoding="utf-8"))
     assert [item["name"] for item in v] == [item["name"] for item in history["versions"]]
-    assert v[0]["name"] == "Dsr" and v[0]["is_baseline"] is True
-    assert [item["reference"] for item in v] == [item["name"] == history["reference"] for item in v]
+    assert [item["is_reference"] for item in v] == [item["name"] == history["reference"] for item in v]
     assert all(item["n_common"] == len(history["originals"]) for item in v)
-    assert all(isinstance(item["suspicious_pairs"], int) for item in v)
     status = client.get("/api/status").json()
     assert status["stale"] is False and status["has_history"] is True and status["baseline"] == "Dsr"
     assert status["reference"] == history["reference"]
@@ -77,17 +76,17 @@ def test_very_stale_history_does_not_500(very_stale_dir):
     assert r.json()["stale"] is True and r.json()["has_history"] is True and r.json()["baseline"] == "Dsr"
 
 
-def test_slice_mask_only_flag(client):
-    slices = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"]
+def test_slice_mask_only_flag():
+    slices = slices_of("Dsr")
     assert all(isinstance(s["mask_only"], bool) for s in slices)
     assert all(s["mask_only"] == (s["pair_mode"] == "só máscara") for s in slices)
 
 
-def test_slice_english_codes_match_framework_labels(client):
+def test_slice_english_codes_match_framework_labels():
     from frameworks.texture_evaluator import regional
     from wavelet.src.densidade_wavelet import wavelet_verdict  # noqa: F401  (fonte dos rótulos)
     from workbench.api.data import WAVELET_CODE
-    slices = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"]
+    slices = slices_of("Dsr")
     rows = {row["case_id"]: row for row in load_rows(HISTORY_DIR, "Dsr")}
     for s in slices:
         assert s["mode_code"] == ("mask_only" if s["mask_only"] else "same_anatomy")
@@ -108,8 +107,8 @@ def test_wavelet_codes_cover_every_framework_label():
     assert set(WAVELET_CODE.values()) == {"preserved", "blurred", "noise", "lost_contrast", "gained_contrast", "saturated"}
 
 
-def test_pct_of_original_is_null_for_air_sat_and_delta(client):
-    s = client.get("/api/slices", params={"version": "Dsr"}).json()["slices"][0]
+def test_pct_of_original_is_null_for_air_sat_and_delta():
+    s = slices_of("Dsr")[0]
     by_key = {m["key"]: m for m in s["metrics"]}
     for key in ("nps_air", "sat31", "delta_mu"):
         assert by_key[key]["pct_of_original"] is None, key

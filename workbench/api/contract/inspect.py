@@ -1,8 +1,8 @@
 """Inspetores do contrato genérico (§4.2): `GET /api/inspect/{key}?dataset=&version=&item=&compare=`.
 
 Cada inspetor de `schema.inspectors()` vira um payload por tipo de gráfico, sem nome de métrica na forma:
-- `spectrum` (curves), `glcm` e `nex_windows` (matrix), `nex` (interval) e `wavelet` (bars) remodelam as
-  rotas `/api/tools/*` de `app.py` com as mesmas funções de `tools`;
+- `spectrum` (curves), `glcm` e `nex_windows` (matrix), `nex` (interval) e `wavelet` (bars) saem das
+  funções de `tools` (as antigas rotas `/api/tools/*` foram removidas);
 - `figure`, `map` e `noise_figure` (image) devolvem `{url, caption}`; a URL aponta para
   `GET /api/inspect/{key}.png`, que desenha com `board.technique_png`, `board.map_png` e `board.nps_png`.
 Séries e painéis são rotulados pelo rótulo de exibição da versão (`versions.version_label`), nunca pela pasta.

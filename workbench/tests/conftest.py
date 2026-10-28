@@ -15,7 +15,7 @@ HISTORY_DIR = ROOT / "outputs" / "placar"
 DATA_OK = (HISTORY_DIR / "historico.json").exists() and (ROOT / "dados" / "Dsr").exists()
 
 from frameworks.texture_evaluator import decision  # noqa: E402
-from workbench.api import data as wb_data  # noqa: E402
+from workbench.api import board as wb_board, data as wb_data, datasets as wb_ds  # noqa: E402
 from workbench.api.app import create_app  # noqa: E402
 
 
@@ -31,6 +31,22 @@ def framework_counts(rows: list[dict]) -> dict:
 
 def nonzero(counts) -> dict:
     return {key: value for key, value in dict(counts).items() if value}
+
+
+def workbench_of(datasets=wb_ds.DATASETS, dataset: str = "Dsr") -> wb_data.Workbench:
+    """Histórico do dataset (o mesmo que as rotas usam); `datasets` aceita uma pasta de histórico, como `create_app`."""
+    return wb_ds.wb_for(dataset, wb_ds.normalise(datasets))
+
+
+def board_of(datasets=wb_ds.DATASETS, baseline: str | None = None, dataset: str = "Dsr") -> dict:
+    """Placar interno (`board.board_json`) que alimenta `GET /api/board` do contrato."""
+    return wb_board.board_json(workbench_of(datasets, dataset), baseline)
+
+
+def slices_of(version: str, datasets=wb_ds.DATASETS, dataset: str = "Dsr") -> list[dict]:
+    """Payload interno por corte (`data.slice_json`) que alimenta `/api/items` e os inspetores."""
+    wb = workbench_of(datasets, dataset)
+    return [wb_data.slice_json(row, wb.history["calibration"]) for row in wb.rows(version)]
 
 
 @pytest.fixture

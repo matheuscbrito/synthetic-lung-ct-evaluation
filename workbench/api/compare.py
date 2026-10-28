@@ -13,15 +13,12 @@ Os vereditos saem de `data.slice_json`, sem recalcular nada aqui. Cortes são os
 from __future__ import annotations
 
 from collections import Counter
-from typing import Literal
 
 import numpy as np
-from fastapi import APIRouter, Query
 from scipy.stats import wilcoxon
 
 from frameworks.texture_evaluator import placar
-from workbench.api import data, datasets as ds
-from workbench.api.datasets import DEFAULT
+from workbench.api import data
 
 # ui_placar.TRANSITION_SEVERITY, na escala de códigos da API (inconclusive = review)
 TRANSITION_SEVERITY = {"approved": 0, "review": 1, "inconclusive": 1, "rejected": 2}
@@ -75,26 +72,3 @@ def cohort(wb: data.Workbench, version: str) -> dict:
     types = Counter(s["wavelet_type"] for s in slices)
     codes = Counter(s["wavelet_type_code"] for s in slices)
     return {"nex_test": stat, "wavelet_types": dict(types), "wavelet_type_codes": dict(codes)}
-
-
-def router(datasets: dict) -> APIRouter:
-    api = APIRouter()
-
-    def _wb(dataset: str) -> data.Workbench:
-        return ds.wb_for(dataset, datasets)
-
-    @api.get("/api/transitions")
-    def transitions_route(before: str = Query(...), after: str = Query(...),
-                          verdict: Literal["brightness", "texture", "noise"] = Query(...),
-                          dataset: str = Query(DEFAULT)):
-        wb = _wb(dataset)
-        wb.entry(before)  # desconhecida: 404
-        wb.entry(after)
-        return transitions(wb, before, after, verdict)
-
-    @api.get("/api/cohort")
-    def cohort_route(version: str = Query(...), dataset: str = Query(DEFAULT)):
-        wb = _wb(dataset)
-        return cohort(wb, version)
-
-    return api

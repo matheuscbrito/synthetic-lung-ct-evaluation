@@ -9,15 +9,9 @@ Ausência de régua (histórico desatualizado) vira `null`, nunca erro.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
-from fastapi import APIRouter, HTTPException, Query
-
 from frameworks.noise_evaluator.integration import AIR_LIMITS, AIR_SIGMAS
 from frameworks.texture_evaluator import placar, regional, visual
-from workbench.api import datasets as ds
 from workbench.api import reasons
-from workbench.api.data import NotFound
 
 
 def _float_or_none(value):
@@ -45,20 +39,3 @@ def calibration_json(history: dict) -> dict:
         "map_layers": list(visual.MAP_LAYERS),
     }
     return placar.json_value(body)
-
-
-def router(datasets: dict) -> APIRouter:
-    api = APIRouter()
-
-    @api.get("/api/calibration")
-    def calibration(dataset: str = Query(ds.DEFAULT)):
-        try:
-            cfg = ds.config(ds.normalise(datasets), dataset)
-        except NotFound as exc:  # dataset desconhecido: 404 mesmo sem o handler do app.py
-            raise HTTPException(404, str(exc)) from exc
-        history = ds.load_state(Path(cfg["history"]))
-        if history is None:  # sem histórico não há réguas para ler
-            raise HTTPException(404, f"dataset has no history: {dataset}")
-        return calibration_json(history)
-
-    return api

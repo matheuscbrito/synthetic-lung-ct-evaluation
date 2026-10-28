@@ -1,11 +1,10 @@
-"""API dos otimizadores (somente leitura), com logs e resumos temporários: nunca os resultados reais."""
+"""Leitura dos logs dos otimizadores (`optimizers.overview`, base de `/api/runs`), com logs e resumos
+temporários: nunca os resultados reais."""
 import json
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
-from workbench.api import notebook, optimizers
+from workbench.api import optimizers
 
 CANDIDATE = {"steps": 25, "noise_level": 1, "sampler": "ddim", "scale_factor": 1.0, "seed": 42,
              "eta": 0.0, "latent_noise_scale": 1.0, "conditioning_noise_scale": 1.0}
@@ -78,11 +77,8 @@ def results(tmp_path):
 
 
 @pytest.fixture
-def client(monkeypatch, results):
+def patched(monkeypatch, results):
     monkeypatch.setattr(optimizers, "RESULTS_DIR", results)
-    app = FastAPI()
-    app.include_router(optimizers.router)
-    return TestClient(app)
 
 
 def _method(body, name):
@@ -92,36 +88,34 @@ def _method(body, name):
 def test_missing_dir_reports_not_exists(monkeypatch, tmp_path):
     missing = tmp_path / "nao-existe"
     monkeypatch.setattr(optimizers, "RESULTS_DIR", missing)
-    app = FastAPI()
-    app.include_router(optimizers.router)
-    body = TestClient(app).get("/api/optimizers").json()
+    body = optimizers.overview()
     assert body["source"] == {"path": str(missing), "exists": False}
     assert body["methods"] == []
 
 
-def test_source_reports_results_dir(client, results):
-    body = client.get("/api/optimizers").json()
+def test_source_reports_results_dir(patched, results):
+    body = optimizers.overview()
     assert body["source"] == {"path": str(results), "exists": True}
 
 
-def test_methods_have_labels_in_fixed_order(client):
-    body = client.get("/api/optimizers").json()
+def test_methods_have_labels_in_fixed_order(patched):
+    body = optimizers.overview()
     assert [(m["method"], m["label"]) for m in body["methods"]] == [
         ("gp", "GP-BO"), ("nm", "Nelder-Mead"), ("agente", "Agent (retired)")]
 
 
-def test_gp_summary_comes_from_resumo(client):
-    summary = _method(client.get("/api/optimizers").json(), "gp")["summary"]
+def test_gp_summary_comes_from_resumo(patched):
+    summary = _method(optimizers.overview(), "gp")["summary"]
     assert summary == {"budget": 269, "cases_used": 269, "configs_measured": 41,
                        "best_full_improvement_pct": 44.1667, "best": {"steps": 43, "noise_level": 2}}
 
 
-def test_agent_without_resumo_has_null_summary(client):
-    assert _method(client.get("/api/optimizers").json(), "agente")["summary"] is None
+def test_agent_without_resumo_has_null_summary(patched):
+    assert _method(optimizers.overview(), "agente")["summary"] is None
 
 
-def test_steps_come_only_from_etapa_events(client):
-    gp = _method(client.get("/api/optimizers").json(), "gp")
+def test_steps_come_only_from_etapa_events(patched):
+    gp = _method(optimizers.overview(), "gp")
     assert [s["config_index"] for s in gp["steps"]] == [1, 2, 3]
     first = gp["steps"][0]
     assert first == {
@@ -132,8 +126,8 @@ def test_steps_come_only_from_etapa_events(client):
     }
 
 
-def test_curve_uses_etapa_cache_and_baseline_deduplicated_by_cases(client):
-    gp = _method(client.get("/api/optimizers").json(), "gp")
+def test_curve_uses_etapa_cache_and_baseline_deduplicated_by_cases(patched):
+    gp = _method(optimizers.overview(), "gp")
     # baseline (0), cache (0), etapa (5, 5), etapa (10): um ponto por contagem, com o último valor
     assert gp["curve"] == [
         {"cases": 0, "best_full_improvement_pct": 0.0},
@@ -142,8 +136,8 @@ def test_curve_uses_etapa_cache_and_baseline_deduplicated_by_cases(client):
     ]
 
 
-def test_curve_ignores_inicio_and_other_events(client):
-    nm = _method(client.get("/api/optimizers").json(), "nm")
+def test_curve_ignores_inicio_and_other_events(patched):
+    nm = _method(optimizers.overview(), "nm")
     # inicio (0 casos) e orcamento_esgotado não entram na curva; só a etapa de 5 casos
     assert nm["curve"] == [{"cases": 5, "best_full_improvement_pct": 3.0}]
     assert [s["config_index"] for s in nm["steps"]] == [1]
@@ -159,9 +153,7 @@ def test_malformed_lines_are_skipped_and_counted(monkeypatch, tmp_path):
         "[1, 2, 3]",
     ])
     monkeypatch.setattr(optimizers, "RESULTS_DIR", tmp_path)
-    app = FastAPI()
-    app.include_router(optimizers.router)
-    body = TestClient(app).get("/api/optimizers").json()
+    body = optimizers.overview()
     assert body["skipped"] == 2
     assert len(_method(body, "nm")["steps"]) == 1
 
@@ -174,23 +166,9 @@ def test_non_finite_values_become_null(monkeypatch, tmp_path):
         '"case_wins": 0, "case_losses": 0, "rejected": 0, "pair_issues": 0, "new_best": false}',
     ])
     monkeypatch.setattr(optimizers, "RESULTS_DIR", tmp_path)
-    app = FastAPI()
-    app.include_router(optimizers.router)
-    response = TestClient(app).get("/api/optimizers")
-    assert response.status_code == 200
-    nm = _method(response.json(), "nm")
+    nm = _method(optimizers.overview(), "nm")
     assert nm["curve"] == [{"cases": 5, "best_full_improvement_pct": None}]
     assert nm["steps"][0]["mean_improvement_pct"] is None
-
-
-def test_notebook_alias_delegates_to_notebook_module(monkeypatch, tmp_path):
-    (tmp_path / "CADERNO.md").write_text("# Caderno\n\nsem tabela\n", encoding="utf-8")
-    monkeypatch.setattr(notebook, "LAB_DIR", tmp_path)
-    app = FastAPI()
-    app.include_router(optimizers.router)
-    response = TestClient(app).get("/api/optimizers/notebook")
-    assert response.status_code == 200
-    assert response.json() == notebook.read_caderno(tmp_path)
 
 
 def test_unreadable_log_is_counted_as_skipped(tmp_path):

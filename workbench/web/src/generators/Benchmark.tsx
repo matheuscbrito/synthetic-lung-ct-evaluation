@@ -475,7 +475,7 @@ function Ready({ props }: { props: Loaded }) {
 /** Transitions baseline → current on the axis, and the current version's items for their labels. */
 function WithCurrent({ props, current }: { props: Omit<Loaded, "transitions" | "items" | "current">; current: string }) {
   const dataset = props.schema.dataset.key;
-  const transitions = useContract<Transition[]>("/api/v2/transitions", {
+  const transitions = useContract<Transition[]>("/api/transitions", {
     dataset,
     before: props.baseline,
     after: current,
@@ -493,7 +493,7 @@ function WithCurrent({ props, current }: { props: Omit<Loaded, "transitions" | "
 }
 
 function WithBoard({ schema, baseline, route, onRoute }: { schema: Schema; baseline: string } & PageProps) {
-  const board = useContract<BenchmarkProps["board"]>("/api/v2/board", { dataset: schema.dataset.key, baseline });
+  const board = useContract<BenchmarkProps["board"]>("/api/board", { dataset: schema.dataset.key, baseline });
   if (board.error) return <Message error text={board.error} />;
   if (!board.data) return <Message text="Loading…" />;
   const current = defaultCurrent(board.data.versions, baseline, route.version);
@@ -510,7 +510,7 @@ interface PageProps {
 
 /** Benchmark wired to the API: versions validate the baseline, then board, transitions, items and runs. */
 export function GeneratorBenchmark({ schema, route, onRoute }: { schema: Schema } & PageProps) {
-  const versions = useContract<VersionInfo[]>("/api/v2/versions", { dataset: schema.dataset.key });
+  const versions = useContract<VersionInfo[]>("/api/versions", { dataset: schema.dataset.key });
   if (versions.error) return <Message error text={versions.error} />;
   if (!versions.data) return <Message text="Loading…" />;
   const names = versions.data.map(v => v.name);

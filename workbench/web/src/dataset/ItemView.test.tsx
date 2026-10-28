@@ -27,7 +27,7 @@ function stubFetch(b: Bundle, override: (url: string) => Reply | null = () => nu
       const u = new URL(url, "http://test.invalid");
       const custom = override(url);
       let reply: Reply | null = custom;
-      if (!reply && u.pathname === "/api/v2/versions") reply = { status: 200, body: b.versions };
+      if (!reply && u.pathname === "/api/versions") reply = { status: 200, body: b.versions };
       if (!reply && u.pathname === "/api/items") {
         const version = u.searchParams.get("version")!;
         reply = { status: 200, body: { version, items: b.items[version] } };

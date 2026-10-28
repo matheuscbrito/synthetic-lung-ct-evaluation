@@ -90,7 +90,7 @@ def parse_caderno(text: str) -> dict:
 
 
 def read_caderno(lab_dir: Path) -> dict:
-    """Resposta de `/api/agent/notebook`: o caderno interpretado, o texto bruto sem tentativas, ou um erro de leitura."""
+    """Leitura usada por `/api/experiments`: o caderno interpretado, o texto bruto sem tentativas, ou um erro de leitura."""
     path = Path(lab_dir) / CADERNO
     source = {"path": str(path), "exists": path.is_file()}
     if not source["exists"]:

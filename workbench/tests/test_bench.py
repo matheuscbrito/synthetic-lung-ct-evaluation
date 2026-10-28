@@ -1,4 +1,4 @@
-"""Benchmark, transições e coorte do contrato genérico (§4.3): `/api/v2/board` e `/api/v2/transitions`.
+"""Benchmark, transições e coorte do contrato genérico (§4.3): `/api/board` e `/api/transitions`.
 
 Valores esperados vêm de `items.item_json`, `compare.transitions`, `compare.cohort` e `versions` (nunca fixos).
 Somente leitura do histórico real; a escrita de rótulo usa `tmp_history`.
@@ -33,7 +33,7 @@ def wb():
 
 @pytest.fixture(scope="module")
 def body(api):
-    response = api.get("/api/v2/board", params={"dataset": ds.DEFAULT})
+    response = api.get("/api/board", params={"dataset": ds.DEFAULT})
     assert response.status_code == 200
     return response.json()
 
@@ -137,18 +137,18 @@ def test_cohort_entry_statuses(stat, status):
 
 def test_explicit_baseline_switches_vs_baseline(api, wb):
     reference = wb.history["reference"]
-    body = api.get("/api/v2/board", params={"dataset": ds.DEFAULT, "baseline": reference}).json()
+    body = api.get("/api/board", params={"dataset": ds.DEFAULT, "baseline": reference}).json()
     assert body["baseline"] == reference
     by_name = {v["name"]: v for v in body["versions"]}
     assert by_name[reference]["vs_baseline"] is None and by_name[reference]["cohort"] == []
-    assert api.get("/api/v2/board", params={"dataset": ds.DEFAULT, "baseline": "nope"}).status_code == 404
-    assert api.get("/api/v2/board", params={"dataset": "nope"}).status_code == 404
+    assert api.get("/api/board", params={"dataset": ds.DEFAULT, "baseline": "nope"}).status_code == 404
+    assert api.get("/api/board", params={"dataset": "nope"}).status_code == 404
 
 
 def test_board_label_follows_meta(tmp_history):
     client = TestClient(create_app(tmp_history))
     assert client.patch("/api/versions/Dsr-copy", params={"dataset": "Dsr"}, json={"label": "copy #1"}).status_code == 200
-    body = client.get("/api/v2/board", params={"dataset": "Dsr"}).json()
+    body = client.get("/api/board", params={"dataset": "Dsr"}).json()
     assert {v["name"]: v["label"] for v in body["versions"]}["Dsr-copy"] == "copy #1"
 
 
@@ -156,7 +156,7 @@ def test_board_label_follows_meta(tmp_history):
 def test_transitions_match_compare(api, wb, axis):
     names = list(wb.board["names"])
     before, after = names[0], names[-1]
-    response = api.get("/api/v2/transitions",
+    response = api.get("/api/transitions",
                        params={"dataset": ds.DEFAULT, "before": before, "after": after, "axis": axis})
     assert response.status_code == 200
     expected = [{"id": t["case_id"], "before": t["before"], "after": t["after"], "change": t["change"],
@@ -166,11 +166,11 @@ def test_transitions_match_compare(api, wb, axis):
 
 def test_transitions_unknown_axis_is_400(api, wb):
     name = wb.board["names"][0]
-    response = api.get("/api/v2/transitions", params={"dataset": ds.DEFAULT, "before": name, "after": name, "axis": "foo"})
+    response = api.get("/api/transitions", params={"dataset": ds.DEFAULT, "before": name, "after": name, "axis": "foo"})
     assert response.status_code == 400
 
 
 def test_transitions_unknown_version_is_404(api, wb):
     name = wb.board["names"][0]
-    response = api.get("/api/v2/transitions", params={"dataset": ds.DEFAULT, "before": name, "after": "nope", "axis": "noise"})
+    response = api.get("/api/transitions", params={"dataset": ds.DEFAULT, "before": name, "after": "nope", "axis": "noise"})
     assert response.status_code == 404
