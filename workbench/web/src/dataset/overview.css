@@ -347,3 +347,235 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* modos Charts / Matrix / Table (mesma linguagem visual dos gráficos dos inspetores) */
+.overview .ov-mode {
+  margin-top: 12px;
+}
+
+.overview .cohort-strips,
+.overview .cohort-scatters {
+  display: grid;
+  gap: 12px;
+}
+
+.overview .cohort-scatters {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.overview .cohort-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.overview .cohort-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.overview .cohort-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.overview .cohort-card header .seg {
+  margin: 0;
+}
+
+.overview .cohort-desc,
+.overview .cohort-cap {
+  margin: 2px 0 6px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+
+.overview .cohort-panel + .cohort-panel {
+  margin-top: 8px;
+}
+
+.overview .cohort-h {
+  margin: 18px 0 8px;
+}
+
+.overview .cohort-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.overview .cohort-strip {
+  height: auto;
+}
+
+.overview .cohort .rule {
+  stroke: var(--ink3);
+  stroke-dasharray: 4 3;
+}
+
+.overview .cohort .cbar {
+  stroke: var(--ink2);
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+
+.overview .cohort .ident {
+  stroke: var(--ink3);
+  stroke-dasharray: 4 3;
+}
+
+.overview .cohort .pt {
+  stroke: #fff;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.overview .cohort .pt.focus {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.overview .vmx-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.overview .vmx-scroll {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 14px;
+}
+
+.overview .vmx {
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.overview .vmx th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink2);
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.overview .vmx thead th {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.overview .vmx tr.vmx-verdict th {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.overview .vmx td {
+  padding: 0;
+}
+
+.overview .vmx button {
+  display: block;
+  width: 10px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--soft);
+  cursor: pointer;
+}
+
+.overview .vmx tr.vmx-verdict button {
+  height: 22px;
+}
+
+.overview .vmx button.focus,
+.overview .vmx button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.overview .itab-scroll {
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.overview .itab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.overview .itab th,
+.overview .itab td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0ede7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.overview .itab .num {
+  text-align: right;
+}
+
+.overview .itab thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.overview .itab thead button {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.overview .itab th[aria-sort="ascending"] button::after {
+  content: " ↑";
+}
+
+.overview .itab th[aria-sort="descending"] button::after {
+  content: " ↓";
+}
+
+.overview .itab tbody tr {
+  cursor: pointer;
+}
+
+.overview .itab tbody tr:hover,
+.overview .itab tbody tr.focus {
+  background: var(--soft);
+}
+
+.overview .itab-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.overview .itab-na,
+.overview .itab-focus {
+  color: var(--ink3);
+}

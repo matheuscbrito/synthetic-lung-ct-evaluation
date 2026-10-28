@@ -160,3 +160,63 @@ test("DatasetOverview loads versions, opens the newest non-reference version and
     vi.unstubAllGlobals();
   }
 });
+
+test("view seg Grid · Charts · Matrix · Table writes the mode to the route", async () => {
+  const onRoute = await render(realBundle);
+  const seg = host.querySelector('[aria-label="View"]')!;
+  expect(Array.from(seg.querySelectorAll("button")).map(b => b.textContent)).toEqual(["Grid", "Charts", "Matrix", "Table"]);
+  expect(seg.querySelector('[aria-pressed="true"]')?.textContent).toBe("Grid");
+  await act(async () => Array.from(seg.querySelectorAll("button")).find(b => b.textContent === "Matrix")!.click());
+  expect(onRoute).toHaveBeenLastCalledWith({ view: "matrix" });
+});
+
+test("route view picks the mode: table rows follow the visible items, charts and matrix replace the grid", async () => {
+  const b = stressBundle;
+  await render(b, { view: "table" });
+  expect(tiles()).toHaveLength(0);
+  expect(host.querySelectorAll("table.itab tbody tr")).toHaveLength(b.items[b.current].length);
+  await render(b, { view: "matrix" });
+  expect(host.querySelectorAll("table.vmx")).toHaveLength(1);
+  await render(b, { view: "charts" });
+  expect(host.querySelectorAll("svg.cohort-strip").length).toBeGreaterThan(0);
+});
+
+test("compare with lists the other versions by label, only in charts and matrix", async () => {
+  const b = realBundle;
+  await render(b, { view: "grid" });
+  expect(host.querySelector('select[aria-label="Compare with"]')).toBeNull();
+  await render(b, { view: "matrix" });
+  const select = host.querySelector<HTMLSelectElement>('select[aria-label="Compare with"]')!;
+  expect(Array.from(select.options).map(o => o.textContent)).toEqual([
+    "No comparison",
+    ...b.versions.filter(v => v.name !== b.current).map(v => v.label),
+  ]);
+});
+
+test("compare version items load from /api/items and stack a second matrix", async () => {
+  const b = realBundle;
+  const other = b.versions.find(v => v.name === b.baseline)!;
+  const calls: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      calls.push(url);
+      return { ok: true, status: 200, statusText: "OK", json: async () => ({ version: other.name, items: b.items[other.name] }) };
+    }),
+  );
+  try {
+    await render(b, { view: "matrix" });
+    const select = host.querySelector<HTMLSelectElement>('select[aria-label="Compare with"]')!;
+    await act(async () => {
+      select.value = other.name;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    for (let i = 0; i < 4; i++) await act(async () => new Promise(r => setTimeout(r, 0)));
+    expect(calls).toContain(`/api/items?dataset=${b.schema.dataset.key}&version=${encodeURIComponent(other.name)}`);
+    const tables = host.querySelectorAll("table.vmx");
+    expect(tables).toHaveLength(2);
+    expect(host.textContent).toContain(other.label);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

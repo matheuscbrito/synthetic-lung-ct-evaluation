@@ -90,17 +90,22 @@ function severity(schema: Schema, status: StatusKey | undefined): number {
   return schema.statuses.find((s) => s.key === status)?.severity ?? 0;
 }
 
-/** Largest normalised deviation of an item on an axis (|z|, or |value| ÷ review limit). */
+/** Deviation of one reading, normalised: |z|, or |value| ÷ review limit; null when unread or unavailable. */
+export function metricDeviation(desc: MetricDesc, v: MetricValue | undefined): number | null {
+  if (!v || v.available === false) return null;
+  if (finite(v.z)) return Math.abs(v.z);
+  const review = desc.limits?.review;
+  if (finite(v.value) && finite(review) && review !== 0) return Math.abs(v.value) / review;
+  return null;
+}
+
+/** Largest normalised deviation of an item on an axis (largest `metricDeviation`, 0 when none is read). */
 export function worst(item: Item, axis: string, schema: Schema): number {
   let out = 0;
   for (const m of schema.metrics) {
     if (m.axis !== axis) continue;
-    const mv = item.metrics[m.key];
-    if (!mv) continue;
-    if (finite(mv.z)) out = Math.max(out, Math.abs(mv.z));
-    else if (finite(mv.value) && finite(m.limits?.review) && m.limits!.review !== 0) {
-      out = Math.max(out, Math.abs(mv.value) / m.limits!.review!);
-    }
+    const d = metricDeviation(m, item.metrics[m.key]);
+    if (d !== null) out = Math.max(out, d);
   }
   return out;
 }

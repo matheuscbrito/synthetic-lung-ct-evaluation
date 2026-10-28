@@ -44,4 +44,11 @@ describe("route hash", () => {
     expect(parseHash("#/nope/item")).toEqual({ section: "dataset", tab: "overview" });
     expect(parseHash("#/nope/item?item=A&dataset=B")).toEqual({ section: "dataset", tab: "overview" });
   });
+
+  test("overview view mode round-trips and is optional", () => {
+    const r: Route = { section: "dataset", tab: "overview", version: "v2-rs07", view: "matrix" };
+    expect(toHash(r)).toContain("view=matrix");
+    expect(parseHash(toHash(r))).toEqual(r);
+    expect(parseHash("#/dataset/overview").view).toBeUndefined();
+  });
 });

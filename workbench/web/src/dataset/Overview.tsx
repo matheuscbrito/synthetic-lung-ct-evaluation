@@ -1,41 +1,42 @@
 // Dataset › Overview: cabeçalho, faixa de veredito, filtros e grade de miniaturas (slide 1 dos mockups v3).
 // Tudo vem do contrato: nomes do item e do grupo, eixos, status, técnicas, métricas e rótulos das versões.
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { useContract } from "../contract/client";
-import { orderItems } from "../contract/format";
-import type { Item, ItemsResponse, MetricDesc, MetricValue, Schema, VersionInfo } from "../contract/types";
+import { metricDeviation, orderItems } from "../contract/format";
+import type { Item, ItemsResponse, Schema, VersionInfo } from "../contract/types";
 import type { Route } from "../route";
 import { toggle } from "../selection";
 import { ThumbGrid } from "../components/ThumbGrid";
 import { ChipSelect } from "../ui/ChipSelect";
 import { Seg } from "../ui/Seg";
+import { CohortCharts } from "./CohortCharts";
 import { DatasetTabs, type DatasetTab } from "./DatasetTabs";
 import { HowToRead } from "./HowToRead";
 import { axisTechniques, focusAxis, goodStatus } from "./strip";
+import { ItemTable } from "./ItemTable";
+import { VerdictMatrix, type CompareVersion } from "./VerdictMatrix";
 import { VerdictStrip } from "./VerdictStrip";
 import "./overview.css";
 
 const cap = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
-const finite = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x);
 const byId = (a: Item, b: Item) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 const COMPARE_MAX = 4;
 
-/** Deviation of one metric, normalised like `worst` (|z|, or |value| ÷ review limit); null when unread. */
-function deviation(m: MetricDesc, v: MetricValue | undefined): number | null {
-  if (!v || v.available === false) return null;
-  if (finite(v.z)) return Math.abs(v.z);
-  const review = m.limits?.review;
-  if (finite(v.value) && finite(review) && review !== 0) return Math.abs(v.value) / review;
-  return null;
-}
+type View = "grid" | "charts" | "matrix" | "table";
+const VIEWS: { value: View; label: string }[] = [
+  { value: "grid", label: "Grid" },
+  { value: "charts", label: "Charts" },
+  { value: "matrix", label: "Matrix" },
+  { value: "table", label: "Table" },
+];
 
 function sortItems(items: Item[], sort: string, axis: string, schema: Schema): Item[] {
   if (sort === "name") return [...items].sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : byId(a, b)));
   const metric = schema.metrics.find(m => m.key === sort && m.axis === axis);
   if (!metric) return orderItems(items, axis, schema);
   // métrica sem leitura vai para o fim, mantendo a ordem por id
-  const d = (it: Item) => deviation(metric, it.metrics[metric.key]) ?? -Infinity;
+  const d = (it: Item) => metricDeviation(metric, it.metrics[metric.key]) ?? -Infinity;
   return [...items].sort((a, b) => d(b) - d(a) || byId(a, b));
 }
 
@@ -81,6 +82,10 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
   const [groupValue, setGroup] = useState("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [compareWith, setCompareWith] = useState("");
+  const view: View = VIEWS.some(v => v.value === route.view) ? (route.view as View) : "grid";
+  const others = versions.filter(v => v.name !== version);
+  const compareName = view === "charts" || view === "matrix" ? others.find(v => v.name === compareWith)?.name : undefined;
 
   const status = statusValue === "all" || schema.statuses.some(s => s.key === statusValue) ? statusValue : "all";
   const technique = techniques.some(t => t.key === techniqueValue) ? techniqueValue : "any";
@@ -106,6 +111,11 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
   const onTab = (tab: DatasetTab) => {
     if (tab === "item") onRoute({ tab, version, item: route.item ?? orderItems(items, axis, schema)[0]?.id });
     else if (tab === "compare") onRoute({ tab, version, items: selected.size >= 2 ? [...selected] : route.items });
+  };
+
+  const modeView = (cmp: CompareVersion | null) => {
+    const props = { schema, axis, items: visible, onOpen: open, focus: route.item, label: versionLabel(version), compare: cmp };
+    return view === "charts" ? <CohortCharts {...props} /> : <VerdictMatrix {...props} />;
   };
 
   return (
@@ -181,6 +191,15 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
           />
         )}
         <ChipSelect label="Sort" value={sort} options={sortOptions} onChange={value => onRoute({ sort: value })} />
+        <Seg<View> small label="View" value={view} options={VIEWS} onChange={v => onRoute({ view: v })} />
+        {(view === "charts" || view === "matrix") && others.length > 0 && (
+          <ChipSelect
+            label="Compare with"
+            value={compareName ?? ""}
+            onChange={setCompareWith}
+            options={[{ value: "", label: "No comparison" }, ...others.map(v => ({ value: v.name, label: v.label }))]}
+          />
+        )}
         <label className="ui-chip ov-search">
           <span aria-hidden="true">⌕</span>
           <input
@@ -208,22 +227,49 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
 
       {groupBy?.note && <p className="sub ov-note">{groupBy.note}</p>}
 
-      <ThumbGrid
-        schema={schema}
-        version={version}
-        items={visible}
-        axis={axis}
-        caption={sortOptions.find(o => o.value === sort)!.label.replace(/^Sort: /, "")}
-        selected={selected}
-        onOpen={open}
-        onToggleSelect={id => setSelected(prev => toggle(prev, id, COMPARE_MAX))}
-      />
+      {view === "grid" ? (
+        <ThumbGrid
+          schema={schema}
+          version={version}
+          items={visible}
+          axis={axis}
+          caption={sortOptions.find(o => o.value === sort)!.label.replace(/^Sort: /, "")}
+          selected={selected}
+          onOpen={open}
+          onToggleSelect={id => setSelected(prev => toggle(prev, id, COMPARE_MAX))}
+        />
+      ) : (
+        <div className="ov-scroll ov-mode">
+          {view === "table" ? (
+            <ItemTable schema={schema} axis={axis} items={visible} onOpen={open} focus={route.item} />
+          ) : compareName ? (
+            <WithCompare schema={schema} version={compareName} label={versionLabel(compareName)}>
+              {cmp => modeView(cmp)}
+            </WithCompare>
+          ) : (
+            modeView(null)
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function Message({ text, error }: { text: string; error?: boolean }) {
   return <p className={error ? "error" : "sub"}>{text}</p>;
+}
+
+/** Items of the "compare with" version, loaded from `/api/items`; the current view waits for them. */
+function WithCompare({ schema, version, label, children }: {
+  schema: Schema;
+  version: string;
+  label: string;
+  children: (cmp: CompareVersion) => ReactElement;
+}) {
+  const res = useContract<ItemsResponse>("/api/items", { dataset: schema.dataset.key, version });
+  if (res.error) return <Message error text={res.error} />;
+  if (!res.data) return <Message text={`Loading ${label}…`} />;
+  return children({ label, items: res.data.items });
 }
 
 interface ItemsProps {

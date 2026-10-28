@@ -14,6 +14,8 @@ export type Route = {
   items?: string[];
   axis?: string;
   sort?: string;
+  /** Overview mode: grid (default), charts, matrix or table. */
+  view?: string;
   exp?: string;
   run?: string;
 };
@@ -22,7 +24,7 @@ const SECTIONS: Section[] = ["dataset", "generators", "versions"];
 const TABS: Tab[] = ["overview", "item", "compare", "bench", "runs", "exp"];
 const DEFAULT: Route = { section: "dataset", tab: "overview" };
 
-const SCALARS = ["dataset", "version", "baseline", "item", "axis", "sort", "exp", "run"] as const;
+const SCALARS = ["dataset", "version", "baseline", "item", "axis", "sort", "view", "exp", "run"] as const;
 
 export function parseHash(hash: string): Route {
   const text = hash.startsWith("#") ? hash.slice(1) : hash;

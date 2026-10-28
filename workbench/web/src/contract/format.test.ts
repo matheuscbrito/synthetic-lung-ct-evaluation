@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { bundles, realBundle, stressBundle } from "../fixtures";
 import type { MetricDesc } from "./types";
-import { limitText, metricText, orderItems, reasonText, signed, ticks, toneOf, worst } from "./format";
+import { limitText, metricDeviation, metricText, orderItems, reasonText, signed, ticks, toneOf, worst } from "./format";
 
 const metric = (key: string, b = realBundle): MetricDesc => {
   const m = b.schema.metrics.find((x) => x.key === key);
@@ -145,5 +145,38 @@ describe("tone and ordering", () => {
         }
       }
     }
+  });
+});
+
+describe("metricDeviation", () => {
+  const items = realBundle.items[realBundle.current];
+
+  test("|z| when z is read, |value| ÷ review limit otherwise, null when unread or unavailable", () => {
+    const nex = metric("nex");
+    const withZ = items.find((it) => typeof it.metrics.nex?.z === "number")!;
+    expect(metricDeviation(nex, withZ.metrics.nex)).toBeCloseTo(Math.abs(withZ.metrics.nex.z!));
+    expect(metricDeviation(nex, { ...withZ.metrics.nex, available: false })).toBeNull();
+    expect(metricDeviation(nex, undefined)).toBeNull();
+    const sat = metric("sat31");
+    const v = items[0].metrics.sat31;
+    expect(metricDeviation(sat, v)).toBeCloseTo(Math.abs(v.value!) / sat.limits!.review!);
+    expect(metricDeviation(sat, { ...v, value: null })).toBeNull();
+  });
+
+  test("worst is the largest metricDeviation of the axis and ignores unavailable readings", () => {
+    for (const b of Object.values(bundles)) {
+      for (const it of b.items[b.current]) {
+        for (const axis of b.schema.axes) {
+          const devs = b.schema.metrics
+            .filter((m) => m.axis === axis.key)
+            .map((m) => metricDeviation(m, it.metrics[m.key]) ?? 0);
+          expect(worst(it, axis.key, b.schema)).toBe(Math.max(0, ...devs));
+        }
+      }
+    }
+    const it = items[0];
+    const m = realBundle.schema.metrics.find((x) => x.key === "nex")!;
+    const off = { ...it, metrics: Object.fromEntries(Object.entries(it.metrics).map(([k, v]) => [k, { ...v, available: false }])) };
+    expect(worst(off, m.axis, realBundle.schema)).toBe(0);
   });
 });
