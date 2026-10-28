@@ -1,0 +1,286 @@
+/* Generators › Notebook (slide "Notebook" dos mockups v3). Cores vêm de theme.css. */
+.nb {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.nb-body {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 22px;
+}
+
+.nb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.nb-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+
+.nb-count {
+  margin: 12px 0 6px;
+}
+
+.nb-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nb-item:hover {
+  background: var(--soft);
+}
+
+.nb-item.on {
+  border-color: var(--line);
+  background: var(--soft);
+}
+
+.nb-id {
+  color: var(--ink2);
+  font-size: 12px;
+}
+
+.nb-change {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.nb-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.nb-best {
+  color: #d9a21b;
+  font-style: normal;
+}
+
+.nb-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.nb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.nb-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.nb-pill,
+.nb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.nb-pill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.nb-tag {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-lineage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+.nb-ln {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--ink2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.nb-ln.cur {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.nb-cards,
+.nb-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.nb-scopes {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  min-height: 110px;
+  margin-top: 10px;
+}
+
+.nb-scope {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+
+.nb-scope i {
+  display: block;
+  width: 26px;
+  border-radius: 4px 4px 0 0;
+  background: var(--ink3);
+}
+
+.nb-note {
+  margin-top: 10px;
+}
+
+.nb-change-text {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.nb-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.nb-table th,
+.nb-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.nb-table th {
+  color: var(--ink2);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nb-traj {
+  min-width: 0;
+}
+
+.nb-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  overflow: visible;
+}
+
+.nb-grid-line {
+  stroke: var(--line);
+}
+
+.nb-goal {
+  stroke: #c0392b;
+  stroke-dasharray: 4 4;
+}
+
+.nb-axis {
+  fill: var(--ink3);
+  font-size: 11px;
+}
+
+.nb-path {
+  fill: none;
+  stroke-width: 2;
+}
+
+.nb-point {
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.nb-end {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.nb-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.nb-lessons ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.nb-lessons li {
+  margin-bottom: 6px;
+  color: var(--ink2);
+}
+
+.nb-lessons li b {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .nb-body,
+  .nb-cards,
+  .nb-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

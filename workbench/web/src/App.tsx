@@ -6,6 +6,7 @@ import { CompareView } from "./dataset/CompareView";
 import { DatasetItem } from "./dataset/ItemView";
 import { DatasetOverview } from "./dataset/Overview";
 import { GeneratorBenchmark } from "./generators/Benchmark";
+import { GeneratorNotebook } from "./generators/Notebook.tsx";
 import { GeneratorOptimizers } from "./generators/Optimizers";
 import { useRoute, type Route, type Section } from "./route";
 import { Shell } from "./shell/Shell";
@@ -96,7 +97,9 @@ function Gate({ status, route, onRoute, onChanged }: GateProps) {
         <CompareView schema={schema.data} route={route} onRoute={onRoute} />
       ) : route.section === "generators" && route.tab === "runs" ? (
         <GeneratorOptimizers schema={schema.data} route={route} onRoute={onRoute} />
-      ) : route.section === "generators" && route.tab !== "exp" ? (
+      ) : route.section === "generators" && route.tab === "exp" ? (
+        <GeneratorNotebook schema={schema.data} route={route} onRoute={onRoute} />
+      ) : route.section === "generators" ? (
         <GeneratorBenchmark schema={schema.data} route={route} onRoute={onRoute} />
       ) : route.section === "versions" ? (
         <VersionsView schema={schema.data} route={route} onRoute={onRoute} onChanged={onChanged} />
