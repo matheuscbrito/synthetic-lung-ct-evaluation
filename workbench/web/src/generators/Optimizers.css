@@ -1,0 +1,135 @@
+/* Generators › Optimizers (mockups v3, slide "Optimizers"; sem cartões: seções com filete). */
+.opt {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.opt-cols {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 14px;
+  margin-top: 20px;
+  min-height: 0;
+}
+
+.opt-panel {
+  min-width: 0;
+}
+
+.opt-eyebrow {
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.opt-chart .opt-curve {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.opt-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.opt-rankhead,
+.opt-row {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 0.7fr 0.7fr 0.8fr;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 6px;
+  font-size: 13px;
+}
+
+.opt-rankhead {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  border-bottom: 1px solid var(--line);
+}
+
+.opt-row {
+  border-bottom: 1px solid #f0ede7;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.opt-row:hover {
+  background: #f7f5f1;
+}
+
+.opt-row.on {
+  background: #f1efe9;
+}
+
+.opt-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.opt-key {
+  width: 16px;
+  height: 4px;
+  display: inline-block;
+}
+
+.opt-best {
+  font-weight: 600;
+}
+
+.opt-steps-head,
+.opt-step {
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  font-size: 12.5px;
+  border-bottom: 1px solid #f0ede7;
+}
+
+.opt-steps-head {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opt-prm {
+  font-size: 11px;
+  color: var(--ink2);
+}
+
+.opt-step.best {
+  font-weight: 600;
+}
+
+.opt-chip {
+  border-radius: 6px;
+  padding: 1px 6px;
+  text-align: right;
+}
+
+.opt-empty {
+  margin-top: 22px;
+}
+
+@media (max-width: 900px) {
+  .opt-cols {
+    grid-template-columns: 1fr;
+  }
+}

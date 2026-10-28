@@ -1,0 +1,294 @@
+/* Generators › Benchmark (mockups v3, slide "Benchmark"; regras de docs/planning/mockups-v3/base.css). */
+.gb {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.gb .head-right .seg {
+  margin: 0;
+}
+
+.gb .dsw .seg {
+  background: #e6e2db;
+}
+
+.gb .dsw .seg-opt[aria-pressed="true"],
+.gb .gb-ver select {
+  font-weight: 600;
+}
+
+.gb .gb-ver span {
+  color: var(--ink2);
+}
+
+.gb-cols {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 22px;
+}
+
+.gb-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* tabela de versões */
+.gb-thead,
+.gb-trow {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+}
+
+.gb-thead {
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.gb-trow {
+  padding: 12px 6px;
+  font-size: 13.5px;
+  border-bottom: 1px solid #f0ede7;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.gb-trow:hover {
+  background: #f7f5f1;
+}
+
+.gb-trow.on {
+  background: #f1f7f2;
+  border-radius: 14px;
+}
+
+.gb-trow .sub {
+  font-size: 12.5px;
+}
+
+.gb-cnt {
+  display: inline-block;
+  min-width: 30px;
+  text-align: center;
+  border-radius: 8px;
+  padding: 3px 6px;
+  margin-right: 4px;
+  font: 500 13px var(--font-mono);
+}
+
+.gb-sbar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--soft);
+}
+
+.gb-sbar i {
+  display: block;
+  height: 100%;
+}
+
+.gb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: #eeeeec;
+  color: #6b6b66;
+}
+
+.gb-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.gb-pill.gb-base {
+  background: var(--soft);
+  color: var(--ink2);
+}
+
+.gb-otag {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-left: 6px;
+  font: inherit;
+  color: #2a78d6;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gb-otag:hover {
+  text-decoration: underline;
+}
+
+.gb-caption {
+  margin: 6px 4px 0;
+  font-size: 12px;
+}
+
+/* indicadores */
+.card.gb-irows {
+  margin-top: 12px;
+  padding: 14px 18px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.gb-ihead,
+.gb-ghead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.gb-toggle {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.gb-toggle[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--card);
+}
+
+.gb-irow {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 12.5px;
+  border-bottom: 1px solid #f0ede7;
+}
+
+.gb-irow .mono,
+.gb-scores .mono {
+  font-size: 12px;
+}
+
+.gb-empty {
+  padding: 10px 0;
+}
+
+.gb-scorewrap {
+  overflow: auto;
+  margin-top: 8px;
+}
+
+.gb-scores {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+
+.gb-scores th {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  font-weight: 500;
+  text-align: left;
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.gb-scores td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid #f0ede7;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.gb-scores td .sub {
+  font-size: 11px;
+}
+
+/* transições */
+.card.gb-right {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 14px 18px;
+}
+
+.gb-right .seg {
+  margin: 8px 0 0;
+}
+
+.gb-ghead .seg {
+  margin: 0;
+}
+
+.gb-tsum {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.gb-xtable {
+  overflow: auto;
+  margin-top: 6px;
+  flex: 1;
+}
+
+.gb-xr {
+  display: grid;
+  grid-template-columns: 1.1fr 1.8fr 0.9fr;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0ede7;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.gb-xr:hover {
+  background: #f7f5f1;
+}
+
+.gb-ba {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gb-ba em {
+  font-style: normal;
+  color: var(--ink3);
+}
+
+.gb-chg {
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}

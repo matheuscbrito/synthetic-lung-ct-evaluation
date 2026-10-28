@@ -1,0 +1,599 @@
+/* Dataset › Overview (mockups v3, slide 1; regras de docs/planning/mockups-v3/base.css e render_v3.py CSS). */
+.overview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.overview .head-right .seg {
+  margin: 0;
+}
+
+.overview .dsw .seg {
+  background: #e6e2db;
+}
+
+.overview .dsw .seg-opt[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+.overview .ov-ver span {
+  color: var(--ink2);
+}
+
+.overview .ov-ver select {
+  font-weight: 600;
+}
+
+/* faixa de veredito em uma linha */
+.overview .vstrip {
+  display: grid;
+  grid-template-columns: auto 1.1fr 0.9fr 1.5fr;
+  gap: 22px;
+  align-items: center;
+  margin: 18px 0 14px;
+  padding: 12px 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.overview .vstrip .seg {
+  margin: 0;
+}
+
+.overview .vsn {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.overview .vsn b {
+  font: 600 15px var(--font-mono);
+}
+
+.overview .sbar {
+  display: flex;
+  height: 6px;
+  border-radius: 5px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.overview .sbar i {
+  display: block;
+}
+
+.overview .ov-bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 30px;
+  margin: 4px 0 0;
+}
+
+.overview .ov-bars i {
+  flex: 1;
+  height: var(--h);
+  border-radius: 3px 3px 1px 1px;
+  transform-origin: bottom;
+  cursor: pointer;
+  animation: ov-grow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 14ms + 0.15s);
+}
+
+.overview .ov-bars i.stk {
+  display: flex;
+  flex-direction: column;
+  background: none;
+  cursor: default;
+}
+
+.overview .ov-bars i.stk b {
+  display: block;
+  width: 100%;
+}
+
+.overview .vst {
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.overview .vst b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* filtros */
+.overview .ov-filters {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.overview .ov-search {
+  margin-left: auto;
+  min-width: 170px;
+  color: var(--ink3);
+}
+
+.overview .ov-search::after {
+  content: none;
+}
+
+.overview .ov-search input {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  outline: none;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.overview .how {
+  position: static;
+}
+
+.overview .how summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.overview .how summary::-webkit-details-marker {
+  display: none;
+}
+
+.overview .how[open] summary {
+  background: var(--soft);
+}
+
+.overview .how .panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: min(600px, 100%);
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 18px 40px -22px #0006;
+  z-index: 6;
+}
+
+.overview .how-guide {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.overview .lrow {
+  display: grid;
+  grid-template-columns: 1.9fr 0.6fr 0.6fr 0.9fr;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0ede7;
+  font-size: 12.5px;
+  align-items: center;
+}
+
+.overview .lrow.lh {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+.overview .how .src2 {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+.overview .ov-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.overview .dark {
+  appearance: none;
+  border: 0;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 999px;
+  padding: 9px 20px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.overview .ov-note {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+}
+
+/* grade de miniaturas */
+.overview .ov-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 6px;
+  margin-right: -6px;
+}
+
+.overview .ov-group,
+.overview .ov-flat {
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.overview .eyebrow.ink {
+  color: var(--ink);
+}
+
+.overview .ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.overview .ov-tile {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 5px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: ov-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 18ms + 0.1s);
+}
+
+.overview .ov-tile.lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 130px;
+}
+
+.overview .ov-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -12px #0005;
+}
+
+.overview .ov-tile.selected {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.overview .ov-tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.overview .ov-tile img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  display: block;
+  background: var(--soft);
+}
+
+.overview .ov-tile .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 3px 1px;
+  font-size: 11.5px;
+}
+
+.overview .ov-tile .meta .mono {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+
+.overview .ov-empty {
+  margin: 24px 0;
+}
+
+@keyframes ov-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes ov-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview .ov-bars i,
+  .overview .ov-tile {
+    animation: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .overview .vstrip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* modos Charts / Matrix / Table (mesma linguagem visual dos gráficos dos inspetores) */
+.overview .ov-mode {
+  margin-top: 12px;
+}
+
+.overview .cohort-strips,
+.overview .cohort-scatters {
+  display: grid;
+  gap: 12px;
+}
+
+.overview .cohort-scatters {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.overview .cohort-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.overview .cohort-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.overview .cohort-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.overview .cohort-card header .seg {
+  margin: 0;
+}
+
+.overview .cohort-desc,
+.overview .cohort-cap {
+  margin: 2px 0 6px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+
+.overview .cohort-panel + .cohort-panel {
+  margin-top: 8px;
+}
+
+.overview .cohort-h {
+  margin: 18px 0 8px;
+}
+
+.overview .cohort-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.overview .cohort-strip {
+  height: auto;
+}
+
+.overview .cohort .rule {
+  stroke: var(--ink3);
+  stroke-dasharray: 4 3;
+}
+
+.overview .cohort .cbar {
+  stroke: var(--ink2);
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+
+.overview .cohort .ident {
+  stroke: var(--ink3);
+  stroke-dasharray: 4 3;
+}
+
+.overview .cohort .pt {
+  stroke: #fff;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.overview .cohort .pt.focus {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.overview .vmx-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.overview .vmx-scroll {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 14px;
+}
+
+.overview .vmx {
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.overview .vmx th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink2);
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.overview .vmx thead th {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.overview .vmx tr.vmx-verdict th {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.overview .vmx td {
+  padding: 0;
+}
+
+.overview .vmx button {
+  display: block;
+  width: 10px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--soft);
+  cursor: pointer;
+}
+
+.overview .vmx tr.vmx-verdict button {
+  height: 22px;
+}
+
+.overview .vmx button.focus,
+.overview .vmx button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.overview .itab-scroll {
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.overview .itab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.overview .itab th,
+.overview .itab td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0ede7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.overview .itab .num {
+  text-align: right;
+}
+
+/* rodapé da tabela: distribuição dos fatos categóricos (paridade #33) */
+.overview .itab-dist {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink2);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overview .itab-dist b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.overview .itab thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.overview .itab thead button {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.overview .itab th[aria-sort="ascending"] button::after {
+  content: " ↑";
+}
+
+.overview .itab th[aria-sort="descending"] button::after {
+  content: " ↓";
+}
+
+.overview .itab tbody tr {
+  cursor: pointer;
+}
+
+.overview .itab tbody tr:hover,
+.overview .itab tbody tr.focus {
+  background: var(--soft);
+}
+
+.overview .itab-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.overview .itab-na,
+.overview .itab-focus {
+  color: var(--ink3);
+}
