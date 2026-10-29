@@ -13,6 +13,8 @@ import { Card } from "../ui/Card";
 import { Seg } from "../ui/Seg";
 import { IDENTITY, pan, zoomAt, type View } from "../zoom";
 import { DatasetTabs } from "./DatasetTabs";
+import { CohortCharts } from "./CohortCharts";
+import "./overview.css";
 import { defaultVersion } from "./Overview";
 import { focusAxis, statusColor } from "./strip";
 import { VerdictPanel } from "./VerdictPanel";
@@ -215,6 +217,7 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
   const [view, setView] = useState<View>(IDENTITY);
   const [contour, setContour] = useState(true);
   const [tab, setTab] = useState<string | undefined>(schema.inspectors[0]?.key);
+  const [showVerdict, setShowVerdict] = useState(true);
 
   // outro item recomeça o enquadramento
   useEffect(() => setView(IDENTITY), [item?.id]);
@@ -227,6 +230,8 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
   const others = versions.filter(v => v.name !== version);
   const inspector = schema.inspectors.find(i => i.key === tab) ?? schema.inspectors[0];
   const group = schema.dataset.group_by;
+  const chartAxis = schema.metrics.some(m => m.axis === axis && m.technique === inspector?.technique)
+    ? axis : schema.metrics.find(m => m.technique === inspector?.technique)?.axis;
   const overlay = contour ? imageUrl(version, item.id, "contour", undefined, true, key) : null;
   const img = (v: string, kind: "real" | "synthetic") => imageUrl(v, item.id, kind, undefined, true, key);
 
@@ -260,7 +265,7 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
         onSelect={onSelect}
       />
 
-      <div className="sgrid">
+      <div className={showVerdict ? "sgrid" : "sgrid verdict-collapsed"}>
         <div className="sgrid-main">
           <div className="cmprow">
             {compare && others.length > 0 && (
@@ -307,6 +312,9 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
                 />
               </div>
               <Card className="toolcard">
+                <div className="inspector-intro"><h2>{inspector.label}</h2>{inspector.primary_view === "cohort" ? <p>Real against synthetic. The dashed line marks equal measurements; the outlined point is this slice.</p> : inspector.description && <p>{inspector.description}</p>}</div>
+                {inspector.primary_view === "cohort" && inspector.technique && chartAxis ? <div className="overview"><CohortCharts scatterFirst schema={schema} axis={chartAxis} technique={inspector.technique} items={ordered}
+                  focus={item.id} onOpen={onSelect} label={labelOf(version)} compare={compare ? { label: compareLabel, items: compareItems } : null} /></div> : <>
                 <Inspector
                   key={`${inspector.key}|${item.id}`}
                   schema={schema}
@@ -315,12 +323,27 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
                   compare={compare}
                   item={item.id}
                 />
+                {inspector.technique && chartAxis && <details className="inspector-charts">
+                  <summary>Charts · {inspector.technique} <span>Open to compare slices</span></summary>
+                  <p>Each point is a slice; the selected slice is outlined. Select a point to inspect it.</p>
+                  <div className="overview"><CohortCharts schema={schema} axis={chartAxis} technique={inspector.technique} items={ordered}
+                    focus={item.id} onOpen={onSelect} label={labelOf(version)} compare={compare ? { label: compareLabel, items: compareItems } : null} /></div>
+                </details>}
+                </>}
               </Card>
             </>
           )}
         </div>
 
-        <VerdictPanel key={item.id} schema={schema} item={item} compareItem={compareItem} compareLabel={compareLabel} />
+        <div className={showVerdict ? "verdict-sidebar" : "verdict-sidebar is-collapsed"}>
+          <div className="verdict-sidebar-head">
+            {showVerdict && <span>Verdict</span>}
+            <button className="verdict-toggle" type="button" aria-label={showVerdict ? "Hide verdict panel" : "Show verdict panel"} title={showVerdict ? "Hide verdict panel" : "Show verdict panel"} aria-expanded={showVerdict} aria-controls="slice-verdict" onClick={() => setShowVerdict(v => !v)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M8 4H4v16h4M12 4h8v16h-8" /><path d={showVerdict ? "m13 9 3 3-3 3" : "m16 9-3 3 3 3"} /></svg>
+            </button>
+          </div>
+          <div id="slice-verdict" hidden={!showVerdict}><VerdictPanel key={item.id} schema={schema} item={item} compareItem={compareItem} compareLabel={compareLabel} /></div>
+        </div>
       </div>
     </div>
   );

@@ -165,7 +165,7 @@ function scatterPoints(items: Item[], m: MetricDesc): ScatterPoint[] {
   items.forEach((it, index) => {
     const v = it.metrics[m.key];
     if (!v || v.available === false || !finite(v.real) || !finite(v.synthetic)) return;
-    out.push({ index, id: it.id, x: v.real, y: v.synthetic, status: v.status });
+    out.push({ index, id: it.id, x: v.real, y: v.synthetic, status: it.verdicts[m.axis] ?? "inconclusive" });
   });
   return out;
 }

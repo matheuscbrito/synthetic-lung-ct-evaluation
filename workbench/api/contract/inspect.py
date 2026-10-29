@@ -28,7 +28,7 @@ NYQUIST = 0.5
 _NEX_REVIEW = reasons.Z_LIMITS["review"]
 NEX_BANDS = [(-4, -_NEX_REVIEW, "review"), (-_NEX_REVIEW, _NEX_REVIEW, "approved"), (_NEX_REVIEW, 4, "review")]
 DATA_KEYS = ("spectrum", "glcm", "nex", "nex_windows", "wavelet")
-IMAGE_KEYS = ("figure", "map", "noise_figure")
+IMAGE_KEYS = ("figure", "map", "noise_figure", "fine_detail", "coarse_detail")
 
 
 def _descriptor(key: str) -> dict:
@@ -152,6 +152,8 @@ def image(descriptor: dict, dataset: str, version: str, item: str, compare: str 
 
 
 def png(wb: Workbench, key: str, item: str, names: list[str], options: dict) -> bytes:
+    if key in ("fine_detail", "coarse_detail"):
+        return board.technique_png(wb, item, {"fine_detail": "wavelet_fina", "coarse_detail": "wavelet_grossa"}[key], names)
     if key == "figure":
         return board.technique_png(wb, item, options["technique"], names)
     if key == "map":

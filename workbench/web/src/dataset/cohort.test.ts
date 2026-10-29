@@ -86,6 +86,13 @@ describe("cohortSeries", () => {
 });
 
 describe("scatterSeries", () => {
+  test("point colors follow the slice verdict even when the metric is approved", () => {
+    const items = current(realBundle);
+    const m = metric(realBundle, "glcm_contrast");
+    const changed = ["approved", "review", "rejected"].map((status, i) => ({ ...items[i], verdicts: { ...items[i].verdicts, [m.axis]: status }, metrics: { ...items[i].metrics, [m.key]: { ...items[i].metrics[m.key], status: "approved" } } }));
+    expect(scatterSeries(changed as typeof items, m).points.map(p => p.status)).toEqual(["approved", "review", "rejected"]);
+  });
+
   test("only items with both readings, scale max shared with the compare version", () => {
     const items = current(realBundle);
     const m = metric(realBundle, "nps_quantity");

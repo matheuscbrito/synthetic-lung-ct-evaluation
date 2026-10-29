@@ -91,8 +91,11 @@ export interface InspectorOption {
 
 export interface InspectorDesc {
   key: string;
+  primary_view?: "cohort";
+  technique?: string;
   label: string;
   chart: ChartKind;
+  description?: string;
   compare?: boolean;
   options?: InspectorOption[];
 }

@@ -668,3 +668,19 @@ main {
     transform: rotate(360deg);
   }
 }
+
+/* Page content keeps its natural height; the footer follows the complete analysis. */
+.shell-main > * { flex-shrink: 0; }
+.shell-main > .overview, .shell-main > .gb, .shell-main > .opt, .shell-main > .nb { flex: 1 0 auto; min-height: auto; }
+.shell-foot { flex: none; margin-top: 28px; padding-bottom: 8px; }
+.head { flex-wrap: wrap; }
+.head > *, .head-right { min-width: 0; max-width: 100%; }
+.seg { max-width: 100%; overflow-x: auto; flex-shrink: 0; }
+.seg-opt { flex-shrink: 0; }
+@media (max-width: 1100px) { .head-right { justify-content: flex-start; } }
+@media (max-width: 600px) {
+  .shell-main { padding: 16px 12px; }
+  .overview .vstrip { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px; }
+  .overview .ov-search { margin-left: 0; min-width: 0; width: 100%; }
+  .overview .cohort-scatter { max-width: 100%; }
+}

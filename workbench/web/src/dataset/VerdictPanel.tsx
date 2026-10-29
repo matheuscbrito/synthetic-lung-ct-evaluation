@@ -47,22 +47,22 @@ export function VerdictPanel({ schema, item, compareItem, compareLabel }: Props)
 
   return (
     <aside className="verdict">
-      <div className="vhead" style={{ gridTemplateColumns: `repeat(${schema.axes.length}, 1fr)` }}>
+      <div className="vhead">
         {schema.axes.map(axis => {
           const cur = item.verdicts[axis.key] ?? "inconclusive";
           const prev = compareItem?.verdicts[axis.key];
           const changed = prev !== undefined && prev !== cur;
           return (
             <div key={axis.key} className="vcol">
-              <div className="eyebrow">{axis.label}</div>
+              <div className="vaxis">{axis.label}</div>
               <div className="vpills">
                 {changed && (
                   <>
-                    <Pill status={prev} label={statusLabel(prev)} className="prev" />
+                    <span className="vstate"><small>{compareLabel}</small><Pill status={prev} label={statusLabel(prev)} className="prev" /></span>
                     <em className="arrow" title={`${compareLabel} → current`}>→</em>
                   </>
                 )}
-                <Pill status={cur} label={statusLabel(cur)} className="cur" />
+                <span className="vstate"><small>{changed ? "Current" : "Verdict"}</small><Pill status={cur} label={statusLabel(cur)} className="cur" /></span>
               </div>
             </div>
           );

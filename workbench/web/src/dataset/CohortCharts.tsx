@@ -16,6 +16,8 @@ interface Props {
   items: Item[];
   onOpen: (id: string) => void;
   focus?: string;
+  technique?: string;
+  scatterFirst?: boolean;
   /** Label of the version shown in `items` (used when a compare version is stacked). */
   label?: string;
   compare?: CompareVersion | null;
@@ -136,7 +138,7 @@ function ScatterChart({ schema, metric, panel, other, scale, focus, onOpen }: {
           return (
             <circle key={p.id} className={focused ? "pt focus" : "pt"} data-id={p.id} data-status={p.status}
               cx={P(p.x)} cy={Yp(p.y)} r={focused ? 6 : 3.6} fill={STATUS_DOT[p.status]} onClick={() => onOpen(p.id)}>
-              <title>{[byId.get(p.id)!.label, `real ${fmt(p.x)}`, `synthetic ${fmt(p.y)}`,
+              <title>{[byId.get(p.id)!.label, `real ${fmt(p.x)}`, `synthetic ${fmt(p.y)}`, schema.statuses.find(s => s.key === p.status)?.label ?? p.status,
                 byId.get(p.id)!.metrics[metric.key]?.note].filter(Boolean).join(" · ")}</title>
             </circle>
           );
@@ -164,6 +166,7 @@ function ScatterBlock({ schema, metric, panels, focus, onOpen }: {
         <h3>{metric.label}</h3>
         <Seg small label={`Scale of ${metric.label}`} value={scale} onChange={setScale} options={SCALES} />
       </header>
+      <div className="chart-status-legend" aria-label="Point assessment"><span>Color: {schema.axes.find(a => a.key === metric.axis)?.label ?? metric.axis} verdict</span>{schema.statuses.map(s => <span key={s.key}><i style={{ background: STATUS_DOT[s.key] }} aria-hidden="true" />{s.label}</span>)}</div>
       <div className="cohort-pair">
         {panels.map((p, i) => (
           <ScatterChart key={i} schema={schema} metric={metric} panel={p} scale={Number(scale)} focus={focus} onOpen={onOpen}
@@ -174,14 +177,13 @@ function ScatterBlock({ schema, metric, panels, focus, onOpen }: {
   );
 }
 
-export function CohortCharts({ schema, axis, items, onOpen, focus, label, compare }: Props) {
-  const metrics = schema.metrics.filter(m => m.axis === axis);
+export function CohortCharts({ schema, axis, items, onOpen, focus, label, compare, technique, scatterFirst = false }: Props) {
+  const metrics = schema.metrics.filter(m => m.axis === axis && (!technique || m.technique === technique));
   const panels: Panel[] = compare
     ? [{ label: label ?? "This version", items }, { label: compare.label, items: alignTo(items, compare.items) }]
     : [{ items }];
   const scatter = metrics.filter(m => panels.some(p => hasScatter(p.items, m)));
-  return (
-    <div className="cohort">
+  const strips = (
       <div className="cohort-strips">
         {metrics.map(m => (
           <section key={m.key} className="cohort-card">
@@ -189,7 +191,7 @@ export function CohortCharts({ schema, axis, items, onOpen, focus, label, compar
               <h3>{m.label}</h3>
               <span className="sub">{m.display === "z" ? `z (${m.unit})` : m.unit}</span>
             </header>
-            {m.description && <p className="cohort-desc">{m.description}</p>}
+            {m.description && <details className="cohort-help"><summary>How to read this chart</summary><p className="cohort-desc">{m.description}</p></details>}
             {panels.map((p, i) => (
               <StripChart key={i} schema={schema} metric={m} panel={p} focus={focus} onOpen={onOpen}
                 other={panels.length > 1 ? panels[1 - i].items : undefined} />
@@ -197,7 +199,8 @@ export function CohortCharts({ schema, axis, items, onOpen, focus, label, compar
           </section>
         ))}
       </div>
-      {scatter.length > 0 && (
+  );
+  const comparisons = scatter.length > 0 ? (
         <>
           <div className="eyebrow cohort-h">Real against synthetic</div>
           <div className="cohort-scatters">
@@ -206,7 +209,6 @@ export function CohortCharts({ schema, axis, items, onOpen, focus, label, compar
             ))}
           </div>
         </>
-      )}
-    </div>
-  );
+      ) : null;
+  return <div className="cohort">{scatterFirst ? <>{comparisons}<details className="inspector-charts"><summary>Deviation from original · details</summary>{strips}</details></> : <>{strips}{comparisons}</>}</div>;
 }

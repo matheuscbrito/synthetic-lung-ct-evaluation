@@ -92,7 +92,7 @@ def test_metric_limits_from_calibration(client):
 
 def test_inspectors(client):
     inspectors = {item["key"]: item for item in _schema(client)["inspectors"]}
-    assert list(inspectors) == ["spectrum", "glcm", "nex", "nex_windows", "wavelet", "figure", "map", "noise_figure"]
+    assert list(inspectors) == ["spectrum", "glcm", "nex", "nex_windows", "wavelet", "fine_detail", "coarse_detail", "figure", "map", "noise_figure"]
     assert inspectors["spectrum"]["chart"] == "curves" and inspectors["spectrum"]["compare"] is True
     assert inspectors["glcm"]["chart"] == "matrix"
     assert inspectors["nex"]["chart"] == "interval"

@@ -38,7 +38,7 @@ export function Curves({ payload: p, colors, width: w = 560, height: h = 200 }: 
   const pl = 46, pr = 110, pt = 10, pb = 28;
   if (xs.length === 0 || ys.length === 0) {
     return (
-      <svg className="spec chart-curves" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      <svg className="spec chart-curves" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet">
         <text x={w / 2} y={h / 2} className="ax" textAnchor="middle">n/a</text>
       </svg>
     );
@@ -103,7 +103,7 @@ export function Curves({ payload: p, colors, width: w = 560, height: h = 200 }: 
   const labelYs = spreadLabels(ended.map(l => l.endY!), LABEL_GAP);
 
   return (
-    <svg className="spec chart-curves" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+    <svg className="spec chart-curves" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet">
       {yTicks.map(t => {
         const y = Y(logy ? 10 ** t : t);
         return (

@@ -107,7 +107,7 @@ def test_wavelet_bars(client, wb, cid):
 
 def test_map_png(client, wb, cid):
     layer = next(iter(MAP_LAYERS))
-    body = _get(client, "map", version="Dsr-gpbo11", item=cid, layer=layer, compared="yes")
+    body = _get(client, "map", version=wb.history["versions"][-1]["name"], item=cid, layer=layer, compared="yes")
     assert body.status_code == 200
     url = body.json()["url"]
     assert url.startswith("/api/inspect/map.png?") and body.json()["caption"]
@@ -117,11 +117,11 @@ def test_map_png(client, wb, cid):
     assert png.status_code == 200 and png.headers["content-type"] == "image/png" and png.content
 
 
-def test_figure_and_noise_urls(client, cid):
+def test_figure_and_noise_urls(client, wb, cid):
     technique = next(iter(TECHNIQUE_FIGURES))
-    figure = _get(client, "figure", version="Dsr-gpbo11", item=cid, technique=technique).json()
+    figure = _get(client, "figure", version=wb.history["versions"][-1]["name"], item=cid, technique=technique).json()
     assert figure["url"].startswith("/api/inspect/figure.png?") and figure["caption"]
-    noise = _get(client, "noise_figure", version="Dsr-gpbo11", item=cid).json()
+    noise = _get(client, "noise_figure", version=wb.history["versions"][-1]["name"], item=cid).json()
     png = client.get(noise["url"])
     assert png.status_code == 200 and png.headers["content-type"] == "image/png" and png.content
 
@@ -145,3 +145,14 @@ def test_tiny_lung_is_422(client, cid, monkeypatch, key, function):
     response = _get(client, key, version="Dsr", item=cid)
     assert response.status_code == 422
     assert "ROI has no valid neighbour pairs" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("key", ["fine_detail", "coarse_detail"])
+def test_detail_image_compares_selected_versions(client, wb, cid, key):
+    names = [v["name"] for v in wb.history["versions"]][-2:]
+    response = _get(client, key, version=names[-1], item=cid, compare=",".join(names))
+    assert response.status_code == 200
+    body = response.json()
+    assert body["caption"] and parse_qs(urlsplit(body["url"]).query)["compare"] == [",".join(names)]
+    png = client.get(body["url"])
+    assert png.status_code == 200 and png.headers["content-type"] == "image/png"

@@ -401,7 +401,7 @@ export function Benchmark({
           <div className="eyebrow">Generators · vs baseline</div>
           <h1>Benchmark</h1>
           <div className="sub">
-            {`Same ${board.n_items} ${noun.plural} · ${board.versions.length} versions`}
+            {`Dataset ${ds.key} · ${ds.label} · ${board.n_items} ${noun.plural} · ${board.versions.length} versions`}
             {cur ? ` · ${label(current)} vs ${label(baseline)}` : ""}
           </div>
         </div>
@@ -437,11 +437,12 @@ export function Benchmark({
         </div>
       </div>
 
+      <p className="gb-guide">Choose a generator below to compare it with the baseline. Counts show verdicts for each axis; transitions show which individual {noun.plural} changed.</p>
       <div className="gb-cols">
         <div className="gb-left">
           {table}
           <div className="sub gb-caption">
-            {shown.map(k => statusLabel(schema, k)).join(" · ")} counts per axis
+            Counts per axis, in order: {shown.map(k => statusLabel(schema, k)).join(" · ")}
             {cur ? ` · indicators compare ${label(current)} with ${label(baseline)}, 95% CI` : ""}
           </div>
           {indicatorsCard}

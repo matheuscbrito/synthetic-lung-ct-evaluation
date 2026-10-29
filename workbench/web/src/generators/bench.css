@@ -292,3 +292,17 @@
   font-weight: 500;
   white-space: nowrap;
 }
+
+.gb-guide { margin: 18px 0 0; max-width: 85ch; color: var(--ink2); font-size: 13px; line-height: 1.5; }
+.gb-cols { margin-top: 14px; }
+.gb-table { overflow-x: auto; }
+.gb-thead, .gb-trow { min-width: 620px; }
+.gb-ghead, .gb-ihead, .gb-ba { flex-wrap: wrap; }
+@media (max-width: 1350px) { .gb-cols { grid-template-columns: minmax(0, 1fr); } }
+
+.gb-irow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; overflow-wrap: anywhere; }
+.gb-xr { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) auto; }
+@media (max-width: 650px) { .gb-irow, .gb-xr { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px 0; } }
+
+.gb-thead, .gb-trow { min-width: 760px; }
+.gb-trow > div { min-width: 0; }

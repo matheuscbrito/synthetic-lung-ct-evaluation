@@ -114,7 +114,7 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
   };
 
   const modeView = (cmp: CompareVersion | null) => {
-    const props = { schema, axis, items: visible, onOpen: open, focus: route.item, label: versionLabel(version), compare: cmp };
+    const props = { schema, axis, items: visible, onOpen: open, label: versionLabel(version), compare: cmp };
     return view === "charts" ? <CohortCharts {...props} /> : <VerdictMatrix {...props} />;
   };
 
@@ -241,7 +241,7 @@ export function Overview({ schema, items, version, versions, route, onRoute }: O
       ) : (
         <div className="ov-scroll ov-mode">
           {view === "table" ? (
-            <ItemTable schema={schema} axis={axis} items={visible} onOpen={open} focus={route.item} />
+            <ItemTable schema={schema} axis={axis} items={visible} onOpen={open} />
           ) : compareName ? (
             <WithCompare schema={schema} version={compareName} label={versionLabel(compareName)}>
               {cmp => modeView(cmp)}

@@ -59,3 +59,8 @@
   .spec .line { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
   .spec .wbar { animation: none; }
 }
+
+.chart-image .img-opts { flex-wrap: nowrap; }
+.chart-image img { width: 100%; }
+.spec.chart-curves { height: auto; min-height: 200px; }
+.wtype { line-height: 1.5; }

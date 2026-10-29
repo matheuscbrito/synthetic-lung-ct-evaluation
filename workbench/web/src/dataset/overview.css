@@ -597,3 +597,17 @@
 .overview .itab-focus {
   color: var(--ink3);
 }
+
+/* Let the page itself scroll so charts and filters share the available height. */
+.overview .ov-scroll { flex: none; min-height: auto; overflow: visible; }
+
+.cohort-help { margin: 8px 0 12px; font-size: 12px; color: var(--ink2); }
+.cohort-help summary { cursor: pointer; }
+.cohort-help p { max-width: 75ch; line-height: 1.5; padding-top: 6px; }
+.overview .cohort-pair > *, .overview .cohort-card { min-width: 0; }
+.overview .cohort-card header { flex-wrap: wrap; }
+.overview .cohort-scatters { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
+
+.chart-status-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 12px; font-size: 12px; color: var(--ink2); }
+.chart-status-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.chart-status-legend i { width: 8px; height: 8px; border-radius: 50%; }

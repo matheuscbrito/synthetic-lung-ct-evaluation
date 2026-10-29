@@ -163,3 +163,55 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.item-view .crumbs-right { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
+.item-view .itabs, .chart-image .img-opts { max-width: 100%; min-width: 0; overflow-x: auto; padding-bottom: 4px; }
+.item-view .itabs .seg, .chart-image .img-opts .seg { width: max-content; max-width: none; flex-shrink: 0; }
+.item-view .vhead { display: flex; flex-direction: column; gap: 0; }
+.item-view .vcol { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(0, 2fr); align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.item-view .vaxis { font-size: 13px; font-weight: 600; color: var(--ink); }
+.item-view .vpills { flex-wrap: nowrap; justify-content: flex-end; }
+.item-view .vstate { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 3px; }
+.item-view .vstate small { max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink2); font-size: 10px; }
+.item-view .inspector-intro { margin-bottom: 16px; }
+.item-view .inspector-intro h2 { margin: 0 0 5px; font: 400 23px var(--font-serif); color: var(--ink); }
+.item-view .inspector-intro p { margin: 0; max-width: 75ch; color: var(--ink2); font-size: 13px; line-height: 1.5; }
+.item-view .why li { line-height: 1.45; }
+@media (max-width: 800px) { .item-view .crumbs-right { width: 100%; margin-left: 0; } }
+
+.metric-comparison { margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.metric-comparison h3 { margin: 0; font-size: 14px; }
+.metric-comparison p { margin: 5px 0 12px; font-size: 12px; color: var(--ink2); }
+.metric-comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+.metric-comparison-row strong { font-size: 12px; }
+.metric-track { position: relative; height: 3px; margin: 14px 6px 12px; background: var(--line); }
+.metric-track i { position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: var(--ink2); transform: translate(-50%, -50%); }
+.metric-track i.synthetic { width: 12px; height: 12px; background: #2a78d6; border: 2px solid white; }
+.metric-values { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; color: var(--ink2); font-size: 11px; }
+
+.slice-charts { margin-top: 12px; min-width: 0; }
+.slice-charts-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.slice-charts-heading h2 { margin: 0; font: 400 26px var(--font-serif); }
+.slice-charts-heading p { margin: 5px 0 0; color: var(--ink2); font-size: 13px; }
+.slice-chart-tabs { max-width: 100%; overflow-x: auto; }
+.slice-chart-tabs .seg { width: max-content; margin: 0; }
+
+.item-view .sgrid.verdict-collapsed { grid-template-columns: minmax(0, 1fr) 36px; }
+.verdict-toggle { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; color: var(--ink2); font: inherit; font-size: 12px; cursor: pointer; }
+.verdict-toggle:hover { color: var(--ink); background: var(--soft); }
+.inspector-charts { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 14px; }
+.inspector-charts summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.inspector-charts summary span { font-weight: 400; font-size: 12px; color: var(--ink2); margin-left: 8px; }
+.inspector-charts > p { color: var(--ink2); font-size: 12px; line-height: 1.5; }
+
+.verdict-sidebar { min-width: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+.verdict-sidebar-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 0 20px; color: var(--ink2); font-size: 13px; font-weight: 600; }
+.verdict-sidebar .verdict { border: 0; padding-top: 4px; }
+.verdict-sidebar .verdict-toggle { display: grid; place-items: center; padding: 8px; border: 0; border-radius: 8px; }
+.verdict-sidebar.is-collapsed { border-radius: 10px; }
+.verdict-sidebar.is-collapsed .verdict-sidebar-head { padding: 0; }
+@media (max-width: 800px) {
+ .item-view .sgrid.verdict-collapsed { grid-template-columns: minmax(0, 1fr); }
+ .verdict-sidebar { grid-row: 1; }
+ .verdict-sidebar.is-collapsed { justify-self: end; }
+}

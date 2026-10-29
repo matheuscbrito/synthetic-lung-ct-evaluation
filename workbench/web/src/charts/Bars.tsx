@@ -27,8 +27,8 @@ export function Bars({ payload: p, width: w = 560, height: h = 200 }: Props) {
   return (
     <svg className="spec chart-bars" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
       <title>{p.y.label}</title>
-      <line x1={pl} x2={w - pr} y1={Y(z)} y2={Y(z)} className="zero" />
-      <text x={pl - 8} y={Y(z) + 4} className="ax" textAnchor="end">{fmt(z)}</text>
+      {[lo + pad, z, hi - pad].filter((v, i, a) => a.findIndex(x => Math.abs(x - v) < 1e-9) === i).map(v => <g key={v}><line x1={pl} x2={w - pr} y1={Y(v)} y2={Y(v)} className={v === z ? "zero" : "grid"} /><text x={pl - 8} y={Y(v) + 4} className="ax" textAnchor="end">{fmt(v)}</text></g>)}
+      <text x={pl} y={h - 1} className="ax">{p.y.label}</text>
       {p.bars.map((b, i) => {
         const x = pl + i * bw + bw * 0.22;
         const cx = x + bw * 0.28;
