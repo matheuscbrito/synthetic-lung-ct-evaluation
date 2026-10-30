@@ -163,7 +163,7 @@ inspector card.
 ```
 
 The baseline row has `vs_baseline: null` and `cohort: []`. Without `baseline=` the default is the
-lab baseline (first version whose name ends in `-baseline`), else the history default; it equals
+lab baseline (first version whose name ends in `-baseline` or starts with `baseline-`), else the history default; it equals
 `schema.dataset.default_baseline`. Cohort result labels: "Systematic deviation: NEx tends to be
 higher|lower" (review, p < 0.05), "No systematic deviation" (approved), "Too few values to test"
 (inconclusive, n < 10); `p` prints with 3 decimals when below 0.05, else 2; missing values print
@@ -239,7 +239,7 @@ Labels and provenance live in a workbench sidecar next to the history
 (`<history>/workbench.json`, `{"versions": {"<name>": {"label", "provenance"}}}`);
 the frozen `historico.json` is never edited. Default label: `reference` for
 the ruler reference, `baseline` for the lab baseline (first version whose name
-ends in `-baseline`, else the history default when it is not the reference),
+ends in `-baseline` or starts with `baseline-`, else the history default when it is not the reference),
 else the name. Labels are 1–40 characters from letters, digits, space, `#`,
 `.`, `-`, `_` (400 otherwise).
 

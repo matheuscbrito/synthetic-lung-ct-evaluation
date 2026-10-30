@@ -14,18 +14,19 @@ matplotlib.use("Agg")  # antes de qualquer import de pyplot
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 
 from frameworks.noise_evaluator.integration import air_mask, measure_nps, natural_noise_sigma  # noqa: E402
 from frameworks.texture_evaluator.placar import load_case  # noqa: E402
-
-DPI = 120
+from workbench.api.images import sharpen  # noqa: E402
 
 
 def _png(fig) -> bytes:
     """Salva e fecha a figura mesmo se o salvamento falhar."""
     try:
         buffer = io.BytesIO()
-        fig.savefig(buffer, format="png", dpi=DPI, bbox_inches="tight", facecolor="white")
+        fig.savefig(buffer, format="png", dpi=sharpen(fig), bbox_inches="tight", facecolor="white")
         return buffer.getvalue()
     finally:
         plt.close(fig)
@@ -73,11 +74,17 @@ def nps_case_png(history: dict, case_id: str, baseline: str, version: str) -> by
                 overview.add_patch(plt.Rectangle((roi.x, roi.y), roi.size, roi.size, fill=False, ec=color, lw=width, alpha=.95 if index == chosen else .45))
             overview.set_title("Where the NPS measures", fontweight="bold")
             overview.axis("off")
-            for axis, patch, title in zip((fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[0, 2]), fig.add_subplot(grid[0, 3])), patches,
+            fluctuation = (fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[0, 2]), fig.add_subplot(grid[0, 3]))
+            for axis, patch, title in zip(fluctuation, patches,
                                           ("Fluctuation · original", f"Fluctuation · {baseline}", f"Fluctuation · {version}")):
                 axis.imshow(patch, cmap="coolwarm", vmin=-vmax, vmax=vmax, interpolation="nearest")
                 axis.set_title(title, fontweight="bold")
                 axis.set_xticks([]); axis.set_yticks([])
+            ramp = plt.get_cmap("coolwarm")
+            fluctuation[1].legend(handles=[Patch(color=ramp(1.0), label="above local trend"), Patch(color=ramp(0.0), label="below local trend"),
+                                           Line2D([], [], ls="none", label="not good or bad")],
+                                  loc="upper center", bbox_to_anchor=(.5, -.01), ncol=3, fontsize=8, frameon=False,
+                                  handlelength=.9, handleheight=.9, labelcolor="#4b5563")
             curve = fig.add_subplot(grid[1, :])
             for result, label, color in ((real, "original", "#242a35"), (old, baseline, "#c45a35"), (new, version, "#157a72")):
                 power = result.radial_power / max(float(result.radial_power.sum()), np.finfo(float).eps)
@@ -89,7 +96,6 @@ def nps_case_png(history: dict, case_id: str, baseline: str, version: str) -> by
             curve.set_ylabel("share of the noise amount")
             curve.set_xlim(0, 1); curve.grid(alpha=.16)
             curve.legend(frameon=False, ncol=5, loc="upper center")
-            fig.text(.5, .015, "Red = above local trend · blue = below · colour does not mean good or bad", ha="center", fontsize=10, color="#4b5563")
         # o ajuste vem antes da barra de cores; depois dele a barra ficaria por cima do último painel
         fig.subplots_adjust(left=.055, right=.985, top=.86 if rois is None else .94, bottom=.07)
         panels = (("original", before.original), (baseline, before.synthetic), (version, after.synthetic))

@@ -181,7 +181,7 @@ def test_add_version_extra_slices_400(tmp_history, tmp_path):
 
 
 def test_add_version_duplicate_folder_400(tmp_history):
-    r = TestClient(create_app(tmp_history)).post("/api/versions", json={"folder": str(ROOT / "dados" / "Dsr-baseline")})
+    r = TestClient(create_app(tmp_history)).post("/api/versions", json={"folder": str(ROOT / "dados" / "Dsr")})
     assert r.status_code == 400 and "already in the history" in r.json()["detail"]
 
 
@@ -203,9 +203,9 @@ def _two_history_dirs(tmp_path):
     dsr_dir = tmp_path / "placar"
     (dsr_dir / "versoes").mkdir(parents=True)
     history = json.loads((HISTORY_DIR / "historico.json").read_text(encoding="utf-8"))
-    history["versions"] = [v for v in history["versions"] if v["name"] in {"Dsr", "Dsr-baseline"}]
+    history["versions"] = [v for v in history["versions"] if v["name"] in {"Dsr", "baseline-full"}]
     (dsr_dir / "historico.json").write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
-    for name in ("Dsr", "Dsr-baseline"):
+    for name in ("Dsr", "baseline-full"):
         shutil.copy(HISTORY_DIR / "versoes" / f"{name}.csv", dsr_dir / "versoes" / f"{name}.csv")
     dgen_dir = tmp_path / "placar_dgen"
     shutil.copytree(ROOT / "outputs" / "placar_dgen", dgen_dir)
@@ -218,7 +218,7 @@ def test_two_histories_are_isolated(tmp_path):
     c = TestClient(create_app(datasets))
     dsr_versions = [v["name"] for v in c.get("/api/versions", params={"dataset": "Dsr"}).json()]
     dgen_versions = [v["name"] for v in c.get("/api/versions", params={"dataset": "Dgen"}).json()]
-    assert dsr_versions == ["Dsr", "Dsr-baseline"] and dgen_versions == ["Dgen"]
+    assert dsr_versions == ["Dsr", "baseline-full"] and dgen_versions == ["Dgen"]
     # a versão de um dataset não existe no outro
     assert c.get("/api/items", params={"version": "Dgen", "dataset": "Dsr"}).status_code == 404
     assert c.get("/api/items", params={"version": "Dsr", "dataset": "Dgen"}).status_code == 404

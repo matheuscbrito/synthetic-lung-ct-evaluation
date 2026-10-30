@@ -22,13 +22,12 @@ from pydantic import BaseModel  # noqa: E402
 
 from frameworks.texture_evaluator import placar  # noqa: E402
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES, map_figure, technique_figure  # noqa: E402
-from workbench.api import data, datasets as ds  # noqa: E402
+from workbench.api import data, datasets as ds, images  # noqa: E402
 from workbench.api.data import NotFound, Workbench  # noqa: E402
 from workbench.api.contract import versions as contract_versions  # noqa: E402
 from workbench.api.datasets import DEFAULT  # noqa: E402
 from workbench.api.nps_figure import nps_case_png  # noqa: E402
 
-DPI = 120
 STATUSES = ("approved", "review", "rejected", "inconclusive")
 RESULT = {"melhorou": "improved", "piorou": "worse", "mudança pequena": "small change",
           "sem diferença clara": "no clear difference", "n/a": "n/a"}
@@ -163,7 +162,7 @@ def _build_board(wb: Workbench, baseline: str) -> dict:
 
 def _png(fig) -> bytes:
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=DPI, bbox_inches="tight", facecolor="white")
+    fig.savefig(buffer, format="png", dpi=images.sharpen(fig), bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return buffer.getvalue()
 

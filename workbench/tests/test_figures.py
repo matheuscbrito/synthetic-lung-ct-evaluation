@@ -29,6 +29,13 @@ def width(content: bytes) -> int:
     return Image.open(io.BytesIO(content)).size[0]
 
 
+def test_figure_keeps_every_native_pixel():
+    wb = workbench_of()
+    names = real_names()[:2]
+    # 512 px nativos em cada painel, nas 3 colunas: a figura inteira precisa passar de 3 × 1024 px
+    assert width(board.technique_png(wb, CID, "wavelet_fina", names)) > 3 * 1024
+
+
 def test_technique_versions_subset_is_honoured():
     wb, names = workbench_of(), real_names()
     full = width(board.technique_png(wb, CID, "delta_mu", names))

@@ -18,6 +18,8 @@ from workbench.api.data import NotFound, Workbench
 
 KINDS = ("real", "synthetic", "diff", "contour")
 CONTOUR_RGB = (0x00, 0xC9, 0x80)  # #00c980
+FIGURE_MIN_PX = 1024  # lado mínimo de um painel de imagem na figura, para valer em tela retina
+FIGURE_MAX_DPI = 600  # teto de tamanho do PNG quando há painéis muito pequenos
 
 
 @functools.lru_cache(maxsize=64)
@@ -59,6 +61,25 @@ def _contour(mask: np.ndarray) -> np.ndarray:
     rgba[edge, :3] = CONTOUR_RGB
     rgba[edge, 3] = 255
     return rgba
+
+
+def sharpen(fig) -> int:
+    """Prepara a figura para mostrar os pixels da CT sem perda e devolve o DPI de salvamento.
+
+    Cada pixel do dado vira um número inteiro de pixels do PNG (sem interpolar), então nada é
+    reamostrado: o DPI sai do menor múltiplo que deixa o painel com `FIGURE_MIN_PX` de lado.
+    """
+    dpi = float(fig.dpi)
+    for axis in fig.axes:
+        if not axis.images:
+            continue
+        for image in axis.images:
+            image.set_interpolation("nearest")
+        axis.apply_aspect()
+        inches = axis.get_position().width * fig.get_figwidth()
+        span = abs(axis.get_xlim()[1] - axis.get_xlim()[0])
+        dpi = max(dpi, np.ceil(FIGURE_MIN_PX / span) * span / inches)
+    return int(np.ceil(min(dpi, FIGURE_MAX_DPI)))
 
 
 def render(case: placar.ValidCase, kind: str, size: int | None, reference: bool = False) -> bytes:

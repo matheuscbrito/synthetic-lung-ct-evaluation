@@ -212,6 +212,11 @@ main {
   pointer-events: none;
 }
 
+/* com zoom, cada pixel da CT aparece como é, sem o borrão da interpolação do navegador */
+.canvas.zoomed img {
+  image-rendering: pixelated;
+}
+
 .verdict {
   min-width: 0;
   overflow: auto;

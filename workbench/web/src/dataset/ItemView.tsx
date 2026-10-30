@@ -85,7 +85,7 @@ function Pane({ src, contour, alt, caption, sub, view, setView }: PaneProps) {
         onPointerCancel={endDrag}
         onDoubleClick={() => setView(() => IDENTITY)}
       >
-        <div className="canvas" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
+        <div className={view.scale > 1 ? "canvas zoomed" : "canvas"} style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
           <img className="base" src={src} alt={alt} draggable={false} />
           {contour !== null && <img className="contour" src={contour} alt="" draggable={false} />}
         </div>

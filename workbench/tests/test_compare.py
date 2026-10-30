@@ -27,7 +27,7 @@ def framework_rows(name):
 
 
 def test_transitions_shape_and_common_slices(wb):
-    items = compare.transitions(wb, "Dsr", "Dsr-gpbo11", "texture")
+    items = compare.transitions(wb, "Dsr", "gpbo-11-full", "texture")
     assert items and all(set(i) == {"case_id", "label", "before", "after", "change", "became_approved"} for i in items)
     assert {i["change"] for i in items} <= {"improved", "worsened", "same"}
     assert {i["before"] for i in items} <= {"approved", "review", "rejected", "inconclusive"}
@@ -36,8 +36,8 @@ def test_transitions_shape_and_common_slices(wb):
 
 @pytest.mark.parametrize("verdict", ["brightness", "texture", "noise"])
 def test_transitions_match_framework_verdicts(wb, verdict):
-    before, after = framework_rows("Dsr"), framework_rows("Dsr-gpbo11")
-    items = compare.transitions(wb, "Dsr", "Dsr-gpbo11", verdict)
+    before, after = framework_rows("Dsr"), framework_rows("gpbo-11-full")
+    items = compare.transitions(wb, "Dsr", "gpbo-11-full", verdict)
     assert [i["case_id"] for i in items] == sorted(before.keys() & after.keys())
     severity = {"aprovada": 0, "revisão": 1, "inconclusivo": 1, "reprovada": 2}  # ui_placar.TRANSITION_SEVERITY
     for item in items:
@@ -69,8 +69,8 @@ def test_cohort_nex_wilcoxon_matches_framework(wb):
 
 
 def test_cohort_wavelet_types_count_framework_rows(wb):
-    body = compare.cohort(wb, "Dsr-gpbo11")
-    expected = Counter(r["wavelet_verdict"] for r in load_rows(HISTORY_DIR, "Dsr-gpbo11"))
+    body = compare.cohort(wb, "gpbo-11-full")
+    expected = Counter(r["wavelet_verdict"] for r in load_rows(HISTORY_DIR, "gpbo-11-full"))
     assert body["wavelet_types"] == dict(expected)
     assert sum(body["wavelet_types"].values()) == sum(expected.values())
 
@@ -95,13 +95,13 @@ def test_cohort_small_n_has_no_median_or_test():
 
 
 def test_cohort_direction_only_when_systematic(wb):
-    stat = compare.cohort(wb, "Dsr-gpbo11")["nex_test"]
+    stat = compare.cohort(wb, "gpbo-11-full")["nex_test"]
     assert stat["n"] >= compare.NEX_MIN_N and stat["median_z"] is not None
     assert (stat["direction"] is not None) == stat["systematic"]
 
 
 def test_cohort_wavelet_type_codes(wb):
     from workbench.api.data import WAVELET_CODE
-    body = compare.cohort(wb, "Dsr-gpbo11")
-    expected = Counter(WAVELET_CODE[r["wavelet_verdict"]] for r in load_rows(HISTORY_DIR, "Dsr-gpbo11"))
+    body = compare.cohort(wb, "gpbo-11-full")
+    expected = Counter(WAVELET_CODE[r["wavelet_verdict"]] for r in load_rows(HISTORY_DIR, "gpbo-11-full"))
     assert body["wavelet_type_codes"] == dict(expected)
