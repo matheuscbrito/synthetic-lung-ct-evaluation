@@ -112,9 +112,9 @@ Rótulos e proveniência ficam em `<histórico>/workbench.json`, separados dos c
 ```
 
 O rótulo aceita de 1 a 40 caracteres: letras ASCII, dígitos, espaço, `#`, `.`, `-`, `_`.
-Sem rótulo explícito, a referência vira `reference`, a primeira versão terminada em
-`-baseline` vira `baseline` (com fallback para a linha de base do histórico quando distinta
-da referência), e as demais mantêm o nome interno.
+Sem rótulo explícito, a referência vira `reference`, a primeira versão cujo nome
+termina em `-baseline` ou começa com `baseline-` vira `baseline` (com fallback para a linha de
+base do histórico quando distinta da referência), e as demais mantêm o nome interno.
 
 Na adição, uma proveniência explícita tem prioridade. Sem ela, a API lê `optimizer` e
 `step` do `report.json` da pasta e grava `{run: optimizer, step: String(step)}`; se faltar

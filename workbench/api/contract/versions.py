@@ -110,11 +110,11 @@ def detected_provenance(folder: Path) -> dict | None:
 def lab_baseline(history: dict) -> str | None:
     """Versão de linha de base do laboratório, que recebe o rótulo `baseline`.
 
-    É a primeira versão (na ordem do histórico) cujo nome termina em `-baseline`; sem ela, a linha de base
-    padrão do histórico quando ela não é a referência; senão None.
+    É a primeira versão (na ordem do histórico) cujo nome termina em `-baseline` ou começa com `baseline-`;
+    sem ela, a linha de base padrão do histórico quando ela não é a referência; senão None.
     """
     for item in history["versions"]:
-        if item["name"].endswith("-baseline"):
+        if item["name"].endswith("-baseline") or item["name"].startswith("baseline-"):
             return item["name"]
     default = data.default_baseline(history)
     return default if default != history.get("reference") else None

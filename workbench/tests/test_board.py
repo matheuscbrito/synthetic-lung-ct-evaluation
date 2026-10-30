@@ -99,15 +99,15 @@ def test_board_noise_indicators_in_vs_baseline():
 
 
 def test_board_baseline_param_changes_reference():
-    b = board_of(baseline="Dsr-baseline")
-    assert b["baseline"] == "Dsr-baseline"
+    b = board_of(baseline="baseline-full")
+    assert b["baseline"] == "baseline-full"
     by_name = {g["name"]: g for g in b["generators"]}
-    assert by_name["Dsr-baseline"]["is_baseline"] and by_name["Dsr-baseline"]["vs_baseline"] is None
+    assert by_name["baseline-full"]["is_baseline"] and by_name["baseline-full"]["vs_baseline"] is None
     assert not by_name["Dsr"]["is_baseline"] and by_name["Dsr"]["vs_baseline"] is not None
     # mesmo cálculo do framework, com os cortes comuns ordenados como no placar
     history_rows = {name: {r["case_id"]: r for r in load_rows(HISTORY_DIR, name)} for name in real_names()}
     common = sorted(set.intersection(*(set(rows) for rows in history_rows.values())))
-    previous = [history_rows["Dsr-baseline"][c] for c in common]
+    previous = [history_rows["baseline-full"][c] for c in common]
     current = [history_rows["Dsr"][c] for c in common]
     gains = placar.compare(previous, current, np.random.default_rng(0))
     nex = next(r for r in by_name["Dsr"]["vs_baseline"] if r["indicator"] == "nex")

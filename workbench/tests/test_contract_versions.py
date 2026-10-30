@@ -79,6 +79,11 @@ def test_lab_baseline_is_first_version_named_baseline():
     assert cv.version_label("Y-baseline", history, {}) == "Y-baseline"
 
 
+def test_lab_baseline_accepts_baseline_prefix():
+    history = {"reference": "Dsr", "versions": [{"name": "Dsr"}, {"name": "baseline-full"}, {"name": "cand"}]}
+    assert cv.lab_baseline(history) == "baseline-full"
+
+
 def test_lab_baseline_none_without_baseline_suffix_and_reference_present():
     history = {"reference": "Dsr", "versions": [{"name": "Dsr"}, {"name": "B"}]}
     assert cv.lab_baseline(history) is None
@@ -91,8 +96,8 @@ def test_lab_baseline_falls_back_to_default_when_reference_missing():
 
 def test_lab_baseline_label_on_real_history_copy(tmp_history):
     rows = by_name(get_versions(TestClient(create_app(tmp_history))))
-    assert rows["Dsr-baseline"]["label"] == "baseline"
-    assert rows["Dsr-baseline"]["is_reference"] is False
+    assert rows["baseline-full"]["label"] == "baseline"
+    assert rows["baseline-full"]["is_reference"] is False
     assert rows["Dsr"]["label"] == "reference"
     assert rows["Dsr-copy"]["label"] == "Dsr-copy"
 
@@ -180,22 +185,22 @@ def test_patch_unknown_dataset_is_404(tmp_history):
 def test_meta_survives_removal_of_another_version(tmp_history):
     client = TestClient(create_app(tmp_history))
     client.patch("/api/versions/Dsr-copy", json={"label": "Copy", "provenance": {"run": "gp", "step": "2"}})
-    client.patch("/api/versions/Dsr-gpbo11", json={"label": "GP-BO #11"})
-    assert client.delete("/api/versions/Dsr-gpbo11").status_code == 200
+    client.patch("/api/versions/gpbo-11-full", json={"label": "GP-BO #11"})
+    assert client.delete("/api/versions/gpbo-11-full").status_code == 200
     meta = cv.load_meta(tmp_history)
-    assert "Dsr-gpbo11" not in meta
+    assert "gpbo-11-full" not in meta
     assert meta["Dsr-copy"] == {"label": "Copy", "provenance": {"run": "gp", "step": "2"}}
     assert by_name(get_versions(client))["Dsr-copy"]["label"] == "Copy"
 
 
 def test_warning_only_when_suspicious_pairs(tmp_history):
     set_suspicious(tmp_history, "Dsr-copy", 3)
-    set_suspicious(tmp_history, "Dsr-baseline", 0)
-    set_suspicious(tmp_history, "Dsr-gpbo11", None)  # versão anterior ao campo: contagem desconhecida
+    set_suspicious(tmp_history, "baseline-full", 0)
+    set_suspicious(tmp_history, "gpbo-11-full", None)  # versão anterior ao campo: contagem desconhecida
     rows = by_name(get_versions(TestClient(create_app(tmp_history))))
     assert rows["Dsr-copy"]["warnings"] == [{"label": "suspicious pairs", "count": 3}]
-    assert rows["Dsr-baseline"]["warnings"] == []
-    assert rows["Dsr-gpbo11"]["warnings"] == []
+    assert rows["baseline-full"]["warnings"] == []
+    assert rows["gpbo-11-full"]["warnings"] == []
 
 
 def test_add_from_detected_run_stores_provenance(tmp_history, tmp_path):
