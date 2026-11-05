@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Sobe a API (uvicorn, porta 8000) e o front (Vite, porta 5173, /api proxied). Rodar a partir de qualquer lugar.
+# Portas ocupadas por outro projeto: WORKBENCH_API_PORT e WORKBENCH_WEB_PORT trocam as duas.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+export WORKBENCH_API_PORT="${WORKBENCH_API_PORT:-8000}"
+export WORKBENCH_WEB_PORT="${WORKBENCH_WEB_PORT:-5173}"
 
 API_PID=""
 WEB_PID=""
@@ -24,7 +27,7 @@ case "${1:-}" in
 esac
 
 API_LOG="$(mktemp "${TMPDIR:-/tmp}/qc-workbench-api.XXXXXX")"
-.venv/bin/uvicorn "$API_APP" --host 127.0.0.1 --port 8000 >"$API_LOG" 2>&1 &
+.venv/bin/uvicorn "$API_APP" --host 127.0.0.1 --port "$WORKBENCH_API_PORT" >"$API_LOG" 2>&1 &
 API_PID=$!
 
 # Só este processo pode autorizar o proxy: uma API antiga na porta não conta como pronta.
@@ -34,7 +37,7 @@ for attempt in {1..150}; do
     cat "$API_LOG" >&2
     exit 1
   fi
-  if grep -q 'Uvicorn running on http://127.0.0.1:8000' "$API_LOG"; then
+  if grep -q "Uvicorn running on http://127.0.0.1:$WORKBENCH_API_PORT" "$API_LOG"; then
     API_READY=1
     break
   fi
