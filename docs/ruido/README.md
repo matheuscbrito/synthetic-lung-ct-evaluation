@@ -19,6 +19,8 @@ Medimos se a CT sintética tem o **mesmo ruído da máquina** que tirou a CT rea
 | `../../resultados/ruido_simulacao/` | Máquinas simuladas (radon → Poisson → FBP com 4 filtros × 3 doses) |
 | `../../resultados/ruido_ortogonalidade/` | Controles reais, ruído × textura, redundância |
 | `../../resultados/ruido_datasets/` | Dsr, Dsr-baseline, Dsr-gpbo11, Dgen; comparação com o `noise_evaluator` |
+| `../../resultados/ruido_tecido_mole/` | Seção de report: NPS no tecido mole (real × sintética) |
+| `../../resultados/ruido_pulmao_viabilidade/` | Viabilidade de medir ruído dentro do pulmão: **não viável** (0 de 288 receitas) |
 
 ## Como o método evoluiu
 
@@ -51,6 +53,10 @@ Datasets (aprovada / revisão / reprovada): Dsr 15/20/2 · baseline 19/16/2 · g
 - O ar das reais está recortado no mínimo, por isso não é usado. As manchas no ar continuam com o `noise_evaluator`.
 - Na validação deixando um paciente fora, σ0 do Wiener e a impressão de referência vêm de todos os pacientes (vazamento leve que favorece `t2_wiener_lsd`); ver `calibrate.py`.
 - 2/37 cortes não têm tecido mole, então o eixo quantidade fica inconclusivo e o corte nunca aprova.
+
+## Ruído dentro do pulmão (05/11/2026)
+
+O tecido mole é a região de referência. A medida dentro do pulmão foi testada com ruído conhecido somado sobre a anatomia (16 métricas × 18 máscaras): nenhuma receita ficou dentro de ±10% da verdade. A microtextura do parênquima tem a escala do ruído correlacionado de CT, e o erro cresce quando o ruído é mais suave (+14% no CT-ramp, +74% no hann). No mesmo teste, o tecido mole erra poucos %. O pulmão fica só como diagnóstico (razão Immerkær pulmão ÷ tecido mole). Detalhes em `resultados/ruido_pulmao_viabilidade/resumo.md`.
 
 ## Decisão em aberto
 
