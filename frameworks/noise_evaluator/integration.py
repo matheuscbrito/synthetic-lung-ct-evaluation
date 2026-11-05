@@ -1,8 +1,10 @@
 """Integração do NPS local com o placar de avaliação.
 
-As métricas de decisão são propriedades escalares do NPS. Cada diferença
-sintética − real é expressa em IQR das CTs reais, de modo idêntico às réguas
-de textura já usadas pelo framework. O ar fora do corpo é medido à parte, pois
+As métricas de decisão são propriedades escalares do NPS, medido em quadrados
+de 16 × 16 px no tecido mole liso fora do pulmão (ver `regions.py`). Cada
+diferença sintética − real é expressa em IQR das CTs reais, de modo idêntico às
+réguas de textura já usadas pelo framework. Quadrados de 16 px não enxergam
+padrões mais largos que eles, por isso a parcela de padrões largos não decide. O ar fora do corpo é medido à parte, pois
 na CT real ele é liso e qualquer mancha ali foi inventada pelo gerador.
 """
 from __future__ import annotations
@@ -13,13 +15,14 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from frameworks.noise_evaluator.core import NPSConfig, compare_spectra, estimate_local_nps, features_from_spectra, select_rois
+from frameworks.noise_evaluator.regions import soft_tissue_mask
 
 
-NPS_CONFIG = NPSConfig(min_rois=4)
+# 16 × 16 px: cabem dezenas de quadrados mesmo na parede fina do tórax; 32 × 32 não cabe em 1/3 dos cortes
+NPS_CONFIG = NPSConfig(roi_size=16, stride=4, min_rois=4, max_rois=64)
 NPS_METRICS = {
     "quantity": "Quantidade de ruído",
     "grain": "Tamanho do grão",
-    "low_band": "Padrões largos",
     "high_band": "Grão fino",
 }
 AIR_LABEL = "Manchas no ar"
@@ -27,7 +30,6 @@ NOISE_READINGS = {**NPS_METRICS, "air": AIR_LABEL}
 FEATURE_KEYS = {
     "quantity": "noise_std",
     "grain": "mean_frequency",
-    "low_band": "low_band_fraction",
     "high_band": "high_band_fraction",
 }
 # Manchas no ar: desvio > 3σ do ruído natural da própria CT (ruído gaussiano passa de 3σ em só 0,27% dos pixels).
@@ -104,8 +106,9 @@ def measure_air(original: np.ndarray, synthetic: np.ndarray, lung_mask: np.ndarr
             "nps_air_status": air_status(synthetic_pct - real_pct)}
 
 
-def measure_nps(image: np.ndarray, mask: np.ndarray, rois=None):
-    rois = list(rois) if rois is not None else select_rois(image, mask, NPS_CONFIG)
+def measure_nps(image: np.ndarray, lung_mask: np.ndarray, rois=None):
+    """NPS nas ROIs dadas ou, sem elas, nas ROIs do tecido mole liso escolhidas nesta imagem (a real)."""
+    rois = list(rois) if rois is not None else select_rois(image, soft_tissue_mask(image, lung_mask), NPS_CONFIG)
     return rois, estimate_local_nps(image, rois, NPS_CONFIG)
 
 
@@ -224,7 +227,7 @@ def noise_statuses(row: dict) -> dict[str, str]:
 
 
 def noise_verdict(row: dict) -> str:
-    """A pior leitura decide; sem medir o pulmão o corte não pode ser aprovado, só ir para revisão."""
+    """A pior leitura decide; sem medir o tecido mole o corte não pode ser aprovado, só ir para revisão."""
     statuses = noise_statuses(row)
     conclusive = [status for status in statuses.values() if status in STATUS_ORDER]
     if not conclusive:
@@ -243,7 +246,7 @@ def noise_reason(row: dict, metric: str) -> str:
     label = NPS_METRICS[metric]
     if not _flag(row, "nps_available", "True"):
         detail = row.get("nps_error")
-        return f"{label}: {detail if isinstance(detail, str) and detail else 'não houve regiões pulmonares suficientes para medir.'}"
+        return f"{label}: {detail if isinstance(detail, str) and detail else 'não houve regiões de tecido mole liso suficientes para medir.'}"
     z = float(row[f"nps_{metric}_z"])
     status = row[f"nps_{metric}_status"]
     low, high = float(row[f"nps_{metric}_z_low"]), float(row[f"nps_{metric}_z_high"])

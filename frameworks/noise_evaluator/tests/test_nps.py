@@ -7,7 +7,8 @@ from scipy.ndimage import gaussian_filter
 
 from frameworks.noise_evaluator.core import NPSConfig, ROI, compare_spectra, estimate_local_nps, select_rois
 from frameworks.noise_evaluator.report import case_assessment
-from frameworks.noise_evaluator.integration import certain_status, measure_air, noise_verdict, status_from_z
+from frameworks.noise_evaluator.integration import NPS_CONFIG, certain_status, measure_air, measure_nps, noise_verdict, status_from_z
+from frameworks.noise_evaluator.regions import AIR_LEVEL, HU_PER_UNIT, REGION_KEYS, segment_regions
 
 
 class NPSTest(unittest.TestCase):
@@ -103,8 +104,8 @@ class NPSTest(unittest.TestCase):
 
     def test_worst_nps_metric_decides(self) -> None:
         row = {"nps_available": True, "nps_air_available": True, "nps_air_status": "aprovada"}
-        statuses = ("aprovada", "revisão", "aprovada", "reprovada")
-        for metric, status in zip(("quantity", "grain", "low_band", "high_band"), statuses):
+        statuses = ("aprovada", "revisão", "reprovada")
+        for metric, status in zip(("quantity", "grain", "high_band"), statuses):
             row[f"nps_{metric}_status"] = status
         self.assertEqual(noise_verdict(row), "reprovada")
 
@@ -112,6 +113,64 @@ class NPSTest(unittest.TestCase):
     def test_unmeasured_lung_is_never_approved(self) -> None:
         row = {"nps_available": False, "nps_air_available": True, "nps_air_status": "aprovada"}
         self.assertEqual(noise_verdict(row), "revisão")
+
+
+def _from_hu(hu):
+    return (np.asarray(hu, dtype=float) + 1000) / HU_PER_UNIT + AIR_LEVEL
+
+
+def _phantom(seed: int = 11):
+    """Tórax sintético: corpo de músculo (+40 HU), dois pulmões (−850 HU), um osso (+700 HU) e ruído de 20 HU."""
+    rng = np.random.default_rng(seed)
+    yy, xx = np.mgrid[:256, :256]
+    hu = np.full((256, 256), -1000.0)
+    body = ((yy - 128) / 100) ** 2 + ((xx - 128) / 120) ** 2 <= 1
+    hu[body] = 40.0
+    lung = np.zeros_like(body)
+    for cx in (85, 171):
+        lung |= ((yy - 120) / 45) ** 2 + ((xx - cx) / 28) ** 2 <= 1
+    hu[lung] = -850.0
+    bone = (yy - 205) ** 2 + (xx - 128) ** 2 <= 10 ** 2
+    hu[bone] = 700.0
+    hu[body] += rng.normal(0, 20, size=int(body.sum()))
+    return _from_hu(hu), lung, bone
+
+
+class RegionsTest(unittest.TestCase):
+    def test_every_pixel_has_exactly_one_region(self) -> None:
+        image, lung, _ = _phantom()
+        regions = segment_regions(image, lung)
+        self.assertEqual(tuple(regions), REGION_KEYS)
+        self.assertTrue((np.sum([regions[key] for key in REGION_KEYS], axis=0) == 1).all())
+
+    def test_soft_tissue_keeps_away_from_lung_bone_and_skin(self) -> None:
+        image, lung, bone = _phantom()
+        regions = segment_regions(image, lung)
+        soft = regions["soft"]
+        self.assertGreater(soft.sum(), 5000)
+        self.assertFalse((soft & lung).any())
+        self.assertFalse((soft & bone).any())
+        self.assertTrue(regions["lung"][lung].all())
+        self.assertTrue(regions["bone"][bone].all())
+        self.assertTrue(regions["air"][0, 0])
+
+    def test_fat_muscle_border_is_an_edge(self) -> None:
+        image, lung, _ = _phantom()
+        hu = (image - AIR_LEVEL) * HU_PER_UNIT - 1000
+        hu[175:196, 160:204] = -100.0  # bloco de gordura abaixo do pulmão direito da imagem
+        regions = segment_regions(_from_hu(hu), lung)
+        self.assertTrue(regions["edges"][185, 160])
+        self.assertTrue(regions["soft"][185, 182])
+
+    def test_nps_squares_sit_only_in_smooth_soft_tissue(self) -> None:
+        image, lung, _ = _phantom()
+        rois, result = measure_nps(image, lung)
+        soft = segment_regions(image, lung)["soft"]
+        self.assertGreaterEqual(len(rois), NPS_CONFIG.min_rois)
+        self.assertTrue(all(roi.size == 16 for roi in rois))
+        self.assertTrue(all(soft[roi.slices].mean() >= NPS_CONFIG.min_tissue for roi in rois))
+        self.assertGreater(result.features["noise_std"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,7 @@ def test_slice_schema():
     s = slices_of("Dsr")[0]
     assert [m["key"] for m in s["metrics"]] == ["delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
                                                 "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
-                                                "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nps_air"]
+                                                "nps_quantity", "nps_grain", "nps_high_band", "nps_air"]
     assert set(s["texture"]["techniques"]) == {"GLCM", "Wavelet", "NEx"}
     assert s["patient"] in {"100", "105", "117"}
 

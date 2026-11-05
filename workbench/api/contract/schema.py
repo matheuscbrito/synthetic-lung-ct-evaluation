@@ -52,16 +52,19 @@ AXIS_GUIDE = {
         "context only and does not decide."
     ),
     "noise": (
-        "Noise is the pixel-to-pixel fluctuation that is not anatomy, measured two ways; the worst reading "
-        "decides the slice. (a) NPS in the lung: quantity and grain size in the smoothest 32 × 32 px lung "
-        "regions, measured on the same regions as the original, in IQR of the real CTs; a difference only "
-        "counts when it passes the limit and its bootstrap interval excludes zero. (b) Air spots: the air "
-        "outside the body is smooth in the original, so any spot there was invented by the generator; up to "
-        "0.5% of the air is approved, up to 2% asks for review, above is rejected (policy limits, not clinical "
-        "ones). If fewer than 4 lung regions fit, the lung is inconclusive and the slice is at least reviewed."
-        " Regions have little vessel or edge content and overlap by at most 25%. A smooth plane is fitted "
-        "and subtracted in each region; its residual is the fluctuation used for NPS. Fine anatomy can "
-        "remain, so this is a local estimate, not a phantom noise measurement."
+        "Noise is the grain the scanner adds on top of the anatomy, measured two ways; the worst reading "
+        "decides the slice. (a) NPS in smooth soft tissue: the slice is split into air, table, lung, bone, "
+        "edges and smooth soft tissue (muscle, fat, heart, liver), and up to 64 small 16 × 16 px squares are "
+        "placed only in the smooth soft tissue, where almost all the fluctuation is scanner noise. Inside the "
+        "lung, vessels would mix with the noise, so the lung is not used. The same squares are measured on the "
+        "original and on the synthetic slice; quantity, grain size and fine grain are compared in IQR of the "
+        "real CTs, and a difference only counts when it passes the limit and its bootstrap interval excludes "
+        "zero. A 16 px square cannot see patterns wider than itself, so wide patterns do not decide. "
+        "(b) Air spots: the air outside the body is smooth in the original, so any spot there was invented by "
+        "the generator; up to 0.5% of the air is approved, up to 2% asks for review, above is rejected (policy "
+        "limits, not clinical ones). If fewer than 4 squares fit, the NPS is inconclusive and the slice is at "
+        "least reviewed. Squares overlap by at most 25%; a smooth plane is subtracted in each one and the "
+        "residual is the fluctuation used for NPS."
     ),
 }
 
@@ -82,10 +85,9 @@ METRIC_DESCRIPTION = {
     "wavelet_entropy": "Variation and complexity of the distribution of detail across scales.",
     "nex": "Excess or lack of structure near the resolution limit, compared with the slice's own original; "
            "more than 1 IQR of difference asks for review.",
-    "nps_quantity": "Total strength of the local pixel fluctuation in the lung; positive means stronger fluctuation, negative weaker.",
-    "nps_grain": "Width of the noise patterns: positive means finer grain, negative means coarser grain.",
-    "nps_low_band": "Share of the noise in slow, wide patterns; positive means more concentrated in wide patterns, negative less.",
-    "nps_high_band": "Share of the noise in fast, small patterns; positive means more concentrated in fine grain, negative less.",
+    "nps_quantity": "How strong the grain is in the smooth soft tissue; positive means stronger grain, negative weaker.",
+    "nps_grain": "Size of the grain dots: positive means finer (smaller) grain, negative means coarser (larger) grain.",
+    "nps_high_band": "Share of the noise made of the finest dots (1–2 px); positive means more fine grain, negative less.",
     "nps_air": "Percent of the air outside the body with spots stronger than 3× the CT's natural noise, which the original does not have. "
                "For Gaussian natural fluctuation, about 0.3% of pixels exceed 3× its standard deviation. "
                "Green up to 0.5%, yellow up to 2%, red above; these are policy limits, not clinical limits.",
@@ -146,7 +148,7 @@ COHORT_TESTS = [{"key": "nex_shift", "label": "NEx cohort test", "axis": "textur
 # as do ruído vêm de `noise_evaluator.integration.NPS_METRICS` mais "air" (data.slice_json)
 TECHNIQUE_LABEL = {
     "GLCM": "GLCM", "Wavelet": "Wavelet", "NEx": "NEx",
-    "quantity": "NPS quantity", "grain": "NPS grain size", "low_band": "NPS wide patterns",
+    "quantity": "NPS quantity", "grain": "NPS grain size",
     "high_band": "NPS fine grain", "air": "Air spots",
 }
 
@@ -187,7 +189,7 @@ def inspectors() -> list[dict]:
                      {"key": "compared", "label": "Compared with the original",
                       "choices": [{"key": "yes", "label": "Yes"}, {"key": "no", "label": "No"}]}]},
         {"key": "noise_figure", "label": "Noise", "chart": "image", "compare": True, "options": [],
-         "description": "NPS in the lung regions and the air-spot test for this slice."},
+         "description": "Where the NPS squares sit in the smooth soft tissue, what each comparison found, and the air-spot test."},
     ]
 
 

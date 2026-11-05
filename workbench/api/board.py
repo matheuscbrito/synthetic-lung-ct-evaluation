@@ -47,7 +47,6 @@ INDICATOR_LABEL = {
     "map_corr_textura": "Map: spatial correlation",
     "nps_abs_quantity_z": "NPS · quantity",
     "nps_abs_grain_z": "NPS · grain size",
-    "nps_abs_low_band_z": "NPS · wide patterns",
     "nps_abs_high_band_z": "NPS · fine grain",
     "nps_air_synthetic": "Air spots",
     "nps_aprovada": "NPS · slices approved",

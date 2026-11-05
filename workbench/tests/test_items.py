@@ -127,7 +127,7 @@ def test_unavailable_metric():
     """Review Focus 2: leituras NaN do NPS → métrica indisponível, sem motivo com número nulo."""
     wb = ds.wb_for(ds.DEFAULT)
     row = dict(wb.rows(wb.history["versions"][0]["name"])[0])
-    for key in ("quantity", "grain", "low_band", "high_band"):
+    for key in ("quantity", "grain", "high_band"):
         for suffix in ("real", "synthetic", "z", "z_low", "z_high"):
             row[f"nps_{key}_{suffix}"] = ""
         row[f"nps_{key}_status"] = "inconclusivo"

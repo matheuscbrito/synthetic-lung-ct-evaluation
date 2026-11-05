@@ -427,11 +427,11 @@ def nps_case_png(history_dir: str, stamp: float, case_id: str, baseline: str, ve
     except ValueError:
         rois = None
     if rois is None:
-        # sem NPS no pulmão, a figura mostra só o ar, em tamanho grande
+        # sem NPS no tecido mole, a figura mostra só o ar, em tamanho grande
         fig = plt.figure(figsize=(15, 6.2), facecolor="white")
         grid = fig.add_gridspec(1, 3, wspace=.08)
         air_row = 0
-        fig.text(.5, .9, "Pulmão pequeno demais para o NPS (não cabem 4 regiões de 32 × 32 px sem sobreposição): só o teste do ar foi medido.",
+        fig.text(.5, .9, "Tecido mole liso pequeno demais para o NPS (não cabem 4 quadrados de 16 × 16 px sem sobreposição): só o teste do ar foi medido.",
                  ha="center", fontsize=11, color="#4b5563")
     else:
         fig = plt.figure(figsize=(15, 11), facecolor="white")
@@ -887,7 +887,6 @@ def metrics_table(rows: list[dict], mode: str) -> pd.DataFrame:
             "maior distância (IQR)": max((abs(number_or_nan(row, f"nps_{key}_z")) for key in NPS_METRICS), default=float("nan")),
             "quantidade (IQR)": number_or_nan(row, "nps_quantity_z"),
             "tamanho do grão (IQR)": number_or_nan(row, "nps_grain_z"),
-            "padrões largos (IQR)": number_or_nan(row, "nps_low_band_z"),
             "grão fino (IQR)": number_or_nan(row, "nps_high_band_z"),
             "manchas no ar (% do ar)": number_or_nan(row, "nps_air_synthetic"),
             "ROIs usadas": number_or_nan(row, "nps_roi_count"),
@@ -931,16 +930,16 @@ def show_method_cards(mode: str, reference: dict):
         st.markdown("#### Como ler o ruído")
         st.write("**Ruído aqui é o sobe-e-desce dos pixels que não é anatomia.** Ele é medido de duas formas, e a pior leitura decide o corte.")
         st.markdown("""
-- **(a) NPS no pulmão.** Em pequenas regiões de 32 × 32 px, as mais lisas do pulmão, mede a quantidade do sobe-e-desce (a força) e o tamanho do grão (padrões largos ou grão fino). A régua é a variação das CTs reais, em IQR, como antes.
+- **(a) NPS no tecido mole liso.** O corte é separado em ar, mesa, pulmão, osso, bordas e tecido mole liso (músculo, gordura, coração, fígado). Em até 64 quadrados de 16 × 16 px, só no tecido mole liso, mede a quantidade do sobe-e-desce (a força), o tamanho do grão e a parcela de grão fino. O pulmão fica de fora porque ali vasos se misturam ao ruído. Quadrados de 16 px não enxergam padrões mais largos que eles, por isso os padrões largos não decidem. A régua é a variação das CTs reais, em IQR, como antes.
 - **(b) Manchas no ar.** O ar fora do corpo na CT original é perfeitamente liso. Qualquer mancha ali na sintética foi inventada pelo gerador. Cada CT é comparada com o próprio ruído: o teste mede o ruído natural dessa CT no tecido mole homogêneo e conta a % do ar com desvio maior que 3 vezes esse ruído (o ruído natural sozinho passa disso em só 0,3% dos pixels). Até 0,5% é aprovada; até 2%, revisão; acima, reprovada. Esses limites são regra de política (as CTs reais têm 0%), não limite clínico.
-- **Incerteza da medida.** Cada leitura do pulmão vem com uma margem de erro calculada pelas próprias regiões medidas (bootstrap). Só conta como diferença quando passa da régua *e* a margem de erro não inclui zero; senão o corte não é penalizado por algo que pode ser só oscilação.
-- **Por que medir nas mesmas regiões.** O NPS do pulmão mistura um pouco de anatomia fina: se a mesma CT fosse medida em regiões diferentes, a leitura mudaria quase tanto quanto mudar de paciente. Por isso a sintética é sempre medida exatamente nas mesmas regiões da original. Assim a anatomia se cancela e a margem de erro de cada corte fica pequena (tipicamente 0,3 a 1 IQR); as diferenças que passam da régua com margem longe de zero são reais.
+- **Incerteza da medida.** Cada leitura do NPS vem com uma margem de erro calculada pelas próprias regiões medidas (bootstrap). Só conta como diferença quando passa da régua *e* a margem de erro não inclui zero; senão o corte não é penalizado por algo que pode ser só oscilação.
+- **Por que medir nas mesmas regiões.** Mesmo no tecido mole sobra um pouco de anatomia fina: se a mesma CT fosse medida em regiões diferentes, a leitura mudaria quase tanto quanto mudar de paciente. Por isso a sintética é sempre medida exatamente nas mesmas regiões da original. Assim a anatomia se cancela e a margem de erro de cada corte fica pequena (tipicamente 0,3 a 1 IQR); as diferenças que passam da régua com margem longe de zero são reais.
 - **Pulmão pequeno.** Se não cabem 4 regiões sem sobreposição, o pulmão fica inconclusivo. Nesse caso o ar ainda pode reprovar, mas o corte nunca sai aprovado: vai no mínimo para revisão, porque o pulmão não foi medido.
 """)
         approved, review, rejected = st.columns(3)
-        approved.success("**Próximo da original**\n\nDiferença até 1 IQR no pulmão; ar até 0,5% com manchas > 3× ruído natural.", icon=":material/check_circle:")
-        review.warning("**Revisar**\n\nEntre 1 e 2 IQR no pulmão; ar entre 0,5% e 2% com manchas > 3× ruído natural.", icon=":material/visibility:")
-        rejected.error("**Distante**\n\nPassou de 2 IQR no pulmão; ar acima de 2% com manchas > 3× ruído natural.", icon=":material/cancel:")
+        approved.success("**Próximo da original**\n\nDiferença até 1 IQR no NPS; ar até 0,5% com manchas > 3× ruído natural.", icon=":material/check_circle:")
+        review.warning("**Revisar**\n\nEntre 1 e 2 IQR no NPS; ar entre 0,5% e 2% com manchas > 3× ruído natural.", icon=":material/visibility:")
+        rejected.error("**Distante**\n\nPassou de 2 IQR no NPS; ar acima de 2% com manchas > 3× ruído natural.", icon=":material/cancel:")
         st.caption("IQR é a faixa central de variação encontrada nas CTs reais. A pior das cinco leituras define o resultado do corte.")
         with st.expander("Quantidade, tamanho do grão e cores — sem jargão", expanded=True):
             st.markdown("""
@@ -1046,9 +1045,9 @@ def show_case(board: dict, history_dir: Path, stamp: float, case_id: str, versio
     if mode == "ruido":
         st.markdown("##### O que o NPS e o teste do ar enxergaram neste corte")
         st.image(nps_case_png(str(history_dir), stamp, case_id, baseline, version), width="stretch")
-        st.caption("Nos três mapas do pulmão a escala de cor é a mesma. Mais vermelho e azul intensos significa maior amplitude local; manchas menores ou maiores indicam o tamanho do grão. A curva mostra onde essa quantidade se distribui entre padrões largos e finos. Na linha de baixo, o ar fora do corpo: cor clara é desvio acima de 3× o ruído natural desta CT, ou seja, mancha visível.")
+        st.caption("Nos três quadrados ampliados a escala de cor é a mesma. Mais vermelho e azul intensos significa maior amplitude local; manchas menores ou maiores indicam o tamanho do grão. A curva mostra onde essa quantidade se distribui entre padrões largos e finos. Na linha de baixo, o ar fora do corpo: cor clara é desvio acima de 3× o ruído natural desta CT, ou seja, mancha visível.")
         with st.expander("Como a anatomia é separada do ruído", expanded=False):
-            st.write("O método procura regiões de 32 × 32 pixels com pouco vaso e pouca borda, e nenhuma se sobrepõe a outra em mais de 25%. Em cada região, ajusta um plano suave para representar o brilho local e subtrai esse plano; o que sobra é a flutuação usada no NPS. Ainda pode restar anatomia muito fina; por isso o NPS do pulmão é uma leitura local e clínica, não uma medição de fantoma. O teste das manchas no ar não depende de anatomia: olha só o ar fora do corpo, que na CT original é liso.")
+            st.write("O método separa o corte em ar, mesa, pulmão, osso (acima de +250 HU), bordas (mudança rápida de brilho, divisa gordura/músculo e faixas junto à pele, ao pulmão e ao osso) e tecido mole liso. Só no tecido mole liso procura quadrados de 16 × 16 pixels, os mais lisos, sem sobreposição maior que 25%. Em cada quadrado, ajusta um plano suave para representar o brilho local e subtrai esse plano; o que sobra é a flutuação usada no NPS. O teste das manchas no ar não depende de anatomia: olha só o ar fora do corpo, que na CT original é liso.")
         return
     tones = glcm_tone_counts(str(history_dir), stamp, case_id, version)
     # na textura os extremos são detalhe técnico; no brilho eles explicam o Sat31
@@ -1478,7 +1477,6 @@ elif mode == "ruido":
         explanation = {
             "quantity": "Positivo = flutuação mais forte; negativo = mais fraca.",
             "grain": "Positivo = grão mais fino; negativo = mais largo.",
-            "low_band": "Positivo = mais quantidade concentrada em padrões largos.",
             "high_band": "Positivo = mais quantidade concentrada em grão fino.",
         }[key]
         st.caption(explanation)

@@ -6,10 +6,10 @@ os textos de status do framework (PT) são convertidos para os códigos da API.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from frameworks.noise_evaluator.integration import AIR_LABEL, NPS_METRICS, noise_statuses, noise_verdict
+from frameworks.noise_evaluator.integration import AIR_LABEL, NPS_CONFIG, NPS_METRICS, noise_statuses, noise_verdict
 from frameworks.texture_evaluator import decision, placar, regional
 from workbench.api import reasons
 
@@ -92,7 +92,8 @@ def is_stale(history: dict) -> bool:
     if any(key not in calibration for key in STALE_KEYS):
         return True
     nps = calibration.get("nps_reference", {})
-    return any(key not in nps for key in STALE_NPS_KEYS)
+    # NPS calibrado com outras ROIs (tamanho, região) pede recálculo
+    return any(key not in nps for key in STALE_NPS_KEYS) or nps.get("config") != asdict(NPS_CONFIG)
 
 
 def slice_label(case_id: str) -> str:
@@ -147,7 +148,7 @@ def _texture_metric(key: str, label: str, technique: str, row: dict, prefix: str
                    ci=_ci(row, prefix))
 
 
-NPS_LABEL = {"quantity": "NPS quantity", "grain": "NPS grain size", "low_band": "NPS wide patterns", "high_band": "NPS fine grain"}
+NPS_LABEL = {"quantity": "NPS quantity", "grain": "NPS grain size", "high_band": "NPS fine grain"}
 
 
 def _nps_metric(key: str, row: dict, statuses: dict) -> dict:

@@ -128,14 +128,13 @@ INDICATORS = (
     Indicator("map_corr_textura", "Mapa: correlação espacial", "a textura está nos mesmos lugares da original? (1 = sim)", "textura", 1.0, "correlação", .05),
     Indicator("nps_abs_quantity_z", "NPS · quantidade", "quanto a intensidade das flutuações locais se afastou da original", "ruido", 0.0, "|diferença| em IQR", .20),
     Indicator("nps_abs_grain_z", "NPS · tamanho do grão", "se as flutuações ficaram mais largas ou mais finas", "ruido", 0.0, "|diferença| em IQR", .20),
-    Indicator("nps_abs_low_band_z", "NPS · padrões largos", "parcela do ruído concentrada em variações lentas e largas", "ruido", 0.0, "|diferença| em IQR", .20),
     Indicator("nps_abs_high_band_z", "NPS · grão fino", "parcela do ruído concentrada em variações rápidas e pequenas", "ruido", 0.0, "|diferença| em IQR", .20),
     Indicator("nps_air_synthetic", "Ruído · manchas no ar", "% do ar fora do corpo com manchas que a original não tem", "ruido", 0.0, "% do ar", .2),
-    Indicator("nps_aprovada", "NPS · cortes aprovados", "cortes em que o ruído do pulmão ficou dentro de ±1 IQR e o ar fora do corpo não ganhou manchas", "ruido", 100.0, "% dos cortes", 5.0,
+    Indicator("nps_aprovada", "NPS · cortes aprovados", "cortes em que o ruído do tecido mole ficou dentro de ±1 IQR e o ar fora do corpo não ganhou manchas", "ruido", 100.0, "% dos cortes", 5.0,
               test=lambda row: noise_verdict(row) == "aprovada"),
 )
 DECIMALS = {"wavelet_ratio": 2, "map_corr_textura": 2, "abs_delta_mu": 3, "abs_delta_ll": 3,
-            "nps_abs_quantity_z": 2, "nps_abs_grain_z": 2, "nps_abs_low_band_z": 2, "nps_abs_high_band_z": 2, "nps_air_synthetic": 2}
+            "nps_abs_quantity_z": 2, "nps_abs_grain_z": 2, "nps_abs_high_band_z": 2, "nps_air_synthetic": 2}
 FILTER_TEXT = {"approved": "filtro: aprovado", "manual_review": "filtro: revisão", "hard_reject": "filtro: rejeição"}
 DENSITY_TEXT = {"ok": "densidade: ok", "brighter": "densidade: clareou", "darker": "densidade: escureceu", "too_bright": "densidade: claro demais", "too_dark": "densidade: escuro demais"}
 
@@ -175,7 +174,7 @@ def load_rows(folder: Path, name: str) -> list[dict]:
     for row in rows:
         row["abs_delta_ll"] = abs(float(row["wavelet_ll_synthetic"]) - float(row["wavelet_ll_real"]))
         row["glcm_energy_pct"] = 100 * float(row["glcm_energy_synthetic"]) / float(row["glcm_energy_real"])
-        for metric in ("quantity", "grain", "low_band", "high_band"):
+        for metric in ("quantity", "grain", "high_band"):
             key = f"nps_{metric}_z"
             row[f"nps_abs_{metric}_z"] = abs(float(row[key])) if key in row and row[key] not in {"", None} else float("nan")
     return rows

@@ -17,8 +17,8 @@ from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, non
 
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
-NPS_KEYS = ("quantity", "grain", "low_band", "high_band")
-NOISE_TECHNIQUES = {"quantity", "grain", "low_band", "high_band", "air"}
+NPS_KEYS = ("quantity", "grain", "high_band")
+NOISE_TECHNIQUES = {"quantity", "grain", "high_band", "air"}
 METRIC_KEYS = {"z_low", "z_high", "pct_of_original", "certain"}
 
 
@@ -107,7 +107,7 @@ def test_noise_group_metrics(dsr_rows, slices):
         statuses = noise_statuses(row)
         for key, label in NPS_METRICS.items():
             metric = by_key(body, f"nps_{key}")
-            assert metric["group"] == "noise" and metric["label"] in {"NPS quantity", "NPS grain size", "NPS wide patterns", "NPS fine grain"}
+            assert metric["group"] == "noise" and metric["label"] in {"NPS quantity", "NPS grain size", "NPS fine grain"}
             assert metric["status"] == wb_data.STATUS[statuses[label]]
             same(metric["real"], row[f"nps_{key}_real"])
             same(metric["synthetic"], row[f"nps_{key}_synthetic"])

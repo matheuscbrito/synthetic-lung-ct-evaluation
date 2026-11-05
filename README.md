@@ -72,6 +72,17 @@ O módulo `frameworks/noise_evaluator/` mede o NPS local estimado das imagens re
 - **NPS local estimado:** calculado em pequenas regiões pulmonares pouco estruturadas; pode conter anatomia fina residual porque não há aquisições repetidas.
 - **Espectro do erro:** calculado sobre `sintética − real` quando a anatomia é a mesma; mede em quais escalas o gerador alterou a imagem, não ruído puro.
 
+### NPS no placar e no workbench: tecido mole liso
+
+No veredito de ruído, o NPS não é medido no pulmão: lá, vasos e septos se somam ao ruído do aparelho. Como na literatura de NPS em imagem de paciente (ex.: Christianson et al., AJR 2015; Smith et al., JMI 2018 e 2021), a medida fica no tecido mole homogêneo. `frameworks/noise_evaluator/regions.py` separa cada corte em ar, mesa, pulmão, osso (acima de +250 HU), bordas e tecido mole liso:
+
+- **bordas:** gradiente acima de 20 HU/px na imagem suavizada com σ = 3 px (σ menor marcaria o próprio ruído, de ~30 HU), divisa gordura/músculo (−30 HU) e faixas de segurança junto à pele (6 px), ao pulmão (4 px) e ao osso (3 px);
+- **tecido mole liso:** o que sobra entre −200 e +200 HU.
+
+As imagens não estão em HU. A conversão foi estimada pelos picos do histograma das CTs reais (ar em −0,606 → −1000 HU; tecido mole em ~1,9 → +40 HU) e vale para este conjunto.
+
+O corpo ocupa só cerca de metade da imagem, e quadrados de 32 × 32 px não cabem no tecido mole de 13 dos 37 cortes. Por isso o NPS usa até 64 quadrados de **16 × 16 px** (`integration.NPS_CONFIG`), sempre os mesmos na real e na sintética. Com 16 px a curva tem 8 pontos: quantidade, tamanho do grão e grão fino seguem confiáveis, mas os padrões mais largos que o quadrado não são vistos, então a parcela de padrões largos saiu do veredito. O teste das manchas no ar continua igual.
+
 Exemplo para um novo dataset no mesmo formato do Dsr:
 
 ```bash

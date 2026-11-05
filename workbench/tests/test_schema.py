@@ -34,16 +34,17 @@ def test_axes_and_statuses(client):
 def test_noise_method_and_chart_guidance_reach_schema(client):
     body = _schema(client)
     guide = next(a["guide"] for a in body["axes"] if a["key"] == "noise")
-    for explanation in ("32 × 32", "overlap by at most 25%", "plane", "subtracted", "Fine anatomy can remain"):
+    for explanation in ("16 × 16", "smooth soft tissue", "lung is not used", "overlap by at most 25%", "plane", "subtracted",
+                        "wide patterns do not decide"):
         assert explanation in guide
     descriptions = {m["key"]: m["description"] for m in body["metrics"]}
-    for key in ("nps_quantity", "nps_grain", "nps_low_band", "nps_high_band", "nex"):
+    for key in ("nps_quantity", "nps_grain", "nps_high_band", "nex"):
         assert "Zero is the original" in descriptions[key]
         assert "95% bootstrap interval" in descriptions[key]
     assert "positive means stronger" in descriptions["nps_quantity"]
     assert "positive means finer" in descriptions["nps_grain"]
-    assert "positive means more concentrated in wide" in descriptions["nps_low_band"]
-    assert "positive means more concentrated in fine" in descriptions["nps_high_band"]
+    assert "positive means more fine grain" in descriptions["nps_high_band"]
+    assert "nps_low_band" not in descriptions
     assert "crosses zero stays green" in descriptions["nps_quantity"]
     assert "never rejects" in descriptions["nex"]
     assert "0.3%" in descriptions["nps_air"] and "policy limits, not clinical" in descriptions["nps_air"]
@@ -75,7 +76,7 @@ def test_metric_limits_from_calibration(client):
     assert by_key["sat31"]["limits"] == {"kind": "above", "review": None, "reject": reasons.SATURATION_LIMIT}
     assert by_key["nps_air"]["limits"] == {"kind": "above", "review": AIR_LIMITS[0], "reject": AIR_LIMITS[1]}
     for key in ("ll", "glcm_contrast", "glcm_energy", "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
-                "nps_quantity", "nps_grain", "nps_low_band", "nps_high_band"):
+                "nps_quantity", "nps_grain", "nps_high_band"):
         assert by_key[key]["limits"] == {"kind": "abs_z", "review": reasons.Z_LIMITS["review"],
                                          "reject": reasons.Z_LIMITS["reject"]}
     assert by_key["nex"]["repeatability"] == cal["nex"]["repeatability_iqr"]
