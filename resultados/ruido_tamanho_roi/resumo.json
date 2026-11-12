@@ -1,0 +1,110 @@
+{
+  "seed": 20261112,
+  "slices": 37,
+  "lag": 44,
+  "sizes": {
+    "soft": {
+      "rois_16": {
+        "slices_with_8": 35,
+        "total": 1648
+      },
+      "rois_24": {
+        "slices_with_8": 25,
+        "total": 375
+      },
+      "rois_32": {
+        "slices_with_8": 4,
+        "total": 118
+      },
+      "rois_48": {
+        "slices_with_8": 0,
+        "total": 19
+      },
+      "rois_64": {
+        "slices_with_8": 0,
+        "total": 3
+      }
+    },
+    "lung": {
+      "rois_16": {
+        "slices_with_8": 37,
+        "total": 2368
+      },
+      "rois_24": {
+        "slices_with_8": 37,
+        "total": 2090
+      },
+      "rois_32": {
+        "slices_with_8": 37,
+        "total": 1191
+      },
+      "rois_48": {
+        "slices_with_8": 28,
+        "total": 353
+      },
+      "rois_64": {
+        "slices_with_8": 0,
+        "total": 112
+      }
+    }
+  },
+  "per_slice": {
+    "ROI 16 px": {
+      "control_f_avg_5_95": [
+        0.9505686483390945,
+        1.044769958483426
+      ],
+      "control_pairs": 29,
+      "Dsr": {
+        "slices": 33,
+        "median_f_avg_ratio": 0.8538691854907982,
+        "below_1": 33,
+        "outside_control": 31,
+        "wilcoxon_p": 2.3283064365386963e-10
+      },
+      "Dsr-baseline": {
+        "slices": 33,
+        "median_f_avg_ratio": 0.9741559587436008,
+        "below_1": 22,
+        "outside_control": 16,
+        "wilcoxon_p": 0.0033213288988918066
+      },
+      "Dsr-gpbo11": {
+        "slices": 33,
+        "median_f_avg_ratio": 0.9790386484672248,
+        "below_1": 27,
+        "outside_control": 9,
+        "wilcoxon_p": 0.00040419818833470345
+      }
+    },
+    "ACF máscara": {
+      "control_f_avg_5_95": [
+        0.9337662027610208,
+        1.0485108860837329
+      ],
+      "control_pairs": 35,
+      "Dsr": {
+        "slices": 37,
+        "median_f_avg_ratio": 0.9291472685976014,
+        "below_1": 28,
+        "outside_control": 23,
+        "wilcoxon_p": 1.8599850591272116e-05
+      },
+      "Dsr-baseline": {
+        "slices": 37,
+        "median_f_avg_ratio": 1.030647019026998,
+        "below_1": 7,
+        "outside_control": 13,
+        "wilcoxon_p": 2.6359135517850518e-05
+      },
+      "Dsr-gpbo11": {
+        "slices": 37,
+        "median_f_avg_ratio": 1.0298371148399015,
+        "below_1": 4,
+        "outside_control": 13,
+        "wilcoxon_p": 7.41510302759707e-06
+      }
+    }
+  },
+  "seconds": 122
+}

@@ -1,0 +1,1030 @@
+machine,estimator,freq,measured_over_truth
+ramp · dose baixa,ROI 16 px,0.125,1.3944456012686144
+ramp · dose baixa,ROI 16 px,0.1875,1.2456364484770606
+ramp · dose baixa,ROI 16 px,0.25,1.133626515890254
+ramp · dose baixa,ROI 16 px,0.3125,1.0487318831598447
+ramp · dose baixa,ROI 16 px,0.375,1.0359008655187105
+ramp · dose baixa,ROI 16 px,0.4375,1.0485321393672506
+ramp · dose baixa,ROI 16 px,0.5,1.0661262971164538
+ramp · dose baixa,ROI 32 px,0.0625,2.5238003334495294
+ramp · dose baixa,ROI 32 px,0.09375,2.2163286026794644
+ramp · dose baixa,ROI 32 px,0.125,1.905206879289793
+ramp · dose baixa,ROI 32 px,0.15625,1.4551786912656834
+ramp · dose baixa,ROI 32 px,0.1875,1.365063921988487
+ramp · dose baixa,ROI 32 px,0.21875,1.2457441986195552
+ramp · dose baixa,ROI 32 px,0.25,1.13183449543667
+ramp · dose baixa,ROI 32 px,0.28125,1.0776747558894308
+ramp · dose baixa,ROI 32 px,0.3125,1.040658690441833
+ramp · dose baixa,ROI 32 px,0.34375,1.02888648429496
+ramp · dose baixa,ROI 32 px,0.375,1.0255442417620335
+ramp · dose baixa,ROI 32 px,0.40625,1.026288290793949
+ramp · dose baixa,ROI 32 px,0.4375,1.0529675047346523
+ramp · dose baixa,ROI 32 px,0.46875,1.0782462160833448
+ramp · dose baixa,ROI 32 px,0.5,1.1139816500496598
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.03125,21.93236555978296
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.0390625,13.052631584500912
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.046875,10.464116101050408
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.0546875,8.563782964296466
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.0625,7.220114817423416
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.0703125,5.728395792802934
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.078125,4.5637930834916105
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.0859375,3.93476923089228
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.09375,3.5792897316607135
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1015625,3.169635733865991
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.109375,2.847735118716758
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1171875,2.6185589983416113
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.125,2.4525708793309104
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1328125,2.2242310037756217
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.140625,2.0403532969502574
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1484375,1.9245124715242972
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.15625,1.8251732457380188
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1640625,1.7103451897318322
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.171875,1.598344889696433
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1796875,1.5401690903048388
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1875,1.4968745536448087
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.1953125,1.4485339719840555
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.203125,1.4267334916882606
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2109375,1.3987890333833037
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.21875,1.3448169086754467
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2265625,1.294458335441376
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.234375,1.2373599205417483
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2421875,1.2144477183079083
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.25,1.1992370467228448
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2578125,1.1760774455309104
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.265625,1.1497428446121498
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2734375,1.1279669143905313
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.28125,1.1087464081104923
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.2890625,1.0917122078623969
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.296875,1.071715534508053
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3046875,1.0600869797214991
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3125,1.0615304938873587
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3203125,1.064778935657524
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.328125,1.0589886504937338
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3359375,1.0521049853223805
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.34375,1.0480331599122066
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3515625,1.042744061483136
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.359375,1.0375003685656714
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3671875,1.038174096811073
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.375,1.0373171293893153
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3828125,1.0352998330829668
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.390625,1.0354620264074728
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.3984375,1.037477603065144
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.40625,1.0376632640677934
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4140625,1.0383084951839066
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.421875,1.0410773806002
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4296875,1.0450577126017433
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4375,1.050282696030232
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4453125,1.0526431885335596
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.453125,1.0552599756938001
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4609375,1.0552657353926165
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.46875,1.056318122989232
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4765625,1.0562950448727417
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.484375,1.05687240235906
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.4921875,1.0577909985493321
+ramp · dose baixa,ACF máscara: tecido mole inteiro,0.5,1.0630925923035637
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.03125,22.256232471444882
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0390625,12.132288794309416
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.046875,8.964950711655927
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0546875,6.710697234960876
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0625,5.562086192582569
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0703125,4.404208212120156
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.078125,3.425619036962258
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0859375,3.0244754515041015
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.09375,2.7968340248286796
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1015625,2.5122332255997635
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.109375,2.248173018676703
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1171875,2.0683837358315267
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.125,2.00600136636313
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1328125,1.856531401784603
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.140625,1.7048170041793869
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1484375,1.6379543380386947
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.15625,1.6067059716197856
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1640625,1.5598944783415556
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.171875,1.4824867200860654
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1796875,1.4372040087549562
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1875,1.3972022299583953
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1953125,1.3474104829494153
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.203125,1.3249383422441945
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2109375,1.2970776797125463
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.21875,1.270635414244116
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2265625,1.2304138540870242
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.234375,1.1870778623177598
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2421875,1.1600358914233977
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.25,1.152336752593198
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2578125,1.1523970088747735
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.265625,1.1360669102056955
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2734375,1.1074110034549194
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.28125,1.0834253245152363
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2890625,1.0806598052869283
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.296875,1.0702505927045949
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3046875,1.054207137565762
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3125,1.0500652984066483
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3203125,1.0414782553782829
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.328125,1.0341943538055762
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3359375,1.0252902965230286
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.34375,1.0251164815830536
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3515625,1.032319629028103
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.359375,1.0359618357135316
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3671875,1.040125052459828
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.375,1.0351782113629933
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3828125,1.0345265045447463
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.390625,1.0344477854794116
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3984375,1.0369349745067409
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.40625,1.0402462104671832
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4140625,1.0420264254282299
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.421875,1.0401456083253464
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4296875,1.0425330528555647
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4375,1.0465752334826124
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4453125,1.0542941266241512
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.453125,1.0594314396232691
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4609375,1.0593912733615511
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.46875,1.0527493991268912
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4765625,1.0486078762536066
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.484375,1.0496467602945185
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4921875,1.0553652842694037
+ramp · dose baixa,ACF máscara: ROIs de 16 px unidas,0.5,1.0681373293458776
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.03125,28.832208364286366
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.0390625,10.243932694983593
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.046875,7.1142002557787265
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.0546875,5.709074101964815
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.0625,5.228312054312543
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.0703125,4.397734892234114
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.078125,3.336602383451442
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.0859375,2.914249018296426
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.09375,2.5531712344441404
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1015625,2.1683566352515595
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.109375,1.8682825806424144
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1171875,1.7010412601305105
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.125,1.6315472384965741
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1328125,1.5527547727405782
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.140625,1.3936930617094079
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1484375,1.2402880164274948
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.15625,1.195700320799401
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1640625,1.2416203979527969
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.171875,1.278258542087367
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1796875,1.2073616897530572
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1875,1.1172512382493425
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.1953125,1.0426725565195332
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.203125,1.066476572617969
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2109375,1.051782186391697
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.21875,1.0447152225455052
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2265625,1.0252910747303534
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.234375,1.034463067804608
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2421875,1.0547890953976686
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.25,1.0757543751106298
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2578125,1.097396835509588
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.265625,1.0901196175143915
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2734375,1.0516389017688055
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.28125,1.0275722948747856
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.2890625,1.010696893547823
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.296875,1.0184099665406359
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3046875,1.016617572076733
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3125,1.021536100882936
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3203125,1.0021059106200891
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.328125,0.9951874387517151
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3359375,0.993654279012737
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.34375,1.0139415030455174
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3515625,1.0313340435474248
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.359375,1.0416492568647395
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3671875,1.0309923006492128
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.375,1.0203487965097497
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3828125,1.0129821385511144
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.390625,1.0041442499387083
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.3984375,1.001024135157708
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.40625,1.0118012217578478
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4140625,1.027844640743709
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.421875,1.0298166662843469
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4296875,1.021624263229971
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4375,1.0241233198175084
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4453125,1.0487672981408938
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.453125,1.0610356092408113
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4609375,1.0565240281888746
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.46875,1.0355382517326193
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4765625,1.037508381840479
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.484375,1.0412985516574416
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.4921875,1.0539795257118678
+ramp · dose baixa,ACF máscara: 20% mais homogêneos,0.5,1.0518695672311853
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.03125,42644.13928952894
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.046875,3474.654245373021
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.0625,975.1734793423857
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.078125,489.69859055513865
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.09375,281.7358203886004
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.109375,161.7976961520351
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.125,93.87030703214118
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.140625,58.168015769253444
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.15625,38.72026828206026
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.171875,26.050963109328908
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.1875,17.35099393119419
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.203125,12.150101876264879
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.21875,8.640819017319053
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.234375,6.443612223889458
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.25,4.878173730902821
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.265625,3.707419110583562
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.28125,2.929817460513216
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.296875,2.4201800821095665
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.3125,2.057730541762536
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.328125,1.7913251089342297
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.34375,1.5881761014948876
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.359375,1.4513794943567695
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.375,1.3622009978762892
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.390625,1.2859387951164682
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.40625,1.2388748683689426
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.421875,1.2055633349788815
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.4375,1.1905607234129902
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.453125,1.1881766572939303
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.46875,1.1878090616944632
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.484375,1.1309787532639013
+ramp · dose baixa,Banco de filtros fino (≈64 px),0.5,1.1365878794709945
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.03125,101919.1468496948
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.046875,28382.258073732228
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.0625,6105.61901050359
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.078125,970.1390251211898
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.09375,115.17612640787506
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.109375,19.433949002045505
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.125,9.704795706485118
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.140625,5.834381104023591
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.15625,3.891931562810406
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.171875,3.0943282663572305
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.1875,2.574422004505227
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.203125,2.121112814979873
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.21875,1.7909364071375555
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.234375,1.5769492712404958
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.25,1.4231617945086512
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.265625,1.3036746326359456
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.28125,1.2191748845775194
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.296875,1.1653107854069793
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.3125,1.1295964393746563
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.328125,1.1029907782885624
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.34375,1.0829779261067098
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.359375,1.0694135735409986
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.375,1.0612744968718084
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.390625,1.0567209910661655
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.40625,1.0548698645505679
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.421875,1.0562401863316704
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.4375,1.0605527627433797
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.453125,1.0650548068004542
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.46875,1.067176261237165
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.484375,1.0680378479969386
+ramp · dose baixa,Banco de filtros largo (≈16 px),0.5,1.0707196943596475
+ramp · dose baixa,Pulmão: ROI 32 px,0.0625,287.0302051708453
+ramp · dose baixa,Pulmão: ROI 32 px,0.09375,293.5495649260582
+ramp · dose baixa,Pulmão: ROI 32 px,0.125,119.1722190090109
+ramp · dose baixa,Pulmão: ROI 32 px,0.15625,37.455365042565056
+ramp · dose baixa,Pulmão: ROI 32 px,0.1875,16.888919059273768
+ramp · dose baixa,Pulmão: ROI 32 px,0.21875,7.266556130043407
+ramp · dose baixa,Pulmão: ROI 32 px,0.25,3.2312704713580334
+ramp · dose baixa,Pulmão: ROI 32 px,0.28125,1.8600148475271998
+ramp · dose baixa,Pulmão: ROI 32 px,0.3125,1.3893832015420613
+ramp · dose baixa,Pulmão: ROI 32 px,0.34375,1.2035158257811538
+ramp · dose baixa,Pulmão: ROI 32 px,0.375,1.1158046751580422
+ramp · dose baixa,Pulmão: ROI 32 px,0.40625,1.0463256401460226
+ramp · dose baixa,Pulmão: ROI 32 px,0.4375,1.0240633034789135
+ramp · dose baixa,Pulmão: ROI 32 px,0.46875,1.015978486858329
+ramp · dose baixa,Pulmão: ROI 32 px,0.5,1.0221128172874105
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.03125,656.6434147718078
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.0390625,364.86290055621475
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.046875,239.31241625451955
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.0546875,179.44985522642142
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.0625,142.88208153367833
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.0703125,113.9614320815652
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.078125,88.92616877706101
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.0859375,71.5297176436466
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.09375,57.37969987546694
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1015625,48.70998167004808
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.109375,40.88342090339825
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1171875,33.77225925208234
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.125,27.65637990075441
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1328125,22.016343336796936
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.140625,17.89395956144099
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1484375,14.823762377227194
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.15625,12.607705836876272
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1640625,10.96729549043298
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.171875,9.290806320895822
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1796875,7.9379339686339065
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1875,6.745727565715914
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.1953125,5.589661933155373
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.203125,4.660953981037029
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2109375,3.983955065344921
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.21875,3.4978282919435113
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2265625,3.147133559106242
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.234375,2.8329736503000036
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2421875,2.5255152844619704
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.25,2.271524030673595
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2578125,2.109723215852758
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.265625,1.9790697087018225
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2734375,1.8880499931640393
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.28125,1.7847807734655767
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.2890625,1.6962649233884048
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.296875,1.6140132360619395
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3046875,1.5576987048059625
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3125,1.504172441317045
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3203125,1.4830378351145876
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.328125,1.4527024306001015
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3359375,1.4068004169401138
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.34375,1.365841822194304
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3515625,1.3510725084425592
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.359375,1.3476881959119167
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3671875,1.3208462223935782
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.375,1.2840645297387543
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3828125,1.247910985773418
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.390625,1.235693920306934
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.3984375,1.22746932575025
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.40625,1.2289402946513588
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4140625,1.2099846030176622
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.421875,1.1914951200909576
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4296875,1.1757513350017896
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4375,1.1661220293002406
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4453125,1.1670259834934404
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.453125,1.1629416290072523
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4609375,1.1674114433325697
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.46875,1.158767900832391
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4765625,1.1546687632146122
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.484375,1.1568034263968339
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.4921875,1.143487877073076
+ramp · dose baixa,Pulmão: ACF máscara (sem vasos),0.5,1.1451813056145486
+hann · dose baixa,ROI 16 px,0.125,1.1520443807610323
+hann · dose baixa,ROI 16 px,0.1875,1.3029676888616128
+hann · dose baixa,ROI 16 px,0.25,1.2261996866717921
+hann · dose baixa,ROI 16 px,0.3125,1.0923096140041484
+hann · dose baixa,ROI 16 px,0.375,1.1050953127766745
+hann · dose baixa,ROI 16 px,0.4375,1.3077412074439858
+hann · dose baixa,ROI 16 px,0.5,1.6291626065996512
+hann · dose baixa,ROI 32 px,0.0625,2.2485477387165815
+hann · dose baixa,ROI 32 px,0.09375,2.2056582147555104
+hann · dose baixa,ROI 32 px,0.125,2.1821678547097596
+hann · dose baixa,ROI 32 px,0.15625,1.623650663568051
+hann · dose baixa,ROI 32 px,0.1875,1.36613893699554
+hann · dose baixa,ROI 32 px,0.21875,1.2426769906607975
+hann · dose baixa,ROI 32 px,0.25,1.171834296577185
+hann · dose baixa,ROI 32 px,0.28125,1.1423617653829061
+hann · dose baixa,ROI 32 px,0.3125,1.0686651652684218
+hann · dose baixa,ROI 32 px,0.34375,1.0316884067411096
+hann · dose baixa,ROI 32 px,0.375,1.044931662904838
+hann · dose baixa,ROI 32 px,0.40625,1.1767999780481788
+hann · dose baixa,ROI 32 px,0.4375,1.6732310896183535
+hann · dose baixa,ROI 32 px,0.46875,2.3920489485819747
+hann · dose baixa,ROI 32 px,0.5,2.1145727849492433
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.03125,23.179001055872973
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.0390625,14.997407278107298
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.046875,11.83493028070225
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.0546875,8.945621740433255
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.0625,7.1433255781078335
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.0703125,5.467464983481018
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.078125,4.343015472466894
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.0859375,3.7235425612297055
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.09375,3.3702214978526652
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1015625,3.072343459108379
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.109375,2.849821955041747
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1171875,2.658875074592235
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.125,2.4799352498538996
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1328125,2.2464490515733964
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.140625,2.0523512537176236
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1484375,1.8972810564284923
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.15625,1.766896406775681
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1640625,1.6544748659542357
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.171875,1.5854700912140203
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1796875,1.5438582761343276
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1875,1.4941965199406304
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.1953125,1.4493795500043323
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.203125,1.4084393046104657
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2109375,1.395477986841341
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.21875,1.3718291144556227
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2265625,1.3468829282037584
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.234375,1.2884976114158095
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2421875,1.2573955534026977
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.25,1.2273701479448487
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2578125,1.195121971065445
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.265625,1.16901543999893
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2734375,1.150162038998121
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.28125,1.1385701741981045
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.2890625,1.133322112003899
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.296875,1.1210806069940054
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3046875,1.108034857155115
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3125,1.1006952549512043
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3203125,1.098810713143181
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.328125,1.1029496960198544
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3359375,1.1035220496073508
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.34375,1.10628668656186
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3515625,1.131998654072338
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.359375,1.154318707417383
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3671875,1.1898106045573476
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.375,1.2089357910719436
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3828125,1.239905664500421
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.390625,1.3102882702262593
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.3984375,1.3597197370258576
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.40625,1.452598668688001
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4140625,1.493005166341862
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.421875,1.618813820835323
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4296875,1.7585597483778577
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4375,1.9296126067274701
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4453125,2.3125165075415803
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.453125,2.6864181280272708
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4609375,2.8336783498130393
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.46875,2.8352679243483108
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4765625,2.845850981749666
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.484375,2.845713912389841
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.4921875,3.2112730880269504
+hann · dose baixa,ACF máscara: tecido mole inteiro,0.5,2.9084096690095396
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.03125,16.619885423386275
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0390625,8.431145190761239
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.046875,6.794630306973209
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0546875,5.982836741041951
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0625,5.118358828747807
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0703125,3.7352745568239465
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.078125,2.7148517731764152
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.0859375,2.1938635291445507
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.09375,1.7293526700215878
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1015625,1.6803625957972121
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.109375,1.750286268216365
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1171875,1.8367238802832304
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.125,1.8910051450741927
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1328125,1.8598934582677382
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.140625,1.7612173043299426
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1484375,1.6489491699642227
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.15625,1.5339446528858134
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1640625,1.5058646423629218
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.171875,1.5169920697397772
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1796875,1.4798744317116446
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1875,1.377664752310474
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.1953125,1.337432619064368
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.203125,1.3238157119394995
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2109375,1.3006244238675702
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.21875,1.2829047553912323
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2265625,1.286973594091731
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.234375,1.2756126544426698
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2421875,1.2569141265778112
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.25,1.2049748856144877
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2578125,1.183067106440537
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.265625,1.1787047160877222
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2734375,1.1634054822062139
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.28125,1.131569226712451
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.2890625,1.134140250633948
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.296875,1.1337515985249782
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3046875,1.1383579262770702
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3125,1.1247375653552611
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3203125,1.1085061704697778
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.328125,1.1014375391046927
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3359375,1.116761483812959
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.34375,1.1425990984942973
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3515625,1.1760767115880608
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.359375,1.200480173776691
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3671875,1.2754259527033018
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.375,1.3273080020031727
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3828125,1.420682697514103
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.390625,1.4413883454232421
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.3984375,1.4402047239774491
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.40625,1.6482903122631853
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4140625,1.9030307544236496
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.421875,2.2021823719501863
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4296875,2.2959040600805882
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4375,2.5126085322014142
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4453125,2.986160614792607
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.453125,3.635188583384228
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4609375,3.3003914246413153
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.46875,3.089331805676843
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4765625,3.226449128918493
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.484375,3.3121166691745585
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.4921875,4.386381978905262
+hann · dose baixa,ACF máscara: ROIs de 16 px unidas,0.5,3.926224458491258
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.03125,22.599604867852165
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.0390625,10.694315355467785
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.046875,7.458719844341246
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.0546875,5.639330661891642
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.0625,4.6131717581333245
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.0703125,3.7111318543470873
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.078125,2.7345795261222428
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.0859375,2.454320223842395
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.09375,2.0816736187730065
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1015625,1.9202803267418194
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.109375,1.6182043064467289
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1171875,1.5080703332119623
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.125,1.4280064383924342
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1328125,1.3524374464707507
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.140625,1.2911406053899603
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1484375,1.1987953536388911
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.15625,1.140305897075534
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1640625,1.1149724919725077
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.171875,1.1362951830533243
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1796875,1.1498789450518623
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1875,1.1385453234794525
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.1953125,1.0637525477173042
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.203125,0.9963323041984364
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2109375,1.0035842069410756
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.21875,1.0493193821237723
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2265625,1.092805397689129
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.234375,1.0901938980995032
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2421875,1.076346292651967
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.25,1.053671140658072
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2578125,1.0502066069813518
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.265625,1.026535887400342
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2734375,1.0476432957874673
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.28125,1.048818685267857
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.2890625,1.0524160941438014
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.296875,1.0767237835951768
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3046875,1.0893610256052702
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3125,1.0790093582914304
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3203125,1.0687272036451294
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.328125,1.053394369917623
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3359375,1.0429673899684895
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.34375,1.025624952492367
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3515625,1.0447816317493734
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.359375,1.0860649762172534
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3671875,1.1309635533630782
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.375,1.0989958478454487
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3828125,1.0876147538920047
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.390625,1.0406530048625315
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.3984375,1.1431228067892822
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.40625,1.2954771916012415
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4140625,1.3812778120000402
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.421875,1.4376440872789487
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4296875,1.3885503554526848
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4375,1.5552456911081005
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4453125,1.939835207989299
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.453125,2.431172887053495
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4609375,2.096638222219397
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.46875,1.6196935909548074
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4765625,1.582143509983138
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.484375,1.750468518860367
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.4921875,2.170454261487984
+hann · dose baixa,ACF máscara: 20% mais homogêneos,0.5,2.079535192586549
+hann · dose baixa,Banco de filtros fino (≈64 px),0.03125,43549.51339894165
+hann · dose baixa,Banco de filtros fino (≈64 px),0.046875,3481.9329890894787
+hann · dose baixa,Banco de filtros fino (≈64 px),0.0625,953.0041114873301
+hann · dose baixa,Banco de filtros fino (≈64 px),0.078125,494.2382077521315
+hann · dose baixa,Banco de filtros fino (≈64 px),0.09375,274.14519720328286
+hann · dose baixa,Banco de filtros fino (≈64 px),0.109375,158.03244178423515
+hann · dose baixa,Banco de filtros fino (≈64 px),0.125,93.67643832131776
+hann · dose baixa,Banco de filtros fino (≈64 px),0.140625,58.83453306889164
+hann · dose baixa,Banco de filtros fino (≈64 px),0.15625,38.81756732052325
+hann · dose baixa,Banco de filtros fino (≈64 px),0.171875,26.50230074385716
+hann · dose baixa,Banco de filtros fino (≈64 px),0.1875,17.64874563999238
+hann · dose baixa,Banco de filtros fino (≈64 px),0.203125,12.08838593334256
+hann · dose baixa,Banco de filtros fino (≈64 px),0.21875,8.749564929190807
+hann · dose baixa,Banco de filtros fino (≈64 px),0.234375,6.5270667906801405
+hann · dose baixa,Banco de filtros fino (≈64 px),0.25,4.811220559975322
+hann · dose baixa,Banco de filtros fino (≈64 px),0.265625,3.680609764539553
+hann · dose baixa,Banco de filtros fino (≈64 px),0.28125,2.984168294019249
+hann · dose baixa,Banco de filtros fino (≈64 px),0.296875,2.5093667199443144
+hann · dose baixa,Banco de filtros fino (≈64 px),0.3125,2.10045353881464
+hann · dose baixa,Banco de filtros fino (≈64 px),0.328125,1.8252108866828034
+hann · dose baixa,Banco de filtros fino (≈64 px),0.34375,1.6326242750660314
+hann · dose baixa,Banco de filtros fino (≈64 px),0.359375,1.514333368794286
+hann · dose baixa,Banco de filtros fino (≈64 px),0.375,1.4419380050263755
+hann · dose baixa,Banco de filtros fino (≈64 px),0.390625,1.413465854585558
+hann · dose baixa,Banco de filtros fino (≈64 px),0.40625,1.437312806537869
+hann · dose baixa,Banco de filtros fino (≈64 px),0.421875,1.5246248566363743
+hann · dose baixa,Banco de filtros fino (≈64 px),0.4375,1.6817812723520462
+hann · dose baixa,Banco de filtros fino (≈64 px),0.453125,1.8359382467257546
+hann · dose baixa,Banco de filtros fino (≈64 px),0.46875,1.9030322258095316
+hann · dose baixa,Banco de filtros fino (≈64 px),0.484375,1.8338849832239998
+hann · dose baixa,Banco de filtros fino (≈64 px),0.5,1.7606643791494412
+hann · dose baixa,Banco de filtros largo (≈16 px),0.03125,110919.72887488097
+hann · dose baixa,Banco de filtros largo (≈16 px),0.046875,31425.86222792882
+hann · dose baixa,Banco de filtros largo (≈16 px),0.0625,6937.607968580876
+hann · dose baixa,Banco de filtros largo (≈16 px),0.078125,1145.8716217008243
+hann · dose baixa,Banco de filtros largo (≈16 px),0.09375,142.07994788036328
+hann · dose baixa,Banco de filtros largo (≈16 px),0.109375,22.672033712155677
+hann · dose baixa,Banco de filtros largo (≈16 px),0.125,10.658197628165855
+hann · dose baixa,Banco de filtros largo (≈16 px),0.140625,6.484994243615592
+hann · dose baixa,Banco de filtros largo (≈16 px),0.15625,4.282797789693343
+hann · dose baixa,Banco de filtros largo (≈16 px),0.171875,3.3193279755613005
+hann · dose baixa,Banco de filtros largo (≈16 px),0.1875,2.7249325283658576
+hann · dose baixa,Banco de filtros largo (≈16 px),0.203125,2.2430276513891787
+hann · dose baixa,Banco de filtros largo (≈16 px),0.21875,1.9021276412073707
+hann · dose baixa,Banco de filtros largo (≈16 px),0.234375,1.6783686206349318
+hann · dose baixa,Banco de filtros largo (≈16 px),0.25,1.5084001382050047
+hann · dose baixa,Banco de filtros largo (≈16 px),0.265625,1.3704964789075285
+hann · dose baixa,Banco de filtros largo (≈16 px),0.28125,1.2735336740482128
+hann · dose baixa,Banco de filtros largo (≈16 px),0.296875,1.2154931333075727
+hann · dose baixa,Banco de filtros largo (≈16 px),0.3125,1.1790396164714412
+hann · dose baixa,Banco de filtros largo (≈16 px),0.328125,1.1512027621192893
+hann · dose baixa,Banco de filtros largo (≈16 px),0.34375,1.1320022810643307
+hann · dose baixa,Banco de filtros largo (≈16 px),0.359375,1.1269274001274714
+hann · dose baixa,Banco de filtros largo (≈16 px),0.375,1.1389870490392437
+hann · dose baixa,Banco de filtros largo (≈16 px),0.390625,1.1687718463050003
+hann · dose baixa,Banco de filtros largo (≈16 px),0.40625,1.2189664310774293
+hann · dose baixa,Banco de filtros largo (≈16 px),0.421875,1.2968392197890404
+hann · dose baixa,Banco de filtros largo (≈16 px),0.4375,1.4094039438502102
+hann · dose baixa,Banco de filtros largo (≈16 px),0.453125,1.5473876535975222
+hann · dose baixa,Banco de filtros largo (≈16 px),0.46875,1.6697882977088239
+hann · dose baixa,Banco de filtros largo (≈16 px),0.484375,1.730217669077863
+hann · dose baixa,Banco de filtros largo (≈16 px),0.5,1.7301698309580686
+hann · dose baixa,Pulmão: ROI 32 px,0.0625,265.04834484251677
+hann · dose baixa,Pulmão: ROI 32 px,0.09375,334.93470140264924
+hann · dose baixa,Pulmão: ROI 32 px,0.125,144.05765643200195
+hann · dose baixa,Pulmão: ROI 32 px,0.15625,40.22096184191177
+hann · dose baixa,Pulmão: ROI 32 px,0.1875,18.66420459551007
+hann · dose baixa,Pulmão: ROI 32 px,0.21875,7.694510266120647
+hann · dose baixa,Pulmão: ROI 32 px,0.25,3.747525057020116
+hann · dose baixa,Pulmão: ROI 32 px,0.28125,2.171758658034819
+hann · dose baixa,Pulmão: ROI 32 px,0.3125,1.5318176220560884
+hann · dose baixa,Pulmão: ROI 32 px,0.34375,1.266924613907099
+hann · dose baixa,Pulmão: ROI 32 px,0.375,1.1460426129654977
+hann · dose baixa,Pulmão: ROI 32 px,0.40625,1.1558496962785516
+hann · dose baixa,Pulmão: ROI 32 px,0.4375,1.23785442228377
+hann · dose baixa,Pulmão: ROI 32 px,0.46875,1.4017478163927444
+hann · dose baixa,Pulmão: ROI 32 px,0.5,1.5300116083697368
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.03125,804.8631233943789
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.0390625,435.4809070003896
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.046875,273.9388334495631
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.0546875,196.0426701582989
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.0625,156.48117799912032
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.0703125,125.89790629281244
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.078125,96.11890395576654
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.0859375,78.6331007681558
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.09375,64.48186226411435
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1015625,55.38970855454427
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.109375,46.26679266637922
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1171875,37.96234275403156
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.125,32.401746985281505
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1328125,25.539676011593787
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.140625,20.876253110089863
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1484375,17.28796196277498
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.15625,14.608175850978421
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1640625,12.68422373945162
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.171875,10.700317232054973
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1796875,9.100965003254732
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1875,7.79139194099712
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.1953125,6.650183436311053
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.203125,5.641977270188886
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2109375,4.862462525949287
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.21875,4.313321713046268
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2265625,3.9254764853977018
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.234375,3.7147032285610084
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2421875,3.539829568940568
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.25,3.469169434890855
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2578125,3.5068124119235526
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.265625,3.5291217759798905
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2734375,3.6114511239134344
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.28125,3.6440942172564177
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.2890625,3.6804516200510933
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.296875,3.829291346563733
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3046875,4.001649440618414
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3125,4.2732395825188005
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3203125,4.49683096624331
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.328125,4.897794563757822
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3359375,5.369782059394433
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.34375,5.865844064676625
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3515625,6.620600282882614
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.359375,7.257218376998376
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3671875,8.112327650808227
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.375,8.896359709765603
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3828125,9.967659027384348
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.390625,11.822651719332411
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.3984375,14.076926770452296
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.40625,17.278879713771165
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4140625,20.334538058094076
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.421875,24.185935953519994
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4296875,27.534658081633378
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4375,32.009990942478225
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4453125,37.09731086790609
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.453125,44.51506653696142
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4609375,49.039896769073145
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.46875,54.30337878774548
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4765625,60.07696447770587
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.484375,59.9988891565234
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.4921875,60.98333968563406
+hann · dose baixa,Pulmão: ACF máscara (sem vasos),0.5,52.00835863498155
+ramp · dose média,ROI 16 px,0.125,2.039175809363623
+ramp · dose média,ROI 16 px,0.1875,1.8294760359649285
+ramp · dose média,ROI 16 px,0.25,1.448256106508248
+ramp · dose média,ROI 16 px,0.3125,1.1673066910423424
+ramp · dose média,ROI 16 px,0.375,1.1415812460782355
+ramp · dose média,ROI 16 px,0.4375,1.2160145514353145
+ramp · dose média,ROI 16 px,0.5,1.3127194606459667
+ramp · dose média,ROI 32 px,0.0625,5.537652623838436
+ramp · dose média,ROI 32 px,0.09375,4.575764905335407
+ramp · dose média,ROI 32 px,0.125,3.647619707983493
+ramp · dose média,ROI 32 px,0.15625,2.3418887643135067
+ramp · dose média,ROI 32 px,0.1875,2.0748764069357124
+ramp · dose média,ROI 32 px,0.21875,1.813100301711213
+ramp · dose média,ROI 32 px,0.25,1.6013785675590144
+ramp · dose média,ROI 32 px,0.28125,1.3047126651553593
+ramp · dose média,ROI 32 px,0.3125,1.133418951223062
+ramp · dose média,ROI 32 px,0.34375,1.0816947911126948
+ramp · dose média,ROI 32 px,0.375,1.0636400270902462
+ramp · dose média,ROI 32 px,0.40625,1.0911280569404254
+ramp · dose média,ROI 32 px,0.4375,1.1540862561585212
+ramp · dose média,ROI 32 px,0.46875,1.2536148383809635
+ramp · dose média,ROI 32 px,0.5,1.395344810854334
+ramp · dose média,ACF máscara: tecido mole inteiro,0.03125,77.06197751049802
+ramp · dose média,ACF máscara: tecido mole inteiro,0.0390625,52.89163001785386
+ramp · dose média,ACF máscara: tecido mole inteiro,0.046875,41.011586830573364
+ramp · dose média,ACF máscara: tecido mole inteiro,0.0546875,29.83616326135841
+ramp · dose média,ACF máscara: tecido mole inteiro,0.0625,23.438473501203035
+ramp · dose média,ACF máscara: tecido mole inteiro,0.0703125,18.395768085791243
+ramp · dose média,ACF máscara: tecido mole inteiro,0.078125,14.896458080703173
+ramp · dose média,ACF máscara: tecido mole inteiro,0.0859375,12.705176183112
+ramp · dose média,ACF máscara: tecido mole inteiro,0.09375,11.015593298843982
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1015625,9.457574297201749
+ramp · dose média,ACF máscara: tecido mole inteiro,0.109375,7.901884447879514
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1171875,7.013106120767291
+ramp · dose média,ACF máscara: tecido mole inteiro,0.125,6.40263869486646
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1328125,5.689325401384701
+ramp · dose média,ACF máscara: tecido mole inteiro,0.140625,4.963492337220518
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1484375,4.255135169982523
+ramp · dose média,ACF máscara: tecido mole inteiro,0.15625,3.7654780629000832
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1640625,3.336142945113791
+ramp · dose média,ACF máscara: tecido mole inteiro,0.171875,3.038363670351925
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1796875,2.907631487756493
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1875,2.782334888231434
+ramp · dose média,ACF máscara: tecido mole inteiro,0.1953125,2.6140337866155683
+ramp · dose média,ACF máscara: tecido mole inteiro,0.203125,2.475655881554044
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2109375,2.32891213484983
+ramp · dose média,ACF máscara: tecido mole inteiro,0.21875,2.1537277944800315
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2265625,2.0915260218230776
+ramp · dose média,ACF máscara: tecido mole inteiro,0.234375,2.016929269597084
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2421875,1.8761661275531523
+ramp · dose média,ACF máscara: tecido mole inteiro,0.25,1.7046091705045645
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2578125,1.597664441781059
+ramp · dose média,ACF máscara: tecido mole inteiro,0.265625,1.5552500415673822
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2734375,1.5077100922120152
+ramp · dose média,ACF máscara: tecido mole inteiro,0.28125,1.4557046534176084
+ramp · dose média,ACF máscara: tecido mole inteiro,0.2890625,1.3997560014430004
+ramp · dose média,ACF máscara: tecido mole inteiro,0.296875,1.3482211099139256
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3046875,1.310304099365174
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3125,1.2368933119014545
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3203125,1.2037885479534536
+ramp · dose média,ACF máscara: tecido mole inteiro,0.328125,1.1716396261295514
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3359375,1.1588041586257898
+ramp · dose média,ACF máscara: tecido mole inteiro,0.34375,1.1536162666466614
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3515625,1.1544019000378398
+ramp · dose média,ACF máscara: tecido mole inteiro,0.359375,1.1483184637172765
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3671875,1.1416987382092372
+ramp · dose média,ACF máscara: tecido mole inteiro,0.375,1.1357492977889077
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3828125,1.1415609959153468
+ramp · dose média,ACF máscara: tecido mole inteiro,0.390625,1.1450548243510519
+ramp · dose média,ACF máscara: tecido mole inteiro,0.3984375,1.1555585471594998
+ramp · dose média,ACF máscara: tecido mole inteiro,0.40625,1.153184419061454
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4140625,1.1535900069082081
+ramp · dose média,ACF máscara: tecido mole inteiro,0.421875,1.1552351917896333
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4296875,1.1670879188381869
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4375,1.174293969082172
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4453125,1.1747325771545192
+ramp · dose média,ACF máscara: tecido mole inteiro,0.453125,1.1886600960526257
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4609375,1.2054920826259403
+ramp · dose média,ACF máscara: tecido mole inteiro,0.46875,1.2161397641986127
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4765625,1.2136368171757255
+ramp · dose média,ACF máscara: tecido mole inteiro,0.484375,1.2113985160672038
+ramp · dose média,ACF máscara: tecido mole inteiro,0.4921875,1.2305497134469054
+ramp · dose média,ACF máscara: tecido mole inteiro,0.5,1.2549151493489157
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.03125,79.50361672095464
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.0390625,38.2288692351558
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.046875,23.97761358828979
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.0546875,16.769549102293073
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.0625,13.81750080372042
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.0703125,10.741780169053138
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.078125,8.478803049244382
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.0859375,6.639849500120684
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.09375,5.7461739963210485
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1015625,5.04528053774208
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.109375,4.342569931767212
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1171875,3.9287201673508556
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.125,3.9323831103859495
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1328125,3.7874486612209495
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.140625,3.2837540020461176
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1484375,2.943260870742407
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.15625,2.910610199384314
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1640625,2.716165403525176
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.171875,2.3768468924404464
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1796875,2.184809743929565
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1875,2.201805467636769
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.1953125,2.177553956831017
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.203125,2.0825116155627534
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2109375,1.8991200520781941
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.21875,1.754023096544235
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2265625,1.7140000381246916
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.234375,1.7240170098585605
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2421875,1.6382033314010371
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.25,1.5073829672308976
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2578125,1.43478046212704
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.265625,1.4112719361545867
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2734375,1.371444233427144
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.28125,1.3339488994809798
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.2890625,1.2842145414767134
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.296875,1.2398439128077596
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3046875,1.2136394267246466
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3125,1.181372480364519
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3203125,1.1654130883533025
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.328125,1.1468870080084952
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3359375,1.1285676978993664
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.34375,1.1163429734332375
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3515625,1.1129420411908904
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.359375,1.11136798759277
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3671875,1.11674191490848
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.375,1.1240138370548063
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3828125,1.1339135720231068
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.390625,1.1396477382327492
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.3984375,1.1550354494247559
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.40625,1.1730336460297366
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4140625,1.1812882187885974
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.421875,1.1871651058127437
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4296875,1.1906725703672256
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4375,1.1936418590475104
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4453125,1.2046537744597752
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.453125,1.2088941912761157
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4609375,1.206677030251166
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.46875,1.2005638113544594
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4765625,1.2122686386240227
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.484375,1.240049761629573
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.4921875,1.280898106452198
+ramp · dose média,ACF máscara: ROIs de 16 px unidas,0.5,1.3318098740079438
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.03125,66.63540815738126
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.0390625,37.67691538241449
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.046875,25.290085465895938
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.0546875,18.73915308403983
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.0625,13.461417262559415
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.0703125,10.010351839563329
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.078125,8.125822002218959
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.0859375,6.816987798003591
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.09375,5.730673481909355
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1015625,4.8215133927765645
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.109375,3.953433404594229
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1171875,3.4208486018208513
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.125,3.3241329256833425
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1328125,2.759945022005854
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.140625,2.294746288174447
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1484375,1.9428147243426543
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.15625,1.8127965170715978
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1640625,1.7005705009370116
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.171875,1.52936947434728
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1796875,1.411064767004265
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1875,1.3081615926811656
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.1953125,1.284550741612268
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.203125,1.2579551149139978
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2109375,1.2021396576602013
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.21875,1.1561842306231709
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2265625,1.1771692263913378
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.234375,1.2652346020423966
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2421875,1.3082077383226296
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.25,1.2544461642799574
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2578125,1.183830622682615
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.265625,1.1408980277620073
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2734375,1.1094570227049454
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.28125,1.1094344723002194
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.2890625,1.0923500595125473
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.296875,1.0645296324770452
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3046875,1.0955286912189688
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3125,1.0930481680746484
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3203125,1.0642812196435998
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.328125,1.0508346184682749
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3359375,1.063181342453829
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.34375,1.0604960843641662
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3515625,1.0556465133476987
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.359375,1.0601462011608096
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3671875,1.0659222620404887
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.375,1.0790728571405435
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3828125,1.0775239787309603
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.390625,1.0665120357437154
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.3984375,1.0823368315443276
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.40625,1.0933554222916153
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4140625,1.0811337788223228
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.421875,1.0724188757231032
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4296875,1.0870643727462777
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4375,1.1100488383531717
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4453125,1.11367815402665
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.453125,1.0985400540644683
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4609375,1.093718602135038
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.46875,1.10079669590261
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4765625,1.1227061323523948
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.484375,1.1367985237381832
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.4921875,1.1555710817954776
+ramp · dose média,ACF máscara: 20% mais homogêneos,0.5,1.1660814974587865
+ramp · dose média,Banco de filtros fino (≈64 px),0.03125,166941.83771887998
+ramp · dose média,Banco de filtros fino (≈64 px),0.046875,13846.89954475718
+ramp · dose média,Banco de filtros fino (≈64 px),0.0625,3815.3088167169244
+ramp · dose média,Banco de filtros fino (≈64 px),0.078125,1963.8076316307079
+ramp · dose média,Banco de filtros fino (≈64 px),0.09375,1113.591913250102
+ramp · dose média,Banco de filtros fino (≈64 px),0.109375,622.8998840802955
+ramp · dose média,Banco de filtros fino (≈64 px),0.125,363.27307829700027
+ramp · dose média,Banco de filtros fino (≈64 px),0.140625,226.79320671494813
+ramp · dose média,Banco de filtros fino (≈64 px),0.15625,149.29526957128917
+ramp · dose média,Banco de filtros fino (≈64 px),0.171875,99.9141231908163
+ramp · dose média,Banco de filtros fino (≈64 px),0.1875,65.88004001866095
+ramp · dose média,Banco de filtros fino (≈64 px),0.203125,43.691740839048435
+ramp · dose média,Banco de filtros fino (≈64 px),0.21875,30.819771301877914
+ramp · dose média,Banco de filtros fino (≈64 px),0.234375,22.6761760176031
+ramp · dose média,Banco de filtros fino (≈64 px),0.25,16.044498409544282
+ramp · dose média,Banco de filtros fino (≈64 px),0.265625,11.497780095222542
+ramp · dose média,Banco de filtros fino (≈64 px),0.28125,8.635633109220326
+ramp · dose média,Banco de filtros fino (≈64 px),0.296875,6.681820144569209
+ramp · dose média,Banco de filtros fino (≈64 px),0.3125,5.163049992718383
+ramp · dose média,Banco de filtros fino (≈64 px),0.328125,4.116173759218191
+ramp · dose média,Banco de filtros fino (≈64 px),0.34375,3.3407323423600137
+ramp · dose média,Banco de filtros fino (≈64 px),0.359375,2.771741065537804
+ramp · dose média,Banco de filtros fino (≈64 px),0.375,2.388321420856252
+ramp · dose média,Banco de filtros fino (≈64 px),0.390625,2.134769483468019
+ramp · dose média,Banco de filtros fino (≈64 px),0.40625,1.9454188542412423
+ramp · dose média,Banco de filtros fino (≈64 px),0.421875,1.7903852954205184
+ramp · dose média,Banco de filtros fino (≈64 px),0.4375,1.7461841258152222
+ramp · dose média,Banco de filtros fino (≈64 px),0.453125,1.7335892049258421
+ramp · dose média,Banco de filtros fino (≈64 px),0.46875,1.7371541874926042
+ramp · dose média,Banco de filtros fino (≈64 px),0.484375,1.519588979837943
+ramp · dose média,Banco de filtros fino (≈64 px),0.5,1.5852572566835537
+ramp · dose média,Banco de filtros largo (≈16 px),0.03125,403324.46718071826
+ramp · dose média,Banco de filtros largo (≈16 px),0.046875,112083.77090838176
+ramp · dose média,Banco de filtros largo (≈16 px),0.0625,24014.210353262253
+ramp · dose média,Banco de filtros largo (≈16 px),0.078125,3789.6352894888537
+ramp · dose média,Banco de filtros largo (≈16 px),0.09375,444.4172341762364
+ramp · dose média,Banco de filtros largo (≈16 px),0.109375,72.37316331207441
+ramp · dose média,Banco de filtros largo (≈16 px),0.125,34.54836445951859
+ramp · dose média,Banco de filtros largo (≈16 px),0.140625,19.545412281555233
+ramp · dose média,Banco de filtros largo (≈16 px),0.15625,12.058246171817444
+ramp · dose média,Banco de filtros largo (≈16 px),0.171875,8.978850972097867
+ramp · dose média,Banco de filtros largo (≈16 px),0.1875,6.957648387470945
+ramp · dose média,Banco de filtros largo (≈16 px),0.203125,5.2199359422265825
+ramp · dose média,Banco de filtros largo (≈16 px),0.21875,3.989711607245539
+ramp · dose média,Banco de filtros largo (≈16 px),0.234375,3.2059132368405376
+ramp · dose média,Banco de filtros largo (≈16 px),0.25,2.6276131188285676
+ramp · dose média,Banco de filtros largo (≈16 px),0.265625,2.164409923550079
+ramp · dose média,Banco de filtros largo (≈16 px),0.28125,1.8396012471403034
+ramp · dose média,Banco de filtros largo (≈16 px),0.296875,1.6389272940054516
+ramp · dose média,Banco de filtros largo (≈16 px),0.3125,1.502653757866724
+ramp · dose média,Banco de filtros largo (≈16 px),0.328125,1.392049942125553
+ramp · dose média,Banco de filtros largo (≈16 px),0.34375,1.3058382456982096
+ramp · dose média,Banco de filtros largo (≈16 px),0.359375,1.251551595920074
+ramp · dose média,Banco de filtros largo (≈16 px),0.375,1.2247776976222604
+ramp · dose média,Banco de filtros largo (≈16 px),0.390625,1.2127613545930127
+ramp · dose média,Banco de filtros largo (≈16 px),0.40625,1.2080857530835456
+ramp · dose média,Banco de filtros largo (≈16 px),0.421875,1.2133688319602092
+ramp · dose média,Banco de filtros largo (≈16 px),0.4375,1.2304651126687334
+ramp · dose média,Banco de filtros largo (≈16 px),0.453125,1.2502826456028129
+ramp · dose média,Banco de filtros largo (≈16 px),0.46875,1.2624406440977372
+ramp · dose média,Banco de filtros largo (≈16 px),0.484375,1.2704914721346705
+ramp · dose média,Banco de filtros largo (≈16 px),0.5,1.2856388644535972
+ramp · dose média,Pulmão: ROI 32 px,0.0625,1163.8980750878184
+ramp · dose média,Pulmão: ROI 32 px,0.09375,1090.247865421145
+ramp · dose média,Pulmão: ROI 32 px,0.125,456.51290375604907
+ramp · dose média,Pulmão: ROI 32 px,0.15625,133.8104883408528
+ramp · dose média,Pulmão: ROI 32 px,0.1875,59.69213041895463
+ramp · dose média,Pulmão: ROI 32 px,0.21875,26.532168297005512
+ramp · dose média,Pulmão: ROI 32 px,0.25,10.650214202859381
+ramp · dose média,Pulmão: ROI 32 px,0.28125,4.8183640678464394
+ramp · dose média,Pulmão: ROI 32 px,0.3125,2.7236134677908876
+ramp · dose média,Pulmão: ROI 32 px,0.34375,1.7386011051887886
+ramp · dose média,Pulmão: ROI 32 px,0.375,1.3555434611646142
+ramp · dose média,Pulmão: ROI 32 px,0.40625,1.1437556467053676
+ramp · dose média,Pulmão: ROI 32 px,0.4375,1.0738957343902058
+ramp · dose média,Pulmão: ROI 32 px,0.46875,1.0614762201695067
+ramp · dose média,Pulmão: ROI 32 px,0.5,1.0923263877730127
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.03125,2951.5514602298513
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.0390625,1563.8165225173675
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.046875,999.9921496178827
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.0546875,744.3221155209079
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.0625,589.0215654096667
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.0703125,446.2443149939384
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.078125,336.64938924425843
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.0859375,272.9994149144302
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.09375,219.46475888241304
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1015625,184.26324578504233
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.109375,154.086643059348
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1171875,127.22443035016626
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.125,105.6605524300789
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1328125,85.69545093972681
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.140625,70.86014082215637
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1484375,58.65748085076339
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.15625,48.448226481726884
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1640625,40.660572106562306
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.171875,33.42733329199169
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1796875,28.59014991923784
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1875,24.3124060358381
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.1953125,20.089800507924362
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.203125,16.08245036338856
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2109375,13.06987126651515
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.21875,10.977187848827343
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2265625,9.47520769739551
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.234375,8.13455505908561
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2421875,6.898760059817308
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.25,6.0351296814875
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2578125,5.422333753573047
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.265625,5.031601719697991
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2734375,4.582202891891899
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.28125,4.122642914334989
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.2890625,3.704709072813716
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.296875,3.38017867047718
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3046875,3.1980581546459868
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3125,3.016968659224542
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3203125,2.9185486307795565
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.328125,2.7400975357700994
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3359375,2.6106373672223127
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.34375,2.5069542432206924
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3515625,2.443474009552857
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.359375,2.354010730929519
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3671875,2.246913605335966
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.375,2.162746425710811
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3828125,2.0896264144132948
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.390625,2.0062913515385796
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.3984375,1.9303980081815841
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.40625,1.8788146019225511
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4140625,1.8140612064972699
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.421875,1.7580848358429484
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4296875,1.6920180266722982
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4375,1.6570504846046463
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4453125,1.6510757229663668
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.453125,1.6272752801958328
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4609375,1.6323499000112454
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.46875,1.6288886589740914
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4765625,1.6003769430758223
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.484375,1.5997154059491046
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.4921875,1.5662725420027648
+ramp · dose média,Pulmão: ACF máscara (sem vasos),0.5,1.601558642240583

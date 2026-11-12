@@ -1,0 +1,168 @@
+estimator,freq,second_over_first
+ROI 16 px,0.125,1.269545025206594
+ROI 16 px,0.1875,1.0376576482838633
+ROI 16 px,0.25,0.9847316846422056
+ROI 16 px,0.3125,0.9735173478404476
+ROI 16 px,0.375,0.9566030383033934
+ROI 16 px,0.4375,0.9883123726534906
+ROI 16 px,0.5,0.9918056547449909
+ROI 32 px,0.125,0.863351534304947
+ROI 32 px,0.15625,0.8883323860915434
+ROI 32 px,0.1875,0.9589556769285345
+ROI 32 px,0.21875,1.0083878633878656
+ROI 32 px,0.25,0.9549206559077981
+ROI 32 px,0.28125,0.9601465139488402
+ROI 32 px,0.3125,1.0291455550824198
+ROI 32 px,0.34375,0.9965990776558175
+ROI 32 px,0.375,0.9997027018539049
+ROI 32 px,0.40625,1.0148315478551213
+ROI 32 px,0.4375,1.041381186339622
+ROI 32 px,0.46875,1.0336914435472662
+ROI 32 px,0.5,0.9789809469923014
+ACF máscara: tecido mole inteiro,0.125,0.956573858875864
+ACF máscara: tecido mole inteiro,0.1328125,0.9588036099319381
+ACF máscara: tecido mole inteiro,0.140625,0.9989732945134602
+ACF máscara: tecido mole inteiro,0.1484375,1.012970866416998
+ACF máscara: tecido mole inteiro,0.15625,1.01297217489507
+ACF máscara: tecido mole inteiro,0.1640625,0.99508337786475
+ACF máscara: tecido mole inteiro,0.171875,0.9804161032156192
+ACF máscara: tecido mole inteiro,0.1796875,0.9639665520391167
+ACF máscara: tecido mole inteiro,0.1875,0.9725744901817859
+ACF máscara: tecido mole inteiro,0.1953125,1.022792618366513
+ACF máscara: tecido mole inteiro,0.203125,1.0397302260967243
+ACF máscara: tecido mole inteiro,0.2109375,1.0432498679155224
+ACF máscara: tecido mole inteiro,0.21875,1.0258566247334704
+ACF máscara: tecido mole inteiro,0.2265625,1.007682976509196
+ACF máscara: tecido mole inteiro,0.234375,0.9993645599164054
+ACF máscara: tecido mole inteiro,0.2421875,1.005534533774636
+ACF máscara: tecido mole inteiro,0.25,1.0129240987392836
+ACF máscara: tecido mole inteiro,0.2578125,1.0472085969544462
+ACF máscara: tecido mole inteiro,0.265625,1.0477633628299865
+ACF máscara: tecido mole inteiro,0.2734375,1.0264282892082117
+ACF máscara: tecido mole inteiro,0.28125,1.0074692637593647
+ACF máscara: tecido mole inteiro,0.2890625,0.9784334470470067
+ACF máscara: tecido mole inteiro,0.296875,0.9596899237343769
+ACF máscara: tecido mole inteiro,0.3046875,1.0028254623332926
+ACF máscara: tecido mole inteiro,0.3125,1.0289382541170733
+ACF máscara: tecido mole inteiro,0.3203125,1.0220848590208835
+ACF máscara: tecido mole inteiro,0.328125,0.9853713033425064
+ACF máscara: tecido mole inteiro,0.3359375,0.9762162405138243
+ACF máscara: tecido mole inteiro,0.34375,0.9797521298727416
+ACF máscara: tecido mole inteiro,0.3515625,0.989460749802371
+ACF máscara: tecido mole inteiro,0.359375,0.9933346896546226
+ACF máscara: tecido mole inteiro,0.3671875,0.9898345252350645
+ACF máscara: tecido mole inteiro,0.375,0.9778148642393114
+ACF máscara: tecido mole inteiro,0.3828125,0.9792210227573896
+ACF máscara: tecido mole inteiro,0.390625,0.9868065495635615
+ACF máscara: tecido mole inteiro,0.3984375,1.0019832155230162
+ACF máscara: tecido mole inteiro,0.40625,1.0053443170097605
+ACF máscara: tecido mole inteiro,0.4140625,1.014372901304818
+ACF máscara: tecido mole inteiro,0.421875,1.0211263437546731
+ACF máscara: tecido mole inteiro,0.4296875,1.029383300100302
+ACF máscara: tecido mole inteiro,0.4375,1.0221977085441827
+ACF máscara: tecido mole inteiro,0.4453125,1.0034335359129791
+ACF máscara: tecido mole inteiro,0.453125,1.0051818193547968
+ACF máscara: tecido mole inteiro,0.4609375,1.0186314166301629
+ACF máscara: tecido mole inteiro,0.46875,1.0271076283918743
+ACF máscara: tecido mole inteiro,0.4765625,1.0126047217626963
+ACF máscara: tecido mole inteiro,0.484375,0.9912190775267138
+ACF máscara: tecido mole inteiro,0.4921875,0.9788389353692133
+ACF máscara: tecido mole inteiro,0.5,0.993327560611397
+ACF máscara: ROIs de 16 px unidas,0.125,0.9885979795595482
+ACF máscara: ROIs de 16 px unidas,0.1328125,0.975430500318274
+ACF máscara: ROIs de 16 px unidas,0.140625,1.0270696904078214
+ACF máscara: ROIs de 16 px unidas,0.1484375,1.0421424406023356
+ACF máscara: ROIs de 16 px unidas,0.15625,1.0452627392063165
+ACF máscara: ROIs de 16 px unidas,0.1640625,0.9997663592542404
+ACF máscara: ROIs de 16 px unidas,0.171875,0.9765808666643718
+ACF máscara: ROIs de 16 px unidas,0.1796875,0.9571773880836065
+ACF máscara: ROIs de 16 px unidas,0.1875,0.9931815164957404
+ACF máscara: ROIs de 16 px unidas,0.1953125,1.0638720593457813
+ACF máscara: ROIs de 16 px unidas,0.203125,1.0550567243263804
+ACF máscara: ROIs de 16 px unidas,0.2109375,1.0223086081744504
+ACF máscara: ROIs de 16 px unidas,0.21875,0.979545344499475
+ACF máscara: ROIs de 16 px unidas,0.2265625,0.9570764602670538
+ACF máscara: ROIs de 16 px unidas,0.234375,0.9845817374682896
+ACF máscara: ROIs de 16 px unidas,0.2421875,1.0275871239821597
+ACF máscara: ROIs de 16 px unidas,0.25,1.0250491393081202
+ACF máscara: ROIs de 16 px unidas,0.2578125,1.040145434943681
+ACF máscara: ROIs de 16 px unidas,0.265625,1.0075084762332356
+ACF máscara: ROIs de 16 px unidas,0.2734375,1.0031388695345598
+ACF máscara: ROIs de 16 px unidas,0.28125,1.0171351033257754
+ACF máscara: ROIs de 16 px unidas,0.2890625,0.9883345011483098
+ACF máscara: ROIs de 16 px unidas,0.296875,0.937485413288854
+ACF máscara: ROIs de 16 px unidas,0.3046875,0.9681053627502566
+ACF máscara: ROIs de 16 px unidas,0.3125,1.0051533158584165
+ACF máscara: ROIs de 16 px unidas,0.3203125,1.0060326966250615
+ACF máscara: ROIs de 16 px unidas,0.328125,0.9931856329933393
+ACF máscara: ROIs de 16 px unidas,0.3359375,0.9774601155115559
+ACF máscara: ROIs de 16 px unidas,0.34375,0.9822124981204768
+ACF máscara: ROIs de 16 px unidas,0.3515625,0.9642652192231039
+ACF máscara: ROIs de 16 px unidas,0.359375,0.9820647176964808
+ACF máscara: ROIs de 16 px unidas,0.3671875,0.9834035144150106
+ACF máscara: ROIs de 16 px unidas,0.375,1.0023671953403694
+ACF máscara: ROIs de 16 px unidas,0.3828125,1.0092120650647438
+ACF máscara: ROIs de 16 px unidas,0.390625,0.9984311802694045
+ACF máscara: ROIs de 16 px unidas,0.3984375,0.99038382119352
+ACF máscara: ROIs de 16 px unidas,0.40625,0.9769792159686833
+ACF máscara: ROIs de 16 px unidas,0.4140625,1.0216411859752648
+ACF máscara: ROIs de 16 px unidas,0.421875,1.0681099183900817
+ACF máscara: ROIs de 16 px unidas,0.4296875,1.0594053044329494
+ACF máscara: ROIs de 16 px unidas,0.4375,1.0240715514245182
+ACF máscara: ROIs de 16 px unidas,0.4453125,1.0014520245415388
+ACF máscara: ROIs de 16 px unidas,0.453125,1.0132691850489728
+ACF máscara: ROIs de 16 px unidas,0.4609375,1.032705128330602
+ACF máscara: ROIs de 16 px unidas,0.46875,1.0295080525420763
+ACF máscara: ROIs de 16 px unidas,0.4765625,0.9946900739187848
+ACF máscara: ROIs de 16 px unidas,0.484375,0.9699531144017305
+ACF máscara: ROIs de 16 px unidas,0.4921875,0.9615747991187015
+ACF máscara: ROIs de 16 px unidas,0.5,0.9946076094825176
+ACF máscara: 20% mais homogêneos,0.125,1.1872169887865476
+ACF máscara: 20% mais homogêneos,0.1328125,1.1078463415331141
+ACF máscara: 20% mais homogêneos,0.140625,1.1780378726430238
+ACF máscara: 20% mais homogêneos,0.1484375,1.2855931321003022
+ACF máscara: 20% mais homogêneos,0.15625,1.3301378906592394
+ACF máscara: 20% mais homogêneos,0.1640625,1.2871872912736277
+ACF máscara: 20% mais homogêneos,0.171875,1.3622563978522981
+ACF máscara: 20% mais homogêneos,0.1796875,1.5981660376973623
+ACF máscara: 20% mais homogêneos,0.1875,1.7420073542840895
+ACF máscara: 20% mais homogêneos,0.1953125,1.6405820041009496
+ACF máscara: 20% mais homogêneos,0.203125,1.3390820229303437
+ACF máscara: 20% mais homogêneos,0.2109375,1.2530964302763692
+ACF máscara: 20% mais homogêneos,0.21875,1.2980211160412336
+ACF máscara: 20% mais homogêneos,0.2265625,1.4160066097558206
+ACF máscara: 20% mais homogêneos,0.234375,1.5116612621500987
+ACF máscara: 20% mais homogêneos,0.2421875,1.4953218635128678
+ACF máscara: 20% mais homogêneos,0.25,1.4369883500700196
+ACF máscara: 20% mais homogêneos,0.2578125,1.3918234732861379
+ACF máscara: 20% mais homogêneos,0.265625,1.4324570217756931
+ACF máscara: 20% mais homogêneos,0.2734375,1.3594238189723569
+ACF máscara: 20% mais homogêneos,0.28125,1.3496901860605153
+ACF máscara: 20% mais homogêneos,0.2890625,1.30238025329327
+ACF máscara: 20% mais homogêneos,0.296875,1.241794851340294
+ACF máscara: 20% mais homogêneos,0.3046875,1.298360507928801
+ACF máscara: 20% mais homogêneos,0.3125,1.3875799878227764
+ACF máscara: 20% mais homogêneos,0.3203125,1.5374099370029248
+ACF máscara: 20% mais homogêneos,0.328125,1.4067243003642567
+ACF máscara: 20% mais homogêneos,0.3359375,1.2643171729843472
+ACF máscara: 20% mais homogêneos,0.34375,1.1889062304702724
+ACF máscara: 20% mais homogêneos,0.3515625,1.2262497231239484
+ACF máscara: 20% mais homogêneos,0.359375,1.2218412676701385
+ACF máscara: 20% mais homogêneos,0.3671875,1.2250465052051476
+ACF máscara: 20% mais homogêneos,0.375,1.228800167897952
+ACF máscara: 20% mais homogêneos,0.3828125,1.1931320080995347
+ACF máscara: 20% mais homogêneos,0.390625,1.0902106231062203
+ACF máscara: 20% mais homogêneos,0.3984375,1.0660586213542642
+ACF máscara: 20% mais homogêneos,0.40625,1.0575206443085319
+ACF máscara: 20% mais homogêneos,0.4140625,1.1215732903089248
+ACF máscara: 20% mais homogêneos,0.421875,1.1386173440739713
+ACF máscara: 20% mais homogêneos,0.4296875,1.1195819349207106
+ACF máscara: 20% mais homogêneos,0.4375,1.0467979849124984
+ACF máscara: 20% mais homogêneos,0.4453125,1.0012708241573391
+ACF máscara: 20% mais homogêneos,0.453125,0.9552808739225703
+ACF máscara: 20% mais homogêneos,0.4609375,0.9927593460522436
+ACF máscara: 20% mais homogêneos,0.46875,1.015212600059162
+ACF máscara: 20% mais homogêneos,0.4765625,0.98370618498096
+ACF máscara: 20% mais homogêneos,0.484375,0.9529384455702136
+ACF máscara: 20% mais homogêneos,0.4921875,0.9400867842999885
+ACF máscara: 20% mais homogêneos,0.5,1.0518453810226795

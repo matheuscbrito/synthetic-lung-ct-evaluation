@@ -1,0 +1,16 @@
+variant,set,n,f_avg_ratio,c_texture
+"ROI 16 px, vazamento testado na real (report)",Dsr,1027,0.8549156339939205,0.37868077169656167
+"ROI 16 px, vazamento testado na real (report)",Dsr-baseline,1027,0.9526904251724626,0.17191140271566535
+"ROI 16 px, vazamento testado na real (report)",Dsr-gpbo11,1027,0.9736438885567112,0.1147953659223584
+"ROI 16 px, sem teste de vazamento",Dsr,1648,0.8829017388392175,0.28472363390011746
+"ROI 16 px, sem teste de vazamento",Dsr-baseline,1648,0.988186788140024,0.0696891751343348
+"ROI 16 px, sem teste de vazamento",Dsr-gpbo11,1648,1.0103880851436053,0.045472417407886004
+"ROI 16 px, vazamento testado nas duas",Dsr,352,0.9234393357775097,0.20130378741836008
+"ROI 16 px, vazamento testado nas duas",Dsr-baseline,593,1.00624080097163,0.026897480850147343
+"ROI 16 px, vazamento testado nas duas",Dsr-gpbo11,714,1.0115371044055854,0.05580930866509862
+"ACF máscara, região da real",Dsr,1211547,0.9192977875487292,0.22221585136651906
+"ACF máscara, região da real",Dsr-baseline,1211547,1.023291740522693,0.07612289985196026
+"ACF máscara, região da real",Dsr-gpbo11,1211547,1.027964395646683,0.09639822936887324
+"ACF máscara, interseção das regiões",Dsr,731015,0.9247638374156668,0.2071673059071323
+"ACF máscara, interseção das regiões",Dsr-baseline,935317,1.0262327886971343,0.07811289401656889
+"ACF máscara, interseção das regiões",Dsr-gpbo11,966072,1.0373635814742606,0.11574407374709661
