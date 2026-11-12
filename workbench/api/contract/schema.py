@@ -4,8 +4,7 @@ docs/planning/2026-10-27-workbench-generic-contract.md).
 O que existe, como se rotula e como se julga; a interface desenha formas a partir daqui e nunca
 ramifica por nome de métrica. Fontes (somente leitura):
 - métricas, rótulos e unidades: `data.slice_json` da primeira linha da versão de referência;
-- limites: `calibration.calibration_json` (Δμ), `reasons.SATURATION_LIMIT`, `reasons.Z_LIMITS` e
-  `noise_evaluator.integration.AIR_LIMITS`;
+- limites: `calibration.calibration_json` (Δμ), `reasons.SATURATION_LIMIT`, `reasons.Z_LIMITS`;
 - inspetores: funções de `tools` e as figuras de `board` (servidas por `/api/inspect/{key}`), com as
   escolhas de `visual.TECHNIQUE_FIGURES` e `visual.MAP_LAYERS`;
 - indicadores: `board.indicators_json` (sem os `map_*`);
@@ -19,7 +18,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
 
-from frameworks.noise_evaluator.integration import AIR_LIMITS
 from frameworks.texture_evaluator import placar
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES
 from workbench.api import board, calibration, data, notebook, optimizers, reasons
@@ -52,19 +50,10 @@ AXIS_GUIDE = {
         "context only and does not decide."
     ),
     "noise": (
-        "Noise is the grain the scanner adds on top of the anatomy, measured two ways; the worst reading "
-        "decides the slice. (a) NPS in smooth soft tissue: the slice is split into air, table, lung, bone, "
-        "edges and smooth soft tissue (muscle, fat, heart, liver), and up to 64 small 16 × 16 px squares are "
-        "placed only in the smooth soft tissue, where almost all the fluctuation is scanner noise. Inside the "
-        "lung, vessels would mix with the noise, so the lung is not used. The same squares are measured on the "
-        "original and on the synthetic slice; quantity, grain size and fine grain are compared in IQR of the "
-        "real CTs, and a difference only counts when it passes the limit and its bootstrap interval excludes "
-        "zero. A 16 px square cannot see patterns wider than itself, so wide patterns do not decide. "
-        "(b) Air spots: the air outside the body is smooth in the original, so any spot there was invented by "
-        "the generator; up to 0.5% of the air is approved, up to 2% asks for review, above is rejected (policy "
-        "limits, not clinical ones). If fewer than 4 squares fit, the NPS is inconclusive and the slice is at "
-        "least reviewed. Squares overlap by at most 25%; a smooth plane is subtracted in each one and the "
-        "residual is the fluctuation used for NPS."
+        "Masked NPS compares the same soft-tissue pixels in the original and synthetic slice. "
+        "Each difference is scaled by the interquartile range (IQR) of the originals. "
+        "Up to 1 IQR is approved, over 1 through 2 is review, and over 2 is rejected. "
+        "The largest absolute difference sets the verdict. The result is inconclusive if the grain cannot be measured."
     ),
 }
 
@@ -88,15 +77,15 @@ METRIC_DESCRIPTION = {
     "nps_quantity": "How strong the grain is in the smooth soft tissue; positive means stronger grain, negative weaker.",
     "nps_grain": "Size of the grain dots: positive means finer (smaller) grain, negative means coarser (larger) grain.",
     "nps_high_band": "Share of the noise made of the finest dots (1–2 px); positive means more fine grain, negative less.",
-    "nps_air": "Percent of the air outside the body with spots stronger than 3× the CT's natural noise, which the original does not have. "
-               "For Gaussian natural fluctuation, about 0.3% of pixels exceed 3× its standard deviation. "
-               "Green up to 0.5%, yellow up to 2%, red above; these are policy limits, not clinical limits.",
 }
 
 
 def metric_description(key: str, display: str) -> str:
     """Chart captions translated from ui_placar.py:1377,1401,1429,1474–1497,1517–1521."""
     text = METRIC_DESCRIPTION.get(key, "")
+    if key.startswith("nps_"):
+        return (text + " Zero is the original. The difference is scaled by the IQR of the originals. "
+                "Up to 1 IQR is approved, over 1 through 2 is review, and over 2 is rejected.")
     if display == "z":
         text += (" Each point is a slice: synthetic minus its own original, in IQR of the real CTs. "
                  "Zero is the original. Positive and negative indicate direction, not quality. "
@@ -145,11 +134,11 @@ LAYER_LABEL = {
 COHORT_TESTS = [{"key": "nex_shift", "label": "NEx cohort test", "axis": "texture"}]
 
 # Rótulos das técnicas: as chaves são as de `slice[eixo]["techniques"]` (as mesmas de /api/items);
-# as do ruído vêm de `noise_evaluator.integration.NPS_METRICS` mais "air" (data.slice_json)
+# as do ruído vêm de `noise_evaluator.integration.NPS_METRICS` (data.slice_json)
 TECHNIQUE_LABEL = {
     "GLCM": "GLCM", "Wavelet": "Wavelet", "NEx": "NEx",
     "quantity": "NPS quantity", "grain": "NPS grain size",
-    "high_band": "NPS fine grain", "air": "Air spots",
+    "high_band": "NPS fine grain",
 }
 
 
@@ -188,8 +177,7 @@ def inspectors() -> list[dict]:
          "options": [{"key": "layer", "label": "Layer", "choices": _choices(MAP_LAYERS, LAYER_LABEL)},
                      {"key": "compared", "label": "Compared with the original",
                       "choices": [{"key": "yes", "label": "Yes"}, {"key": "no", "label": "No"}]}]},
-        {"key": "noise_figure", "label": "Noise", "chart": "image", "compare": True, "options": [],
-         "description": "Where the NPS squares sit in the smooth soft tissue, what each comparison found, and the air-spot test."},
+        {"key": "noise_figure", "label": "Noise", "chart": "assessment", "axis": "noise", "compare": True, "options": []},
     ]
 
 
@@ -206,13 +194,11 @@ def indicators() -> list[dict]:
 
 
 def _limits(key: str, cal: dict) -> dict:
-    """Régua de cada métrica: Δμ em valor absoluto, Sat31 e ar acima de um %, o resto em |z|."""
+    """Régua de cada métrica: Δμ em valor absoluto, Sat31 acima de um %, o resto em |z|."""
     if key == "delta_mu":
         return {"kind": "abs_value", "review": cal["delta_mu"]["review"], "reject": cal["delta_mu"]["reject"]}
     if key == "sat31":  # o juiz rejeita direto acima do limite: não há faixa de revisão
         return {"kind": "above", "review": None, "reject": reasons.SATURATION_LIMIT}
-    if key == "nps_air":
-        return {"kind": "above", "review": AIR_LIMITS[0], "reject": AIR_LIMITS[1]}
     return {"kind": "abs_z", "review": reasons.Z_LIMITS["review"], "reject": reasons.Z_LIMITS["reject"]}
 
 
@@ -267,7 +253,7 @@ def _technique_keys(slice: dict) -> list[str]:
 
 def metric_technique(metric: dict, keys: list[str]) -> str | None:
     """Técnica do veredito a que a métrica pertence: o nome da técnica (GLCM, Wavelet, NEx) ou, no ruído,
-    a chave da métrica sem o prefixo `nps_` (nps_quantity → quantity, nps_air → air)."""
+    a chave da métrica sem o prefixo `nps_` (nps_quantity → quantity)."""
     for candidate in (metric["technique"], metric["technique"].lower(), metric["key"].removeprefix("nps_")):
         if candidate in keys:
             return candidate

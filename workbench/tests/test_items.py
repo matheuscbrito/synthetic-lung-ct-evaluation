@@ -10,8 +10,8 @@ from workbench.tests.conftest import DATA_OK
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="histórico real de outputs/placar ausente")
 
 AXIS_KEYS = [key for key, _ in AXES]
-NOTE_LABEL = {"few_windows": "too few windows to measure", "lung_not_measured": "lung area not measured",
-              "air_unavailable": "air not available", "ci_includes_zero": "interval includes zero"}
+NOTE_LABEL = {"few_windows": "too few windows to measure", "lung_not_measured": "Noise could not be measured in the soft tissue",
+              "ci_includes_zero": "interval includes zero"}
 WAVELET_LABEL = {"preserved": "preserved texture", "blurred": "blurred", "noise": "noise",
                  "lost_contrast": "lost contrast"}
 
@@ -88,14 +88,14 @@ def test_note_labels_cover_every_reason_code():
 def test_facts(slices):
     for s in slices:
         facts = items.item_json(s)["facts"]
-        assert [f["label"] for f in facts] == ["Noise ROIs", "Wavelet type", "Pairing", "Density"]
+        assert [f["label"] for f in facts] == ["Noise blocks", "Wavelet type", "Pairing", "Density"]
         assert all(isinstance(f["value"], str) for f in facts)
         values = {f["label"]: f["value"] for f in facts}
         if s["wavelet_type_code"] in WAVELET_LABEL:
             assert values["Wavelet type"] == WAVELET_LABEL[s["wavelet_type_code"]]
         assert values["Density"].startswith(s["density"]["status"].replace("_", " "))
         if s["noise_roi_count"] is not None:
-            assert values["Noise ROIs"] == str(s["noise_roi_count"])
+            assert values["Noise blocks"] == str(s["noise_roi_count"])
         assert values["Pairing"].startswith(("Same anatomy", "Mask only"))
 
 
@@ -105,16 +105,6 @@ def test_pairing_caveat_uses_judge_threshold(monkeypatch):
     assert "suspicious pair" in items._pairing("same_anatomy")
     assert "no spatial comparison" in items._pairing("mask_only")
     assert items._pairing(None) == "n/a"
-
-
-def test_air_peak_note_is_context_only_and_hidden_without_reading(slices):
-    source = dict(next(m for m in slices[0]["metrics"] if m["key"] == "nps_air"))
-    source.update(value=0.8, available=True, peak_sigmas=4.26)
-    out = items._metric(source)
-    assert out["note"] == "Peak: 4.3 × natural noise"
-    assert out["value"] == source["value"] and out["status"] == source["status"]
-    assert items._metric({**source, "peak_sigmas": None})["note"] is None
-    assert items._metric({**source, "available": False})["note"] is None
 
 
 def test_density_fact_format():
@@ -134,7 +124,7 @@ def test_unavailable_metric():
     row["nps_available"] = "False"
     row["nps_roi_count"] = ""
     item = items.item_json(data.slice_json(row, wb.history["calibration"]))
-    nps = [key for key in item["metrics"] if key.startswith("nps_") and key != "nps_air"]
+    nps = [key for key in item["metrics"] if key.startswith("nps_")]
     assert nps
     for key in nps:
         metric = item["metrics"][key]
@@ -143,4 +133,4 @@ def test_unavailable_metric():
             # sem número para mostrar: o motivo é só a nota, nunca uma frase com valor nulo
             assert reason["note"] is not None
             assert reason["value"] is None and reason["z"] is None and reason["limit_value"] is None
-    assert {f["label"]: f["value"] for f in item["facts"]}["Noise ROIs"] == "n/a"
+    assert {f["label"]: f["value"] for f in item["facts"]}["Noise blocks"] == "n/a"

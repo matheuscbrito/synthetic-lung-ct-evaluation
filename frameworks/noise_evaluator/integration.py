@@ -1,43 +1,30 @@
-"""Integração do NPS local com o placar de avaliação.
-
-As métricas de decisão são propriedades escalares do NPS, medido em quadrados
-de 16 × 16 px no tecido mole liso fora do pulmão (ver `regions.py`). Cada
-diferença sintética − real é expressa em IQR das CTs reais, de modo idêntico às
-réguas de textura já usadas pelo framework. Quadrados de 16 px não enxergam
-padrões mais largos que eles, por isso a parcela de padrões largos não decide. O ar fora do corpo é medido à parte, pois
-na CT real ele é liso e qualquer mancha ali foi inventada pelo gerador.
-"""
+"""NPS com máscara de tecido mole e régua de triagem do placar."""
 from __future__ import annotations
-
-from dataclasses import asdict
 
 import numpy as np
 from scipy import ndimage as ndi
 
-from frameworks.noise_evaluator.core import NPSConfig, compare_spectra, estimate_local_nps, features_from_spectra, select_rois
+from frameworks.noise_evaluator.core import NPSConfig, estimate_local_nps, select_rois
+from frameworks.noise_evaluator import masked_nps
 from frameworks.noise_evaluator.regions import soft_tissue_mask
 
 
-# 16 × 16 px: cabem dezenas de quadrados mesmo na parede fina do tórax; 32 × 32 não cabe em 1/3 dos cortes
+# Referência legada para reproduzir os estudos com ROIs quadradas.
 NPS_CONFIG = NPSConfig(roi_size=16, stride=4, min_rois=4, max_rois=64)
+MASKED_CONFIG = {"method": "masked_acf", "tile": masked_nps.TILE, "lag": masked_nps.LAG,
+                 "min_cover": masked_nps.MIN_COVER, "min_pairs": masked_nps.MIN_PAIRS,
+                 "nfft": masked_nps.NFFT, "grain": masked_nps.GRAIN, "fine": masked_nps.FINE}
 NPS_METRICS = {
     "quantity": "Quantidade de ruído",
     "grain": "Tamanho do grão",
     "high_band": "Grão fino",
 }
-AIR_LABEL = "Manchas no ar"
-NOISE_READINGS = {**NPS_METRICS, "air": AIR_LABEL}
-FEATURE_KEYS = {
-    "quantity": "noise_std",
-    "grain": "mean_frequency",
-    "high_band": "high_band_fraction",
-}
+NOISE_READINGS = NPS_METRICS
 # Manchas no ar: desvio > 3σ do ruído natural da própria CT (ruído gaussiano passa de 3σ em só 0,27% dos pixels).
 AIR_SIGMAS = 3.0
 # Regra de política, não limite clínico: as CTs reais têm 0% de ar com manchas.
 # Percentual do ar fora do corpo com desvio > 3σ: ≤0,5 aprovada, ≤2 revisão.
 AIR_LIMITS = (0.5, 2.0)
-NPS_BOOTSTRAPS, NPS_SEED = 300, 0
 STATUS_ORDER = {"aprovada": 0, "revisão": 1, "reprovada": 2}
 
 
@@ -73,11 +60,6 @@ def natural_noise_sigma(original: np.ndarray, lung_mask: np.ndarray) -> float:
     return float((original - ndi.median_filter(original, 5))[soft].std())
 
 
-def tone_from_scale(glcm_scale: dict) -> float:
-    """Um tom da régua de 32 tons da GLCM: a menor diferença que a textura enxerga."""
-    return float((glcm_scale["clip_high"] - glcm_scale["clip_low"]) / glcm_scale["levels"])
-
-
 def air_spots_pct(image: np.ndarray, air: np.ndarray, threshold: float) -> float:
     values = np.asarray(image[air], dtype=float)
     return float(100 * np.mean(np.abs(values - np.median(values)) > threshold)) if values.size else float("nan")
@@ -90,6 +72,7 @@ def air_status(excess: float) -> str:
 
 
 def measure_air(original: np.ndarray, synthetic: np.ndarray, lung_mask: np.ndarray, fallback_sigma: float) -> dict:
+    """Diagnóstico avulso; não faz parte da avaliação de NPS."""
     air = air_mask(original)
     if air.mean() < 0.02:   # menos de 2% da imagem é ar livre
         return {"nps_air_available": False}
@@ -112,42 +95,26 @@ def measure_nps(image: np.ndarray, lung_mask: np.ndarray, rois=None):
     return rois, estimate_local_nps(image, rois, NPS_CONFIG)
 
 
-def calibrate_nps(cases, glcm_scale: dict) -> dict:
-    """Cria a régua de variabilidade natural e a referência do ar usando somente CTs reais."""
-    tone = tone_from_scale(glcm_scale)
-    cases = list(cases)
-    sigmas = [natural_noise_sigma(case.original, case.lung_mask) for case in cases]
-    finite = [sigma for sigma in sigmas if np.isfinite(sigma)]
-    fallback_sigma = float(np.median(finite)) if finite else float("nan")
-    readings = {name: [] for name in FEATURE_KEYS}
-    differences = {name: [] for name in FEATURE_KEYS}
-    usable = repeatable = 0
-    air_values = []
-    for case, sigma in zip(cases, sigmas):
-        air = air_mask(case.original)
-        if air.mean() >= 0.02:
-            air_values.append(air_spots_pct(case.original, air, AIR_SIGMAS * (sigma if np.isfinite(sigma) else fallback_sigma)))
+def calibrate_nps(cases) -> dict:
+    """Cria a régua de variabilidade do NPS usando somente CTs reais."""
+    values = {key: [] for key in NPS_METRICS}
+    for case in cases:
         try:
-            rois, result = measure_nps(case.original, case.lung_mask)
-            split = (estimate_local_nps(case.original, rois[0::2], NPS_CONFIG), estimate_local_nps(case.original, rois[1::2], NPS_CONFIG)) if len(rois) >= 4 else None
+            _, freq, profiles = masked_nps.measure(case.original, case.lung_mask)
         except ValueError:
             continue
-        usable += 1
-        for name, feature in FEATURE_KEYS.items():
-            readings[name].append(result.features[feature])
-            if split:
-                differences[name].append(split[0].features[feature] - split[1].features[feature])
-        repeatable += split is not None
-    if not usable:
-        raise ValueError("nenhuma CT real possui ROIs suficientes para calibrar o NPS")
+        features = masked_nps.decision_features(freq, profiles[0])
+        if all(np.isfinite(list(features.values()))):
+            for key, value in features.items():
+                values[key].append(value)
+    count = len(values["quantity"])
+    if not count:
+        raise ValueError("nenhuma CT real possui tecido mole suficiente para calibrar o NPS")
     metrics = {}
-    for name, values in readings.items():
-        p25, median, p75, iqr = _safe_iqr(np.asarray(values))
-        repeat = _safe_iqr(np.asarray(differences[name]))[3] / iqr if differences[name] else float("nan")
-        metrics[name] = {"p25": p25, "median": median, "p75": p75, "iqr": iqr, "repeatability_iqr": float(repeat)}
-    return {"config": asdict(NPS_CONFIG), "n_cases": usable, "repeatability_cases": repeatable, "metrics": metrics,
-            "air_tone": tone, "air_sigmas": AIR_SIGMAS, "air_fallback_sigma": fallback_sigma, "air_limits_pct": list(AIR_LIMITS),
-            "air_real_max_pct": float(max(air_values)) if air_values else float("nan")}
+    for key, readings in values.items():
+        p25, median, p75, iqr = _safe_iqr(readings)
+        metrics[key] = {"p25": p25, "median": median, "p75": p75, "iqr": iqr}
+    return {"config": MASKED_CONFIG, "n_cases": count, "metrics": metrics}
 
 
 def status_from_z(z: float) -> str:
@@ -160,57 +127,31 @@ def certain_status(z: float, low: float, high: float) -> str:
     return status_from_z(z) if low > 0 or high < 0 else "aprovada"
 
 
-def bootstrap_z(real, generated, reference: dict) -> dict[str, tuple[float, float]]:
-    """IC 95% de (sintética − real) em IQR, reamostrando as mesmas ROIs nas duas imagens."""
-    rng = np.random.default_rng(NPS_SEED)
-    count = real.roi_spectra.shape[0]
-    draws = {name: [] for name in FEATURE_KEYS}
-    for _ in range(NPS_BOOTSTRAPS):
-        idx = rng.integers(0, count, count)
-        real_features = features_from_spectra(real.roi_spectra[idx], NPS_CONFIG)
-        generated_features = features_from_spectra(generated.roi_spectra[idx], NPS_CONFIG)
-        for name, feature in FEATURE_KEYS.items():
-            draws[name].append((generated_features[feature] - real_features[feature]) / float(reference["metrics"][name]["iqr"]))
-    bands = {}
-    for name, values in draws.items():
-        low, high = np.percentile(values, [2.5, 97.5])
-        bands[name] = (float(low), float(high))
-    return bands
-
-
 def pt(value: float, digits: int = 1, sign: bool = False) -> str:
     """Número com vírgula decimal, como no texto das leituras."""
     return f"{value:{'+' if sign else ''}.{digits}f}".replace(".", ",")
 
 
-def evaluate_nps_pair(original: np.ndarray, synthetic: np.ndarray, mask: np.ndarray, reference: dict) -> dict:
-    """Mede um par nas mesmas ROIs e devolve campos planos para o CSV."""
-    out: dict[str, object] = measure_air(original, synthetic, mask, reference["air_fallback_sigma"])
+def evaluate_nps_pair(original: np.ndarray, synthetic: np.ndarray, mask: np.ndarray, reference: dict,
+                      *, aligned: bool = True) -> dict:
+    """Compare the same soft-tissue pixels and apply the reference IQR thresholds."""
+    out = {"nps_available": False, "nps_roi_count": 0, "nps_verdict": "inconclusivo"}
+    if not aligned:
+        return {**out, "nps_error": "The original and synthetic images need matching anatomy."}
+    if reference.get("config") != MASKED_CONFIG:
+        raise ValueError("recalcule a referência do NPS com máscara antes de avaliar pares")
     try:
-        rois, real = measure_nps(original, mask)
-        _, generated = measure_nps(synthetic, mask, rois)
-    except ValueError as error:
-        out.update({"nps_available": False, "nps_error": str(error), "nps_roi_count": 0})
-        out["nps_verdict"] = noise_verdict(out)
-        return out
-    out.update({"nps_available": True, "nps_error": "", "nps_roi_count": len(rois)})
-    bands = bootstrap_z(real, generated, reference)
-    for name, feature in FEATURE_KEYS.items():
-        real_value = float(real.features[feature])
-        synthetic_value = float(generated.features[feature])
-        z = (synthetic_value - real_value) / float(reference["metrics"][name]["iqr"])
-        low, high = bands[name]
-        out.update({
-            f"nps_{name}_real": real_value,
-            f"nps_{name}_synthetic": synthetic_value,
-            f"nps_{name}_z": float(z),
-            f"nps_{name}_z_low": low,
-            f"nps_{name}_z_high": high,
-            f"nps_{name}_certain": bool(low > 0 or high < 0),
-            f"nps_{name}_status": certain_status(z, low, high),
-        })
-    out["nps_quantity_pct"] = float(100 * out["nps_quantity_synthetic"] / max(out["nps_quantity_real"], np.finfo(float).eps))
-    out.update({f"nps_{key}": value for key, value in compare_spectra(real, generated).items()})
+        sums, freq, profiles = masked_nps.measure(original, mask, synthetic)
+    except ValueError:
+        return {**out, "nps_error": "There is too little soft tissue to measure noise in this slice."}
+    real, generated = (masked_nps.decision_features(freq, profile) for profile in profiles)
+    if not all(np.isfinite([*real.values(), *generated.values()])):
+        return {**out, "nps_error": "There is too little grain signal for a reliable comparison."}
+    out.update(nps_available=True, nps_error="", nps_roi_count=sums.tiles)
+    for key in NPS_METRICS:
+        z = (generated[key] - real[key]) / reference["metrics"][key]["iqr"]
+        out.update({f"nps_{key}_real": real[key], f"nps_{key}_synthetic": generated[key],
+                    f"nps_{key}_z": z, f"nps_{key}_status": status_from_z(z)})
     out["nps_verdict"] = noise_verdict(out)
     return out
 
@@ -220,43 +161,23 @@ def _flag(row: dict, key: str, default: str) -> bool:
 
 
 def noise_statuses(row: dict) -> dict[str, str]:
-    lung = _flag(row, "nps_available", "True")
-    statuses = {label: row[f"nps_{name}_status"] if lung else "inconclusivo" for name, label in NPS_METRICS.items()}
-    statuses[AIR_LABEL] = row["nps_air_status"] if _flag(row, "nps_air_available", "False") else "inconclusivo"
-    return statuses
+    available = _flag(row, "nps_available", "True")
+    return {label: row[f"nps_{name}_status"] if available else "inconclusivo"
+            for name, label in NPS_METRICS.items()}
 
 
 def noise_verdict(row: dict) -> str:
-    """A pior leitura decide; sem medir o tecido mole o corte não pode ser aprovado, só ir para revisão."""
-    statuses = noise_statuses(row)
-    conclusive = [status for status in statuses.values() if status in STATUS_ORDER]
-    if not conclusive:
-        return "inconclusivo"
-    worst = max(conclusive, key=STATUS_ORDER.get)
-    lung_missing = any(statuses[label] == "inconclusivo" for label in NPS_METRICS.values())
-    return "revisão" if lung_missing and worst == "aprovada" else worst
+    """A pior leitura de NPS decide; sem leitura, o resultado é inconclusivo."""
+    measured = (status for status in noise_statuses(row).values() if status in STATUS_ORDER)
+    return max(measured, key=STATUS_ORDER.get, default="inconclusivo")
 
 
 def noise_reason(row: dict, metric: str) -> str:
-    if metric == "air":
-        if not _flag(row, "nps_air_available", "False"):
-            return f"{AIR_LABEL}: a imagem não tem ar livre suficiente fora do corpo para medir."
-        return (f"{AIR_LABEL}: {pt(float(row['nps_air_synthetic']))}% do ar fora do corpo tem desvio maior que 3× o ruído natural desta CT "
-                f"(original: {pt(float(row['nps_air_real']))}%; o ruído natural sozinho daria ~0,3%; pico de {pt(float(row['nps_air_peak_sigmas']))} × o ruído natural) — {row['nps_air_status']}.")
     label = NPS_METRICS[metric]
     if not _flag(row, "nps_available", "True"):
         detail = row.get("nps_error")
         return f"{label}: {detail if isinstance(detail, str) and detail else 'não houve regiões de tecido mole liso suficientes para medir.'}"
     z = float(row[f"nps_{metric}_z"])
     status = row[f"nps_{metric}_status"]
-    low, high = float(row[f"nps_{metric}_z_low"]), float(row[f"nps_{metric}_z_high"])
-    direction = "acima" if z > 0 else "abaixo"
-    interval = f"IC 95% de {pt(low, sign=True)} a {pt(high, sign=True)} IQR"
-    text = f"{label}: sintética ficou {pt(abs(z))} IQR {direction} da original — {status}"
-    if not _flag(row, f"nps_{metric}_certain", "True") and abs(z) > 1:
-        text += f" — dentro da incerteza da medida neste corte ({interval}), por isso não pesa"
-    else:
-        text += f" ({interval})"
-    if metric == "quantity" and "nps_quantity_pct" in row:
-        text += f" (a sintética tem {pt(float(row['nps_quantity_pct']), 0)}% do ruído da original)"
-    return text + "."
+    direction = "acima" if z > 0 else "abaixo" if z < 0 else "igual"
+    return f"{label} · diferença de {pt(abs(z))} IQR ({direction} da original) · {status}."

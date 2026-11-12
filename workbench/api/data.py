@@ -6,10 +6,10 @@ os textos de status do framework (PT) são convertidos para os códigos da API.
 from __future__ import annotations
 
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
-from frameworks.noise_evaluator.integration import AIR_LABEL, NPS_CONFIG, NPS_METRICS, noise_statuses, noise_verdict
+from frameworks.noise_evaluator.integration import MASKED_CONFIG, NPS_METRICS, noise_statuses, noise_verdict
 from frameworks.texture_evaluator import decision, placar, regional
 from workbench.api import reasons
 
@@ -17,9 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HISTORY_DIR = ROOT / "outputs" / "placar"
 STATUS = {"aprovada": "approved", "revisão": "review", "reprovada": "rejected", "inconclusivo": "inconclusive"}
 # réguas que o placar precisa para comparar versões novas; sem elas, o histórico está desatualizado.
-# Lista de `ui_placar.py:1147` (chaves de calibração e as duas do NPS, dentro de `nps_reference`).
 STALE_KEYS = ("nex_reference", "wavelet_iqr", "glcm_iqr", "ll_iqr", "nps_reference")
-STALE_NPS_KEYS = ("air_tone", "air_fallback_sigma")
 # códigos em inglês da API (campos novos, ao lado dos rótulos em português que o front já usa)
 MODE_CODE = {regional.SAME_ANATOMY: "same_anatomy", regional.MASK_ONLY: "mask_only"}
 # rótulos de `wavelet_densidade.wavelet_verdict` (wavelet/src/densidade_wavelet.py) -> código
@@ -93,7 +91,7 @@ def is_stale(history: dict) -> bool:
         return True
     nps = calibration.get("nps_reference", {})
     # NPS calibrado com outras ROIs (tamanho, região) pede recálculo
-    return any(key not in nps for key in STALE_NPS_KEYS) or nps.get("config") != asdict(NPS_CONFIG)
+    return nps.get("config") != MASKED_CONFIG
 
 
 def slice_label(case_id: str) -> str:
@@ -158,12 +156,6 @@ def _nps_metric(key: str, row: dict, statuses: dict) -> dict:
                    ci=_ci(row, prefix))
 
 
-def _air_metric(row: dict, statuses: dict) -> dict:
-    return _metric("nps_air", "Air spots", "noise", "Air", row.get("nps_air_real"), row.get("nps_air_synthetic"),
-                   row.get("nps_air_synthetic"), None, _api(statuses[AIR_LABEL]), "%", percent=False,
-                   peak_sigmas=_f(row.get("nps_air_peak_sigmas")), available=_bool(row, "nps_air_available", "False"))
-
-
 def slice_json(row: dict, calibration: dict) -> dict:
     delta_mu = _num(row["delta_mu"])
     delta_z = delta_mu / max(calibration["mean_iqr"], 1e-12)
@@ -185,7 +177,6 @@ def slice_json(row: dict, calibration: dict) -> dict:
         _metric("nex", "NEx", "texture", "NEx", row["nex_real"], row["nex_synthetic"],
                 row["nex_z"], row["nex_z"], _api(decision.NEX_STATUS[row["nex_status"]]), "IQR", ci=_ci(row, "nex")),
         *[_nps_metric(key, row, noise) for key in NPS_METRICS],
-        _air_metric(row, noise),
     ]
     roi_count = _f(row.get("nps_roi_count"))
     return {
@@ -205,8 +196,7 @@ def slice_json(row: dict, calibration: dict) -> dict:
         },
         "noise": {
             "verdict": _api(noise_verdict(row)),
-            "techniques": {**{key: _api(noise[label]) for key, label in NPS_METRICS.items()},
-                           "air": _api(noise[AIR_LABEL])},
+            "techniques": {key: _api(noise[label]) for key, label in NPS_METRICS.items()},
         },
         "noise_roi_count": None if roi_count is None else int(roi_count),
         "noise_available": _bool(row, "nps_available", "True"),

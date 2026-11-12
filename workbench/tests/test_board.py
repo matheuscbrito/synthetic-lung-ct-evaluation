@@ -59,8 +59,7 @@ def test_board_median_z_keys_and_nulls():
     # brilho e textura (e NEx) seguem como antes; ruído tem campo próprio
     assert set(g["median_abs_z"]) == {"delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
                                       "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex"}
-    assert set(g["median_abs_z_noise"]) == {"nps_quantity", "nps_grain", "nps_high_band", "nps_air"}
-    assert g["median_abs_z_noise"]["nps_air"] is None
+    assert set(g["median_abs_z_noise"]) == {"nps_quantity", "nps_grain", "nps_high_band"}
     assert g["median_abs_z"]["sat31"] is None
     assert isinstance(g["median_abs_z"]["nex"], float)
     assert all(isinstance(v, float) for k, v in g["median_abs_z"].items() if v is not None)
@@ -92,9 +91,9 @@ def test_board_noise_indicators_in_vs_baseline():
     rows = board_of()["generators"][1]["vs_baseline"]
     noise = [r for r in rows if r["group"] == "noise"]
     assert {r["indicator"] for r in noise} == {"nps_abs_quantity_z", "nps_abs_grain_z",
-                                               "nps_abs_high_band_z", "nps_air_synthetic", "nps_aprovada"}
+                                               "nps_abs_high_band_z", "nps_aprovada"}
     assert {r["label"] for r in noise} == {"NPS · quantity", "NPS · grain size",
-                                           "NPS · fine grain", "Air spots", "NPS · slices approved"}
+                                           "NPS · fine grain", "NPS · slices approved"}
     assert {r["result"] for r in noise} <= RESULTS
 
 

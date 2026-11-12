@@ -216,7 +216,8 @@ export function ItemView({ schema, versions, version, items, compare, compareIte
   const item = ordered.find(it => it.id === route.item) ?? ordered[0];
   const [view, setView] = useState<View>(IDENTITY);
   const [contour, setContour] = useState(true);
-  const [tab, setTab] = useState<string | undefined>(schema.inspectors[0]?.key);
+  const [tab, setTab] = useState<string | undefined>(() =>
+    (schema.inspectors.find(i => i.axis === axis) ?? schema.inspectors[0])?.key);
   const [showVerdict, setShowVerdict] = useState(true);
 
   // outro item recomeça o enquadramento

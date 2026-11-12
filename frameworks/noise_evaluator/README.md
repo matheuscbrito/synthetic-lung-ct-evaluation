@@ -88,7 +88,7 @@ Cada feature aparece com os prefixos `real_`, `synthetic_` e, quando aplicável,
 - `nps_log_curve_correlation`: semelhança entre as curvas em escala logarítmica.
 - deltas das bandas baixa, média e alta.
 
-## Escolha das ROIs
+## Escolha das ROIs no relatório com quadrados
 
 As ROIs são escolhidas **uma vez na imagem real** e reaplicadas nas mesmas coordenadas da sintética. O ranking prioriza regiões com baixo gradiente depois de suavização, reduzindo a presença de bordas e vasos grandes. O padrão é:
 
@@ -96,32 +96,11 @@ As ROIs são escolhidas **uma vez na imagem real** e reaplicadas nas mesmas coor
 - passo: 8 pixels;
 - pelo menos 98% da ROI dentro da máscara erodida;
 - ROIs não se sobrepõem em mais de 25%;
-- no placar, mínimo de 4 e máximo de 32 ROIs por corte.
+- no relatório com quadrados, mínimo de 4 e máximo de 32 ROIs por corte.
 
-Se não cabem 4 ROIs sem sobreposição acima de 25% (pulmão pequeno), a medição do pulmão fica inconclusiva. Não há mais preenchimento com regiões sobrepostas: nesse caso o teste das manchas no ar ainda pode reprovar, mas o corte nunca é aprovado — vai no mínimo para revisão.
+Se não cabem quatro ROIs dentro do limite de sobreposição, a leitura de NPS fica inconclusiva.
 
-Os retângulos aparecem nos painéis por corte para permitir auditoria visual.
-
-## Teste das manchas no ar
-
-Na CT original o ar fora do corpo é perfeitamente liso. Qualquer mancha ali na sintética foi inventada pelo gerador, e o NPS do pulmão não enxerga isso.
-
-- A região do ar é o que está longe do corpo e da mesa (`air_mask`).
-- O limiar é 3σ, onde σ é o ruído natural da própria CT: o desvio do resíduo (imagem − mediana 5×5) medido no tecido mole homogêneo daquela mesma imagem (`natural_noise_sigma`). Ruído gaussiano passa de 3σ em só 0,27% dos pixels, então cada CT é comparada consigo mesma e não com uma régua fixa.
-- Se a CT não tiver tecido mole homogêneo suficiente para medir σ, usa-se a mediana de σ das CTs reais (`air_fallback_sigma`).
-- Mede-se a porcentagem do ar em que o desvio em relação à mediana do ar é maior que 3σ, na original e na sintética.
-- `nps_air_excess` é a diferença sintética − original. Até 0,5% é aprovada; até 2%, revisão; acima, reprovada.
-- `nps_air_peak_sigmas` e `nps_air_ratio` dizem quão forte é a mancha mais forte e o desvio típico, em múltiplos de σ.
-
-Esses limites são regra de política, não limite clínico: as CTs reais têm 0%. Estão em `AIR_LIMITS` e podem ser ajustados.
-
-## Confiabilidade da medida no pulmão
-
-Medir a mesma CT real em regiões diferentes (duas metades intercaladas das suas ROIs) muda a leitura quase tanto quanto trocar de paciente, porque a anatomia de cada região pesa. A calibração guarda essa variação em `repeatability_iqr`. Por isso original e sintética são sempre medidas **nas mesmas regiões**: a anatomia se cancela e a margem de erro pareada de cada corte fica pequena (tipicamente 0,3 a 1,2 IQR, ver abaixo). Diferenças que passam da régua com essa margem longe de zero são reais.
-
-## Incerteza da medida no pulmão
-
-Cada leitura do pulmão (`nps_{métrica}_z`) vem com um IC 95% por bootstrap (300 reamostragens das ROIs, a mesma seleção nas duas imagens): `nps_{métrica}_z_low` e `nps_{métrica}_z_high`. Só conta como diferença quando a régua de 1 ou 2 IQR é cruzada **e** o IC não inclui zero (`nps_{métrica}_certain`). Caso contrário o status fica "aprovada": a diferença pode ser só oscilação da medida.
+O Workbench usa a medição com máscara descrita mais abaixo.
 
 ## Faixas visuais de triagem
 
@@ -140,3 +119,70 @@ pixel a pixel. Anatomia e textura devem continuar sendo avaliadas separadamente.
 ```bash
 .venv/bin/python -m unittest frameworks.noise_evaluator.tests.test_nps
 ```
+
+## Estudo de tamanho e homogeneidade das ROIs quadradas
+
+Para reproduzir o baseline 16×16, auditar 16/24/32/48/64 px, calibrar o
+threshold nas imagens reais e comparar a sensibilidade entre geradores:
+
+```bash
+.venv/bin/python -m frameworks.noise_evaluator.roi_study \
+  --method DSR=dados/Dsr \
+  --method Baseline=dados/Dsr-baseline \
+  --method GPBO-11=dados/Dsr-gpbo11 \
+  --mask-dir dados/Dgen \
+  --output-dir outputs/nps_roi_study
+```
+
+As saídas incluem tabelas por corte e agregadas, ranking por configuração,
+thresholds reproduzíveis, uma montagem visual das ROIs e `simple_results.png`
+com a explicação resumida. Nesse estudo com ROIs quadradas, a análise principal usou
+24×24 permissiva para incluir os três pacientes; 32×32 moderada fica como
+sensibilidade. A comparação é feita primeiro dentro de cada corte e resumida
+por medianas, sem concatenar espectros de cortes diferentes.
+O protocolo e as referências estão em
+`docs/nps_roi_literature_and_protocol.md`.
+
+### NPS com máscara de tecido mole (Workbench → corte → Noise)
+
+O inspetor **Noise** usa NPS com máscara em blocos de 64 px, adaptado da branch
+`ruido-experimental-matheus` (`d29be8d`). O mapa ao lado do espectro marca os
+blocos aceitos e destaca em verde os pixels medidos. A
+máscara vem do tecido mole da imagem original e é aplicada nas mesmas
+coordenadas da sintética. Cada bloco de 64 × 64 px precisa ter apenas 15% de
+tecido elegível. Subtraímos a variação suave de brilho do bloco e, para cada
+distância, comparamos apenas pares de pixels que estão ambos na máscara. A
+transformada dessa autocovariância fornece o espectro. Os blocos se sobrepõem
+e não são contados como observações independentes.
+
+- **0,125–0,5 ciclos/pixel:** leitura de intensidade do grão e frequência média.
+  Frequência média maior indica grão mais fino. Ainda pode haver contribuição anatômica.
+- **0,047–0,125 ciclos/pixel:** leitura exploratória de padrões mais largos.
+  A curva fica disponível em **Broad patterns**. Nessa faixa, diferenças
+  podem refletir anatomia alterada pelo gerador, além de ruído. O gráfico
+  usa ciclos/pixel porque os
+  TIFFs não informam o espaçamento físico necessário para ciclos/mm.
+- **Veredito:** quantidade, frequência média e parcela de grão fino usam a mesma medição com máscara.
+  A parcela de grão fino usa potência radial ponderada pela frequência a partir de 0,30 ciclos/pixel.
+  A diferença em relação à original é dividida pelo IQR das originais. Até 1 IQR aprova, acima de 1 até 2
+  pede revisão e acima de 2 reprova. Esses limiares são critérios de triagem do projeto. Os blocos se
+  sobrepõem, então o painel não usa o intervalo de bootstrap do método anterior.
+
+Na reprodução de 12/11/2026, a máscara mediu **37 de 37 cortes, de três
+pacientes**. Pelo critério geométrico da branch (pelo menos oito ROIs com 90%
+ou mais de cobertura), 32 × 32 cabia em 4/37, e 64 × 64 em 0/37. No controle
+com espectro conhecido, a máscara recuperou 59% da altura de um pico estreito,
+contra 26% em 32 × 32 e 13% em 16 × 16. Na simulação com anatomia, o ganho
+de resolução não separou ruído e anatomia na faixa baixa.
+
+No espectro conjunto de **GPBO-11 / original**, a intensidade do grão ficou
+em **0,937×**, a frequência média em **1,028×** e a razão de padrões mais
+largos em **1,127×**. O GPBO-11 ficou mais próximo do original na intensidade
+do grão e na razão de padrões largos do que o Baseline e o DSR. Na forma da
+curva na faixa de grão, o Baseline ficou ligeiramente mais próximo. São
+resultados descritivos para os três pacientes, sem conclusão de superioridade.
+
+Para reproduzir a comparação em lote, rode `.venv/bin/python -m frameworks.noise_evaluator.run_masked_nps`.
+O comando salva as leituras de cada par em `outputs/nps_masked/per_slice.csv`
+e as do conjunto em `outputs/nps_masked/ensemble.csv`. O conjunto reúne as
+somas dos pares antes de calcular as métricas, como na branch.

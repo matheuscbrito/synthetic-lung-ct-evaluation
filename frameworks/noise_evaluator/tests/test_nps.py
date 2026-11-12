@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-from frameworks.noise_evaluator.core import NPSConfig, ROI, compare_spectra, estimate_local_nps, select_rois
+from frameworks.noise_evaluator.core import NPSConfig, ROI, candidate_rois, compare_spectra, estimate_local_nps, select_rois, spectrum_from_roi_spectra
 from frameworks.noise_evaluator.report import case_assessment
 from frameworks.noise_evaluator.integration import NPS_CONFIG, certain_status, measure_air, measure_nps, noise_verdict, status_from_z
 from frameworks.noise_evaluator.regions import AIR_LEVEL, HU_PER_UNIT, REGION_KEYS, segment_regions
+from frameworks.noise_evaluator.roi_study import aggregate_cases_by_patient
 
 
 class NPSTest(unittest.TestCase):
@@ -41,6 +43,14 @@ class NPSTest(unittest.TestCase):
         self.assertAlmostEqual(comparison["nps_shape_js_distance"], 0.0)
         self.assertAlmostEqual(comparison["mean_frequency_delta"], 0.0)
 
+    def test_spectra_can_be_pooled_across_slices(self) -> None:
+        rng = np.random.default_rng(91)
+        first = estimate_local_nps(rng.normal(size=(128, 128)), self.rois[:8], self.config)
+        second = estimate_local_nps(rng.normal(size=(128, 128)), self.rois[8:], self.config)
+        pooled = spectrum_from_roi_spectra(np.concatenate((first.roi_spectra, second.roi_spectra)), self.config)
+        self.assertEqual(pooled.roi_spectra.shape[0], 16)
+        self.assertGreater(pooled.features["noise_std"], 0)
+
     def test_roi_selection_stays_inside_mask(self) -> None:
         image = np.zeros((128, 128), dtype=float)
         image[:, 64:] = 5.0
@@ -57,6 +67,41 @@ class NPSTest(unittest.TestCase):
         config = NPSConfig(roi_size=32, stride=8, min_tissue=1.0, min_rois=4, max_rois=16)
         with self.assertRaises(ValueError):
             select_rois(image, mask, config)
+
+    def test_structure_threshold_rejects_heterogeneous_candidates(self) -> None:
+        yy, xx = np.mgrid[:128, :128]
+        image = np.zeros((128, 128), dtype=float)
+        image[:, 64:] = 0.02 * xx[:, 64:] + np.sin(yy[:, 64:] / 3)
+        mask = np.ones_like(image, dtype=bool)
+        unfiltered = candidate_rois(image, mask, self.config)
+        threshold = float(np.median([roi.structure_score for roi in unfiltered]))
+        filtered = candidate_rois(image, mask, replace(self.config, max_structure_score=threshold))
+        self.assertGreater(len(unfiltered), len(filtered))
+        self.assertTrue(all(roi.structure_score <= threshold for roi in filtered))
+
+    def test_case_aggregation_uses_patient_median_without_pooling_spectra(self) -> None:
+        base = {
+            "config": "roi24_permissive", "patient_id": "100", "method": "Baseline",
+            "roi_size": 24, "profile": "permissive", "max_structure_score": 0.01,
+            "roi_count": 2, "real_noise_std": 1.0, "synthetic_noise_std": 1.0,
+            "noise_std_ratio": 1.0, "noise_std_delta_pct": 0.0,
+            "peak_frequency_delta": 0.0, "mean_frequency_delta": 0.0,
+            "median_frequency_delta": 0.0, "mean_frequency_delta_nyquist": 0.0,
+            "low_band_delta": 0.0, "mid_band_delta": 0.0, "high_band_delta": 0.0,
+            "anisotropy_delta": 0.0, "periodic_peak_ratio": 1.0, "nps_shape_rmse": 0.0,
+            "nps_shape_js_distance": 0.1, "nps_log_curve_correlation": 0.9,
+            "composite_distance": 0.0,
+        }
+        rows = [
+            {**base, "case_id": "case-a"},
+            {**base, "case_id": "case-b", "noise_std_ratio": 3.0},
+            {**base, "case_id": "case-c", "patient_id": "105", "roi_count": 3},
+        ]
+        aggregated = aggregate_cases_by_patient(rows)
+        self.assertEqual(len(aggregated), 1)
+        self.assertEqual(aggregated[0]["case_count"], 2)
+        self.assertEqual(aggregated[0]["roi_count"], 4)
+        self.assertEqual(aggregated[0]["noise_std_ratio"], 2.0)
 
     def test_air_spots_detect_invented_blotches(self) -> None:
         rng = np.random.default_rng(10)
@@ -79,9 +124,9 @@ class NPSTest(unittest.TestCase):
         self.assertEqual(certain_status(1.5, 0.3, 2.8), "revisão")
         self.assertEqual(certain_status(2.5, 1.0, 4.0), "reprovada")
 
-    def test_lung_unavailable_still_uses_air(self) -> None:
+    def test_unavailable_nps_ignores_rejected_air(self) -> None:
         row = {"nps_available": False, "nps_air_available": True, "nps_air_status": "reprovada"}
-        self.assertEqual(noise_verdict(row), "reprovada")
+        self.assertEqual(noise_verdict(row), "inconclusivo")
 
     def test_plain_language_assessment_uses_all_four_checks(self) -> None:
         close = {
@@ -112,7 +157,7 @@ class NPSTest(unittest.TestCase):
 
     def test_unmeasured_lung_is_never_approved(self) -> None:
         row = {"nps_available": False, "nps_air_available": True, "nps_air_status": "aprovada"}
-        self.assertEqual(noise_verdict(row), "revisão")
+        self.assertEqual(noise_verdict(row), "inconclusivo")
 
 
 def _from_hu(hu):

@@ -26,7 +26,7 @@ from workbench.api import data, datasets as ds, images  # noqa: E402
 from workbench.api.data import NotFound, Workbench  # noqa: E402
 from workbench.api.contract import versions as contract_versions  # noqa: E402
 from workbench.api.datasets import DEFAULT  # noqa: E402
-from workbench.api.nps_figure import nps_case_png  # noqa: E402
+from workbench.api.nps_figure import masked_case_png  # noqa: E402
 
 STATUSES = ("approved", "review", "rejected", "inconclusive")
 RESULT = {"melhorou": "improved", "piorou": "worse", "mudança pequena": "small change",
@@ -48,7 +48,6 @@ INDICATOR_LABEL = {
     "nps_abs_quantity_z": "NPS · quantity",
     "nps_abs_grain_z": "NPS · grain size",
     "nps_abs_high_band_z": "NPS · fine grain",
-    "nps_air_synthetic": "Air spots",
     "nps_aprovada": "NPS · slices approved",
 }
 GROUP = {"brilho": "brightness", "textura": "texture", "ruido": "noise"}
@@ -58,7 +57,6 @@ UNIT = {
     "% dos cortes": "% of slices",
     "% da original": "% of original",
     "% do pulmão": "% of lung",
-    "% do ar": "% of air",
     "razão": "ratio",
     "correlação": "correlation",
     "|diferença| em IQR": "|difference| in IQR",
@@ -82,7 +80,7 @@ def _counts(slices: list[dict], key: str) -> dict[str, int]:
 
 
 def _median_abs_z(slices: list[dict], groups: tuple[str, ...]) -> dict[str, float | None]:
-    """Mediana de |z| por métrica dos grupos pedidos; métrica sem z (sat31, nps_air) sai como null."""
+    """Mediana de |z| por métrica dos grupos pedidos; métrica sem z (sat31) sai como null."""
     out: dict[str, float | None] = {}
     for index, metric in enumerate(slices[0]["metrics"]):
         if metric["group"] not in groups:
@@ -196,19 +194,14 @@ def map_png(wb: Workbench, case_id: str, layer: str, compared: bool, names: list
 
 
 def nps_png(wb: Workbench, case_id: str, requested: list[str]) -> bytes:
-    """Figura de NPS e ar: `requested` tem zero, uma ou duas versões distintas (desenhada em `/api/inspect/noise_figure.png`)."""
-    for name in requested:
-        wb.entry(name)  # desconhecida: 404
     if len(requested) > 2:
-        raise HTTPException(400, "the NPS figure compares at most two versions: reference and compared")
-    if not requested:
-        names = [wb.baseline, wb.history["versions"][-1]["name"]]
-    else:
-        names = [wb.baseline, requested[0]] if len(requested) == 1 else list(requested)
-    _case_rows(wb, case_id, names)  # corte desconhecido: 404
+        raise HTTPException(400, "select at most two versions")
+    version = requested[-1] if requested else wb.history["versions"][-1]["name"]
+    for name in requested or [version]:
+        wb.row(name, case_id)
     try:
-        return nps_case_png(wb.history, case_id, names[0], names[1])
-    except placar.PlacarError as exc:  # corte que não pode ser carregado nas versões pedidas
+        return masked_case_png(wb.history, case_id, version)
+    except placar.PlacarError as exc:
         raise HTTPException(404, f"slice could not be loaded: {case_id}") from exc
 
 

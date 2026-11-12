@@ -121,8 +121,8 @@ def test_nps_figure_closes_figure_on_any_error(monkeypatch):
     def boom(*args, **kwargs):
         raise RuntimeError("falha no desenho")
 
-    monkeypatch.setattr(nps_figure, "Rectangle", boom)
+    monkeypatch.setattr(nps_figure, "sharpen", boom)
     before = set(plt.get_fignums())
     with pytest.raises(RuntimeError):
-        nps_figure.nps_case_png(history, CID, names[0], names[-1])
+        nps_figure.masked_case_png(history, CID, names[-1])
     assert set(plt.get_fignums()) == before

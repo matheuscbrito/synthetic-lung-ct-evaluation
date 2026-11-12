@@ -49,9 +49,9 @@ from wavelet.src.load_data import CasePaths, discover_cases
 from wavelet.src.run_pipeline import write_csv
 from wavelet.src.validate_cases import ValidCase, validate_case
 from frameworks.texture_evaluator.decision import brightness_statuses, brightness_verdict, technique_statuses, texture_status
-from frameworks.texture_evaluator.regional import apply_pair_check
+from frameworks.texture_evaluator.regional import MASK_ONLY, apply_pair_check
 from frameworks.texture_evaluator.run_mvp import calibrate, context_from_dict, context_to_dict, evaluate_pair
-from frameworks.noise_evaluator.integration import calibrate_nps, evaluate_nps_pair, noise_verdict
+from frameworks.noise_evaluator.integration import MASKED_CONFIG, calibrate_nps, evaluate_nps_pair, noise_verdict
 
 BOOTSTRAP = 2000
 HISTORY_FILE = "historico.json"
@@ -129,12 +129,11 @@ INDICATORS = (
     Indicator("nps_abs_quantity_z", "NPS · quantidade", "quanto a intensidade das flutuações locais se afastou da original", "ruido", 0.0, "|diferença| em IQR", .20),
     Indicator("nps_abs_grain_z", "NPS · tamanho do grão", "se as flutuações ficaram mais largas ou mais finas", "ruido", 0.0, "|diferença| em IQR", .20),
     Indicator("nps_abs_high_band_z", "NPS · grão fino", "parcela do ruído concentrada em variações rápidas e pequenas", "ruido", 0.0, "|diferença| em IQR", .20),
-    Indicator("nps_air_synthetic", "Ruído · manchas no ar", "% do ar fora do corpo com manchas que a original não tem", "ruido", 0.0, "% do ar", .2),
-    Indicator("nps_aprovada", "NPS · cortes aprovados", "cortes em que o ruído do tecido mole ficou dentro de ±1 IQR e o ar fora do corpo não ganhou manchas", "ruido", 100.0, "% dos cortes", 5.0,
+    Indicator("nps_aprovada", "NPS · cortes aprovados", "cortes em que o ruído do tecido mole ficou dentro de ±1 IQR", "ruido", 100.0, "% dos cortes", 5.0,
               test=lambda row: noise_verdict(row) == "aprovada"),
 )
 DECIMALS = {"wavelet_ratio": 2, "map_corr_textura": 2, "abs_delta_mu": 3, "abs_delta_ll": 3,
-            "nps_abs_quantity_z": 2, "nps_abs_grain_z": 2, "nps_abs_high_band_z": 2, "nps_air_synthetic": 2}
+            "nps_abs_quantity_z": 2, "nps_abs_grain_z": 2, "nps_abs_high_band_z": 2}
 FILTER_TEXT = {"approved": "filtro: aprovado", "manual_review": "filtro: revisão", "hard_reject": "filtro: rejeição"}
 DENSITY_TEXT = {"ok": "densidade: ok", "brighter": "densidade: clareou", "darker": "densidade: escureceu", "too_bright": "densidade: claro demais", "too_dark": "densidade: escuro demais"}
 
@@ -172,6 +171,12 @@ def load_rows(folder: Path, name: str) -> list[dict]:
         rows = list(csv.DictReader(handle))
     # colunas derivadas, calculadas na leitura para valer também em históricos já gravados
     for row in rows:
+        # Históricos antigos podem ter o teste do ar e um veredito que o inclui.
+        for key in tuple(row):
+            if key.startswith("nps_air_"):
+                del row[key]
+        if "nps_verdict" in row:
+            row["nps_verdict"] = noise_verdict(row)
         row["abs_delta_ll"] = abs(float(row["wavelet_ll_synthetic"]) - float(row["wavelet_ll_real"]))
         row["glcm_energy_pct"] = 100 * float(row["glcm_energy_synthetic"]) / float(row["glcm_energy_real"])
         for metric in ("quantity", "grain", "high_band"):
@@ -266,10 +271,12 @@ def add_version(history_dir: Path, name: str, folder: Path, mask_dir: Path | Non
         ctx = calibrate(list(valid.values()))
         history = {
             "reference": name, "mask_dir": str(mask_dir) if mask_dir else None,
-            "calibration": {**context_to_dict(ctx), "nps_reference": calibrate_nps(list(valid.values()), glcm_scale=context_to_dict(ctx)["glcm_scale"])},
+            "calibration": {**context_to_dict(ctx), "nps_reference": calibrate_nps(list(valid.values()))},
             "originals": {case: fingerprint(c.original) for case, c in valid.items()},
             "versions": [],
         }
+    if history["calibration"].get("nps_reference", {}).get("config") != MASKED_CONFIG:
+        raise PlacarError("recalcule o histórico para usar o NPS com máscara")
     ctx = context_from_dict(history["calibration"])
     known = history["originals"]
     different = [case for case, c in valid.items() if case in known and fingerprint(c.original) != known[case]]
@@ -283,9 +290,10 @@ def add_version(history_dir: Path, name: str, folder: Path, mask_dir: Path | Non
     for case in cases:
         item = valid[case]
         row = evaluate_pair(case, item.original, item.synthetic, item.lung_mask, ctx)
-        row.update(evaluate_nps_pair(item.original, item.synthetic, item.lung_mask, history["calibration"]["nps_reference"]))
         rows.append({**row, "abs_delta_mu": abs(row["delta_mu"])})
     mode = apply_pair_check(rows)
+    for row in rows:
+        _update_noise(row, valid[row["case_id"]], history["calibration"]["nps_reference"])
     suspicious = sum(row["pair_status"] == "suspeito" for row in rows)
     history_dir.mkdir(parents=True, exist_ok=True)
     rows_path(history_dir, name).parent.mkdir(exist_ok=True)
@@ -296,6 +304,37 @@ def add_version(history_dir: Path, name: str, folder: Path, mask_dir: Path | Non
     })
     save_history(history_dir, history)
     return f"{name}: {len(rows)} cortes avaliados · modo {mode}" + (f" · {suspicious} pares suspeitos" if suspicious else "")
+
+
+def _update_noise(row: dict, case: ValidCase, reference: dict) -> None:
+    for key in tuple(row):
+        if key.startswith("nps_"):
+            del row[key]
+    aligned = row["pair_mode"] != MASK_ONLY and row["pair_status"] != "suspeito"
+    row.update(evaluate_nps_pair(case.original, case.synthetic, case.lung_mask, reference, aligned=aligned))
+
+
+def refresh_noise_history(history_dir: Path) -> None:
+    """Replace only the noise columns, preparing every version before writing."""
+    history = load_history(history_dir)
+    if not history or not history["versions"]:
+        raise PlacarError("não há versões para recalcular")
+    reference = next(entry for entry in history["versions"] if entry["name"] == history["reference"])
+    originals = [load_case(reference, cid) for cid in history["originals"]]
+    calibration = calibrate_nps(originals)
+    pending = {}
+    for entry in history["versions"]:
+        rows = load_rows(history_dir, entry["name"])
+        for row in rows:
+            case = load_case(entry, row["case_id"])
+            if fingerprint(case.original) != history["originals"][row["case_id"]]:
+                raise PlacarError(f"a original de {row['case_id']} difere do histórico")
+            _update_noise(row, case, calibration)
+        pending[entry["name"]] = rows
+    for name, rows in pending.items():
+        write_csv(rows_path(history_dir, name), rows)
+    history["calibration"]["nps_reference"] = calibration
+    save_history(history_dir, history)
 
 
 def refresh_history(history_dir: Path) -> str:
@@ -313,7 +352,7 @@ def refresh_history(history_dir: Path) -> str:
     if not reference_valid:
         raise PlacarError("não foi possível recarregar a versão de referência")
     ctx = calibrate(list(reference_valid.values()))
-    nps_reference = calibrate_nps(list(reference_valid.values()), glcm_scale=context_to_dict(ctx)["glcm_scale"])
+    nps_reference = calibrate_nps(list(reference_valid.values()))
     history["calibration"] = {**context_to_dict(ctx), "nps_reference": nps_reference}
     for version in history["versions"]:
         masks = Path(version["mask_dir"]) if version.get("mask_dir") else None
@@ -323,11 +362,12 @@ def refresh_history(history_dir: Path) -> str:
         for case in cases:
             item = valid[case]
             row = {**evaluate_pair(case, item.original, item.synthetic, item.lung_mask, ctx), "abs_delta_mu": 0.0}
-            row.update(evaluate_nps_pair(item.original, item.synthetic, item.lung_mask, nps_reference))
             rows.append(row)
         for row in rows:
             row["abs_delta_mu"] = abs(row["delta_mu"])
         mode = apply_pair_check(rows)
+        for row in rows:
+            _update_noise(row, valid[row["case_id"]], nps_reference)
         version.update({"n_cases": len(rows), "mode": mode, "suspicious_pairs": sum(row["pair_status"] == "suspeito" for row in rows)})
         write_csv(rows_path(history_dir, version["name"]), rows)
     save_history(history_dir, history)

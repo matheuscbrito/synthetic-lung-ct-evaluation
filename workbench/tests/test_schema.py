@@ -4,7 +4,6 @@ import math
 import pytest
 from fastapi.testclient import TestClient
 
-from frameworks.noise_evaluator.integration import AIR_LIMITS
 from frameworks.texture_evaluator.visual import MAP_LAYERS, TECHNIQUE_FIGURES
 from workbench.api import calibration, data, datasets as ds, notebook, optimizers, reasons
 from workbench.api.app import create_app
@@ -34,20 +33,19 @@ def test_axes_and_statuses(client):
 def test_noise_method_and_chart_guidance_reach_schema(client):
     body = _schema(client)
     guide = next(a["guide"] for a in body["axes"] if a["key"] == "noise")
-    for explanation in ("16 × 16", "smooth soft tissue", "lung is not used", "overlap by at most 25%", "plane", "subtracted",
-                        "wide patterns do not decide"):
+    for explanation in ("Masked NPS", "soft-tissue pixels", "inconclusive", "over 2 is rejected"):
         assert explanation in guide
     descriptions = {m["key"]: m["description"] for m in body["metrics"]}
     for key in ("nps_quantity", "nps_grain", "nps_high_band", "nex"):
         assert "Zero is the original" in descriptions[key]
-        assert "95% bootstrap interval" in descriptions[key]
+    assert "95% bootstrap interval" in descriptions["nex"]
     assert "positive means stronger" in descriptions["nps_quantity"]
     assert "positive means finer" in descriptions["nps_grain"]
     assert "positive means more fine grain" in descriptions["nps_high_band"]
     assert "nps_low_band" not in descriptions
-    assert "crosses zero stays green" in descriptions["nps_quantity"]
+    assert "over 2 is rejected" in descriptions["nps_quantity"]
     assert "never rejects" in descriptions["nex"]
-    assert "0.3%" in descriptions["nps_air"] and "policy limits, not clinical" in descriptions["nps_air"]
+    assert "nps_air" not in descriptions
 
 
 def test_metric_limits_from_calibration(client):
@@ -74,7 +72,6 @@ def test_metric_limits_from_calibration(client):
     assert by_key["delta_mu"]["display"] == "value"
     assert by_key["delta_mu"]["unit"] == ""
     assert by_key["sat31"]["limits"] == {"kind": "above", "review": None, "reject": reasons.SATURATION_LIMIT}
-    assert by_key["nps_air"]["limits"] == {"kind": "above", "review": AIR_LIMITS[0], "reject": AIR_LIMITS[1]}
     for key in ("ll", "glcm_contrast", "glcm_energy", "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
                 "nps_quantity", "nps_grain", "nps_high_band"):
         assert by_key[key]["limits"] == {"kind": "abs_z", "review": reasons.Z_LIMITS["review"],
@@ -99,7 +96,7 @@ def test_inspectors(client):
     assert inspectors["nex"]["chart"] == "interval"
     assert inspectors["nex_windows"]["chart"] == "matrix"
     assert inspectors["wavelet"]["chart"] == "bars"
-    assert inspectors["noise_figure"]["chart"] == "image"
+    assert inspectors["noise_figure"]["chart"] == "assessment"
     figure = inspectors["figure"]
     assert figure["chart"] == "image"
     assert [c["key"] for c in figure["options"][0]["choices"]] == list(TECHNIQUE_FIGURES)
@@ -197,6 +194,6 @@ def test_technique_keys_match_items(client):
     for metric in body["metrics"]:
         assert metric["technique"] in schema_keys, metric["key"]
     by_key = {m["key"]: m["technique"] for m in body["metrics"]}
-    assert by_key["nps_quantity"] == "quantity" and by_key["nps_air"] == "air"
+    assert by_key["nps_quantity"] == "quantity" and "nps_air" not in by_key
     assert by_key["delta_mu"] == by_key["sat31"] == by_key["glcm_contrast"] == "GLCM"
     assert by_key["ll"] == by_key["wavelet_fine"] == "Wavelet" and by_key["nex"] == "NEx"

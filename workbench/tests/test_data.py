@@ -33,7 +33,7 @@ def test_slice_schema():
     s = slices_of("Dsr")[0]
     assert [m["key"] for m in s["metrics"]] == ["delta_mu", "sat31", "ll", "glcm_contrast", "glcm_energy",
                                                 "wavelet_fine", "wavelet_coarse", "wavelet_entropy", "nex",
-                                                "nps_quantity", "nps_grain", "nps_high_band", "nps_air"]
+                                                "nps_quantity", "nps_grain", "nps_high_band"]
     assert set(s["texture"]["techniques"]) == {"GLCM", "Wavelet", "NEx"}
     assert s["patient"] in {"100", "105", "117"}
 
@@ -107,17 +107,20 @@ def test_wavelet_codes_cover_every_framework_label():
     assert set(WAVELET_CODE.values()) == {"preserved", "blurred", "noise", "lost_contrast", "gained_contrast", "saturated"}
 
 
-def test_pct_of_original_is_null_for_air_sat_and_delta():
+def test_pct_of_original_is_null_for_sat_and_delta():
     s = slices_of("Dsr")[0]
     by_key = {m["key"]: m for m in s["metrics"]}
-    for key in ("nps_air", "sat31", "delta_mu"):
+    for key in ("sat31", "delta_mu"):
         assert by_key[key]["pct_of_original"] is None, key
     assert by_key["ll"]["pct_of_original"] is not None
 
 
-def test_pct_of_original_null_even_with_air_values():
+def test_legacy_air_does_not_affect_slice():
     row = dict(any_dsr_row())
     row["nps_air_real"], row["nps_air_synthetic"] = "0.5", "1.0"
-    by_key = {m["key"]: m for m in slice_json(row, calibration())["metrics"]}
-    assert by_key["nps_air"]["real"] == 0.5 and by_key["nps_air"]["synthetic"] == 1.0
-    assert by_key["nps_air"]["pct_of_original"] is None
+    before = slice_json(row, calibration())
+    row.update(nps_air_available=True, nps_air_status="reprovada", nps_verdict="reprovada")
+    after = slice_json(row, calibration())
+    assert before == after
+    assert "air" not in after["noise"]["techniques"]
+    assert "nps_air" not in {m["key"] for m in after["metrics"]}

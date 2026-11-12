@@ -4,7 +4,6 @@ import math
 
 import pytest
 
-from frameworks.noise_evaluator import integration
 from frameworks.texture_evaluator import placar, regional, visual
 from workbench.api import calibration, reasons
 from workbench.tests.conftest import DATA_OK, HISTORY_DIR
@@ -31,8 +30,8 @@ def test_calibration_matches_history_and_framework_constants(tmp_history):
     metrics = history["calibration"]["nps_reference"]["metrics"]
     assert set(body["nps"]) == set(metrics)
     for key, metric in metrics.items():
-        assert body["nps"][key] == {"repeatability_iqr": pytest.approx(metric["repeatability_iqr"])}
-    assert body["air"] == {"limits": list(integration.AIR_LIMITS), "sigmas": integration.AIR_SIGMAS}
+        assert body["nps"][key] == {"repeatability_iqr": metric.get("repeatability_iqr")}
+    assert "air" not in body
     assert body["pair_min_correlation"] == regional.PAIR_MIN_CORRELATION
     assert body["technique_figures"] == list(visual.TECHNIQUE_FIGURES)
     assert body["map_layers"] == list(visual.MAP_LAYERS)
@@ -42,7 +41,7 @@ def test_stale_history_returns_null_for_missing_reference(stale_dir):
     body = body_for(stale_dir)
     assert body["nex"] == {"iqr": None, "repeatability_iqr": None}
     assert body["mean_iqr"] is not None
-    assert body["air"] == {"limits": list(integration.AIR_LIMITS), "sigmas": integration.AIR_SIGMAS}
+    assert "air" not in body
 
 
 def test_non_finite_values_become_null(tmp_history):

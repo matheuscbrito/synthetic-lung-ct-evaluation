@@ -7,7 +7,7 @@ from collections import Counter
 
 import pytest
 
-from frameworks.noise_evaluator.integration import AIR_LABEL, AIR_LIMITS, NPS_METRICS, noise_statuses, noise_verdict
+from frameworks.noise_evaluator.integration import NPS_METRICS, noise_statuses, noise_verdict
 from frameworks.texture_evaluator import decision
 from frameworks.texture_evaluator.placar import load_rows
 from workbench.api import data as wb_data
@@ -18,7 +18,7 @@ from workbench.tests.conftest import DATA_OK, HISTORY_DIR, framework_counts, non
 pytestmark = pytest.mark.skipif(not DATA_OK, reason="outputs/placar/historico.json ou dados/Dsr ausente")
 
 NPS_KEYS = ("quantity", "grain", "high_band")
-NOISE_TECHNIQUES = {"quantity", "grain", "high_band", "air"}
+NOISE_TECHNIQUES = {"quantity", "grain", "high_band"}
 METRIC_KEYS = {"z_low", "z_high", "pct_of_original", "certain"}
 
 
@@ -112,15 +112,9 @@ def test_noise_group_metrics(dsr_rows, slices):
             same(metric["real"], row[f"nps_{key}_real"])
             same(metric["synthetic"], row[f"nps_{key}_synthetic"])
             same(metric["z"], row[f"nps_{key}_z"])
-            same(metric["z_low"], row[f"nps_{key}_z_low"])
-            same(metric["z_high"], row[f"nps_{key}_z_high"])
-        air = by_key(body, "nps_air")
-        assert air["label"] == "Air spots" and air["group"] == "noise" and air["unit"] == "%"
-        same(air["value"], row["nps_air_synthetic"])
-        same(air["real"], row["nps_air_real"])
-        assert air["status"] == wb_data.STATUS[statuses[AIR_LABEL]]
-        same(air["peak_sigmas"], row["nps_air_peak_sigmas"])
-        assert air["available"] is (str(row["nps_air_available"]).lower() == "true")
+            assert metric["z_low"] is None
+            assert metric["z_high"] is None
+        assert all(m["key"] != "nps_air" for m in body["metrics"])
 
 
 def test_noise_techniques_and_extras(dsr_rows, slices):
@@ -128,7 +122,6 @@ def test_noise_techniques_and_extras(dsr_rows, slices):
         noise = body["noise"]
         assert set(noise["techniques"]) == NOISE_TECHNIQUES
         statuses = noise_statuses(row)
-        assert noise["techniques"]["air"] == wb_data.STATUS[statuses[AIR_LABEL]]
         assert noise["techniques"]["quantity"] == wb_data.STATUS[statuses[NPS_METRICS["quantity"]]]
         assert body["noise_roi_count"] == int(row["nps_roi_count"])
         assert body["noise_available"] is (str(row["nps_available"]).lower() == "true")
@@ -192,13 +185,11 @@ def test_reason_shape_and_limits(slices):
         assert reason["limit"] == {"review": "review", "rejected": "reject"}.get(reason["status"])
         if reason["metric"] == "sat31":
             assert reason["limit_value"] == reasons.SATURATION_LIMIT
-        elif reason["metric"] == "nps_air" and reason["limit"] is not None:
-            assert reason["limit_value"] == AIR_LIMITS[0 if reason["limit"] == "review" else 1]
         elif reason["z"] is not None and reason["limit"] is not None:
             assert reason["limit_value"] == reasons.Z_LIMITS[reason["limit"]]
         else:
             assert reason["limit_value"] is None
-        assert reason["note"] in {None, "few_windows", "lung_not_measured", "air_unavailable", "ci_includes_zero"}
+        assert reason["note"] in {None, "few_windows", "lung_not_measured", "ci_includes_zero"}
 
 
 def test_reason_notes_for_inconclusive_nex(dsr_rows, calibration):
@@ -209,11 +200,10 @@ def test_reason_notes_for_inconclusive_nex(dsr_rows, calibration):
 
 
 def test_reason_notes_when_lung_not_measured(dsr_rows, calibration):
-    row = {**dsr_rows[0], "nps_available": "False", "nps_air_available": "False"}
+    row = {**dsr_rows[0], "nps_available": "False"}
     body = slice_json(row, calibration)
     notes = {r["metric"]: r["note"] for r in body["why"]["noise"]}
     assert all(notes[f"nps_{k}"] == "lung_not_measured" for k in NPS_KEYS if f"nps_{k}" in notes)
-    assert notes.get("nps_air") == "air_unavailable"
 
 
 def test_slice_payload_exposes_new_fields():

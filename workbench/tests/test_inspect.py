@@ -117,16 +117,38 @@ def test_map_png(client, wb, cid):
     assert png.status_code == 200 and png.headers["content-type"] == "image/png" and png.content
 
 
-def test_figure_and_noise_urls(client, wb, cid):
+def test_figure_url(client, wb, cid):
     technique = next(iter(TECHNIQUE_FIGURES))
     figure = _get(client, "figure", version=wb.history["versions"][-1]["name"], item=cid, technique=technique).json()
     assert figure["url"].startswith("/api/inspect/figure.png?") and figure["caption"]
-    noise = _get(client, "noise_figure", version=wb.history["versions"][-1]["name"], item=cid).json()
-    png = client.get(noise["url"])
+
+
+def test_noise_assessment_matches_item_verdicts_and_masked_spectrum(client, wb, cid):
+    version = wb.history["versions"][-1]["name"]
+    body = _get(client, "noise_figure", version=version, item=cid).json()
+    item = next(i for i in client.get("/api/items", params={"version": version}).json()["items"] if i["id"] == cid)
+    assessment, = body["assessments"]
+    assert assessment["verdict"] == item["verdicts"]["noise"]
+    assert assessment["summary"] and len(assessment["readings"]) == 3
+    assert [r["distance"] for r in assessment["readings"]] == pytest.approx(
+        [item["metrics"][key]["z"] for key in ("nps_quantity", "nps_grain", "nps_high_band")])
+    assert min(body["curve"]["series"][0]["x"]) == 0.125
+    assert max(body["broad_curve"]["series"][0]["x"]) < 0.125
+    overlay = body["overlay"]
+    size = overlay["block_size"]
+    assert len(overlay["blocks"]) == int(wb.row(version, cid)["nps_roi_count"])
+    assert 0 < overlay["pixel_count"] <= sum(block["pixels"] for block in overlay["blocks"])
+    assert all(0 <= block["x"] <= overlay["width"] - size
+               and 0 <= block["y"] <= overlay["height"] - size
+               and overlay["min_coverage"] <= block["pixels"] / size**2 <= 1
+               for block in overlay["blocks"])
+    png = client.get(overlay["url"])
     assert png.status_code == 200 and png.headers["content-type"] == "image/png" and png.content
+    assert _get(client, "noise_figure", version=version, item=cid, method="squares").status_code == 400
 
 
 def test_errors(client, cid):
+    assert _get(client, "noise_figure", version="Dsr", item=cid, method="nope").status_code == 400
     assert _get(client, "map", version="Dsr", item=cid, layer="nope", compared="yes").status_code == 400
     assert client.get("/api/inspect/map.png", params={"version": "Dsr", "item": cid, "layer": "nope"}).status_code == 400
     assert _get(client, "map", version="Dsr", item=cid, compared="maybe").status_code == 400

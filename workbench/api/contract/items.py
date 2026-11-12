@@ -14,8 +14,8 @@ from frameworks.texture_evaluator import regional
 from workbench.api import data, datasets as ds, reasons
 from workbench.api.contract import AXES, DATASET_LABEL
 
-NOTE_LABEL = {reasons.NOTE_FEW_WINDOWS: "too few windows to measure", reasons.NOTE_LUNG: "lung area not measured",
-              reasons.NOTE_AIR: "air not available", reasons.NOTE_CI: "interval includes zero"}
+NOTE_LABEL = {reasons.NOTE_FEW_WINDOWS: "too few windows to measure", reasons.NOTE_LUNG: "Noise could not be measured in the soft tissue",
+              reasons.NOTE_CI: "interval includes zero"}
 # códigos de `data.WAVELET_CODE` -> texto da UI
 WAVELET_LABEL = {"preserved": "preserved texture", "blurred": "blurred", "noise": "noise",
                  "lost_contrast": "lost contrast", "gained_contrast": "gained contrast", "saturated": "saturated"}
@@ -27,21 +27,18 @@ def _ci(low, high) -> list | None:
 
 
 def _available(metric: dict) -> bool:
-    """Sem leitura (valor nulo) ou marcada indisponível (ar) → indisponível."""
+    """Sem leitura (valor nulo) ou marcada indisponível → indisponível."""
     return metric["value"] is not None and metric.get("available", True) is not False
 
 
 def _metric(metric: dict) -> dict:
     available = _available(metric)
-    # ui_placar.py: air_chart tooltip (pico em múltiplos do ruído natural da própria CT).
-    peak = metric.get("peak_sigmas")
-    note = f"Peak: {peak:.1f} × natural noise" if available and peak is not None else None
     return {"value": metric["value"] if available else None,
             "z": metric["z"] if available else None,
             "ci": _ci(metric["z_low"], metric["z_high"]) if available else None,
             "real": metric["real"], "synthetic": metric["synthetic"],
             "pct": metric["pct_of_original"] if available else None,
-            "status": metric["status"], "available": available, "note": note}
+            "status": metric["status"], "available": available, "note": None}
 
 
 def _reason(axis: str, entry: dict, available: bool) -> dict:
@@ -76,7 +73,7 @@ def _pairing(mode_code: str | None) -> str:
 def _facts(s: dict) -> list[dict]:
     rois = s["noise_roi_count"]
     code = s["wavelet_type_code"]
-    return [{"label": "Noise ROIs", "value": NA if rois is None else str(rois)},
+    return [{"label": "Noise blocks", "value": NA if rois is None else str(rois)},
             {"label": "Wavelet type", "value": WAVELET_LABEL.get(code, s["wavelet_type"] or NA)},
             {"label": "Pairing", "value": _pairing(s["mode_code"])},
             {"label": "Density", "value": _density(s["density"])}]

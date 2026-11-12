@@ -3,18 +3,23 @@
 Cada inspetor de `schema.inspectors()` vira um payload por tipo de gráfico, sem nome de métrica na forma:
 - `spectrum` (curves), `glcm` e `nex_windows` (matrix), `nex` (interval) e `wavelet` (bars) saem das
   funções de `tools` (as antigas rotas `/api/tools/*` foram removidas);
-- `figure`, `map` e `noise_figure` (image) devolvem `{url, caption}`; a URL aponta para
+- `noise_figure` (assessment) junta vereditos, espectros e uma imagem da região medida.
+- `figure` e `map` (image) devolvem `{url, caption}`; a URL aponta para
   `GET /api/inspect/{key}.png`, que desenha com `board.technique_png`, `board.map_png` e `board.nps_png`.
 Séries e painéis são rotulados pelo rótulo de exibição da versão (`versions.version_label`), nunca pela pasta.
 Opções fora das `choices` do schema são 400; inspetor desconhecido é 404.
 """
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response
+
+from frameworks.noise_evaluator import masked_nps
+from frameworks.noise_evaluator.integration import MASKED_CONFIG
 
 from frameworks.texture_evaluator.run_mvp import context_from_dict
 from workbench.api import board, data, datasets as ds, images, reasons, tools
@@ -161,6 +166,90 @@ def png(wb: Workbench, key: str, item: str, names: list[str], options: dict) -> 
     return board.nps_png(wb, item, names)
 
 
+NOISE_ROWS = {
+    "quantity": ("Grain strength", "How strong the fluctuations are", "stronger grain", "weaker grain", 3, ""),
+    "grain": ("Mean frequency", "Higher frequency means finer grain", "finer grain", "coarser grain", 3, " cycles/px"),
+    "high_band": ("Fine-grain share", "Power at 0.30 cycles/pixel and above", "more fine grain", "less fine grain", 1, "%"),
+}
+
+
+def _noise_assessment(wb: Workbench, item: str, name: str, label) -> dict:
+    row = wb.row(name, item)
+    reference = wb.history["calibration"].get("nps_reference", {})
+    result = {"label": label(name), "verdict": "inconclusive", "summary": "", "readings": []}
+    if reference.get("config") != MASKED_CONFIG:
+        return {**result, "summary": "Refresh the evaluation to calculate the masked noise results."}
+    body = data.slice_json(row, wb.history["calibration"])
+    result["verdict"] = body["noise"]["verdict"]
+    if result["verdict"] == "inconclusive":
+        return {**result, "summary": row.get("nps_error") or "Noise could not be measured in this slice."}
+    by_key = {m["key"]: m for m in body["metrics"]}
+    for key, (title, explanation, above, below, digits, unit) in NOISE_ROWS.items():
+        m = by_key[f"nps_{key}"]
+        scale = 100 if unit == "%" else 1
+        z = m["z"]
+        real, synthetic = m["real"], m["synthetic"]
+        if unit == "%":
+            change = f"{100 * (synthetic - real):+.1f} pp"
+        elif real:
+            change = f"{100 * (synthetic / real - 1):+.1f}%"
+        else:
+            change = "—"
+        result["readings"].append({
+            "label": title, "description": explanation, "status": m["status"],
+            "original": f"{scale * real:.{digits}f}{unit}", "synthetic": f"{scale * synthetic:.{digits}f}{unit}",
+            "change": change, "distance": z, "direction": above if z > 0 else below if z < 0 else "equal",
+        })
+    drivers = [r for r in result["readings"] if r["status"] == result["verdict"]]
+    if result["verdict"] == "approved":
+        result["summary"] = "All three readings are within 1 IQR of the original."
+    else:
+        phrases = [f"{r['label']} shows {r['direction']} ({abs(r['distance']):.2f} IQR from the original)"
+                   for r in drivers]
+        result["summary"] = ". ".join(phrases) + "."
+    return result
+
+
+def noise_report(wb: Workbench, dataset: str, item: str, version: str, names: list[str]) -> dict:
+    if len(names) > 2:
+        raise HTTPException(400, "select at most two versions")
+    names = sorted(names, key=lambda name: name != version)
+    label = _labeller(wb)
+    assessments = [_noise_assessment(wb, item, name, label) for name in names]
+    measured = [name for name, result in zip(names, assessments) if result["verdict"] != "inconclusive"]
+    curve = broad_curve = overlay = None
+    if measured:
+        cases = [images.case(wb, name, item) for name in measured]
+        comparisons = [masked_nps.measure(c.original, c.lung_mask, c.synthetic) for c in cases]
+        geometry, freq, first_profiles = comparisons[0]
+        profiles = [first_profiles[0], *(p[1] for _, _, p in comparisons)]
+
+        def spectrum_band(band):
+            return {"x": {"label": "Spatial frequency (cycles/pixel)"}, "y": {"label": "Noise power", "scale": "linear"},
+                    "band": None, "markers": [],
+                    "series": [{"label": name, "role": role, "x": freq[band].tolist(), "y": profile[band].tolist()}
+                               for name, role, profile in zip(["Original", *(label(n) for n in measured)],
+                                                              ["real", *["version"] * len(measured)], profiles)]}
+        curve = spectrum_band(freq >= masked_nps.GRAIN)
+        broad_curve = spectrum_band((freq >= masked_nps.LOW) & (freq < masked_nps.GRAIN))
+        query = urlencode({"dataset": dataset, "version": measured[0], "item": item}, quote_via=quote)
+        height, width = geometry.used.shape
+        overlay = {"url": f"/api/inspect/noise_figure.png?{query}",
+                   "caption": "The outlined blocks met the soft-tissue coverage requirement. Green shows the pixels used in the calculation.",
+                   "width": width, "height": height, "block_size": masked_nps.TILE,
+                   "min_coverage": masked_nps.MIN_COVER,
+                   "pixel_count": int(geometry.used.sum()),
+                   "blocks": [asdict(block) for block in geometry.blocks]}
+    return {"assessments": assessments, "curve": curve, "broad_curve": broad_curve, "overlay": overlay,
+            "limits": dict(reasons.Z_LIMITS),
+            "rule": "Approved ≤ 1 IQR · Review > 1 to 2 IQR · Rejected > 2 IQR. "
+                    "IQR is the spread of the middle half of the original readings. These are project triage limits.",
+            "curve_title": "Grain spectrum",
+            "curve_hint": "Read left to right from coarser to finer grain. The height shows noise power.",
+            "details_title": "Broad patterns",
+            "details_hint": "Below 0.125 cycles/pixel, anatomy can dominate the curve, so this band stays outside the verdict."}
+
+
 def _data(wb: Workbench, key: str, item: str, version: str, compare: str | None) -> dict:
     label = _labeller(wb)
     if key == "spectrum":
@@ -183,6 +272,8 @@ def router(datasets: dict) -> APIRouter:
         descriptor = _descriptor(key)
         if key not in IMAGE_KEYS:
             raise HTTPException(404, f"inspector {key} has no image")
+        if key == "noise_figure" and request.query_params.get("method", "masked") != "masked":
+            raise HTTPException(400, "only the masked method is available")
         options = _options(descriptor, dict(request.query_params))
         wb = ds.wb_for(dataset, datasets)
         return Response(png(wb, key, item, _compare(wb, version, compare), options), media_type="image/png")
@@ -194,6 +285,14 @@ def router(datasets: dict) -> APIRouter:
         options = _options(descriptor, dict(request.query_params))
         wb = ds.wb_for(dataset, datasets)
         wb.entry(version)  # desconhecida: 404
+        if key == "noise_figure":
+            if request.query_params.get("method", "masked") != "masked":
+                raise HTTPException(400, "only the masked method is available")
+            names = _compare(wb, version, compare)
+            try:
+                return noise_report(wb, dataset, item, version, names)
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
         if key in IMAGE_KEYS:
             wb.row(version, item)  # corte desconhecido: 404 já no JSON, não só no PNG
             return image(descriptor, dataset, version, item, compare, options)

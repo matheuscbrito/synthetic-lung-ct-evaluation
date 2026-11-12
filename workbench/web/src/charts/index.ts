@@ -1,6 +1,7 @@
 // Um componente por tipo de gráfico do contrato (§4.2); o descritor do inspetor escolhe qual.
 import { createElement, Fragment, type ReactElement } from "react";
 import type {
+  AssessmentPayload,
   BarsPayload,
   CurvesPayload,
   ImagePayload,
@@ -9,6 +10,7 @@ import type {
   IntervalPayload,
   MatrixPayload,
 } from "../contract/types";
+import { Assessment } from "./Assessment";
 import { Bars } from "./Bars";
 import { Curves } from "./Curves";
 import { ImageFigure } from "./ImageFigure";
@@ -32,6 +34,8 @@ export interface InspectorChartProps {
 
 function chart({ desc, payload, colors, width, height, onOptionsChange }: InspectorChartProps): ReactElement | null {
   switch (desc.chart) {
+    case "assessment":
+      return createElement(Assessment, { payload: payload as AssessmentPayload });
     case "curves":
       return createElement(Curves, { payload: payload as CurvesPayload, colors, width, height });
     case "bars":

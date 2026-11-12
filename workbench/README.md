@@ -62,7 +62,7 @@ Os formatos completos estão no documento do contrato.
 |---|---|
 | `/api/schema?dataset=` | Descritores da interface, datasets, estado do histórico e addons |
 | `/api/items?dataset=&version=` | Itens, vereditos por eixo/técnica, métricas, motivos e fatos |
-| `/api/inspect/{key}?dataset=&version=&item=&compare=` | Payload `curves`, `bars`, `interval`, `matrix` ou `image`; opções vêm do schema |
+| `/api/inspect/{key}?dataset=&version=&item=&compare=` | Payload `curves`, `bars`, `interval`, `matrix`, `image` ou `assessment`; opções vêm do schema |
 | `/api/inspect/{key}.png` | PNG do inspetor de imagem, com os mesmos parâmetros e opções |
 | `/api/board?dataset=&baseline=` | Benchmark: `n_items`, `baseline`, `versions` com contagens, scores, comparações e testes de coorte |
 | `/api/transitions?dataset=&before=&after=&axis=` | Transições dos itens comuns no eixo selecionado |
@@ -137,6 +137,15 @@ bash workbench/dev.sh
 O script sobe uvicorn na porta 8000 e Vite na 5173, com `/api` encaminhado para a API.
 Abra http://localhost:5173. O script pode ser chamado de qualquer diretório.
 
+Para ver o GPBO-11 no servidor local, selecione **Same anatomy**. Se o histórico ainda
+não existir, clique em **Evaluate**. Se o painel oferecer **Recalculate**, execute o recálculo
+para atualizar a régua de ruído para o NPS com máscara. O recálculo precisa das pastas
+das versões já registradas nesse histórico.
+
+Se o GPBO-11 ainda não estiver registrado, abra **Versions → Add version** e informe
+`dados/Dsr-gpbo11` como pasta. Selecione essa versão, abra um corte e escolha **Noise**.
+O painel mostra a região medida ao lado do espectro, com os vereditos e as tabelas abaixo.
+
 Para testar a mesma interface com o contrato fictício de 180 imagens, dois eixos e um
 otimizador, use `bash workbench/dev.sh --stress` no lugar da execução normal. Essa API
 serve apenas o fixture versionado, com imagens explicitamente marcadas como placeholders,
@@ -160,9 +169,9 @@ evidência científica.
 
 ## Limites de escrita
 
-O workbench não altera o código do juiz (`frameworks/texture_evaluator/**` e `wavelet/src/**`,
-congelados em `juiz-v1`), nem os arquivos do laboratório externo. Reutiliza as funções do
-framework para avaliação, vereditos e figuras. Brilho, textura e ruído permanecem separados.
+O workbench usa as funções do framework para avaliação, vereditos e figuras. As operações
+do painel escrevem nas saídas locais de avaliação. Os arquivos do laboratório externo são
+fontes de leitura.
 
 Init, add, remove e refresh escrevem no histórico e nas saídas do dataset por meio do
 framework. Add e remove também atualizam `workbench.json`; PATCH escreve somente nesse

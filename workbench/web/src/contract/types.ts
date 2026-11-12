@@ -76,7 +76,7 @@ export interface MetricDesc {
   description?: string | null;
 }
 
-export type ChartKind = "curves" | "bars" | "interval" | "matrix" | "image";
+export type ChartKind = "curves" | "bars" | "interval" | "matrix" | "image" | "assessment";
 
 export interface Choice {
   key: string;
@@ -92,6 +92,7 @@ export interface InspectorOption {
 export interface InspectorDesc {
   key: string;
   primary_view?: "cohort";
+  axis?: string;
   technique?: string;
   label: string;
   chart: ChartKind;
@@ -249,7 +250,42 @@ export interface ImagePayload {
   caption: string;
 }
 
-export type InspectorPayload = CurvesPayload | BarsPayload | IntervalPayload | MatrixPayload | ImagePayload;
+export interface MeasurementMap extends ImagePayload {
+  width: number;
+  height: number;
+  block_size: number;
+  min_coverage: number;
+  pixel_count: number;
+  blocks: { x: number; y: number; pixels: number }[];
+}
+
+export interface AssessmentPayload {
+  assessments: {
+    label: string;
+    verdict: StatusKey;
+    summary: string;
+    readings: {
+      label: string;
+      description: string;
+      status: StatusKey;
+      original: string;
+      synthetic: string;
+      change: string;
+      distance: number;
+    }[];
+  }[];
+  curve: CurvesPayload | null;
+  broad_curve: CurvesPayload | null;
+  overlay: MeasurementMap | null;
+  limits: { review: number; reject: number };
+  rule: string;
+  curve_title: string;
+  curve_hint: string;
+  details_title: string;
+  details_hint: string;
+}
+
+export type InspectorPayload = AssessmentPayload | CurvesPayload | BarsPayload | IntervalPayload | MatrixPayload | ImagePayload;
 
 // ---------------------------------------------------------------- §4.3 board
 

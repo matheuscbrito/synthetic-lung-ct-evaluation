@@ -22,6 +22,7 @@ class NPSConfig:
     min_rois: int = 6
     max_rois: int = 32
     structure_sigma: float = 1.5
+    max_structure_score: float | None = None
     max_overlap_fraction: float = 0.25
     pixel_spacing_mm: float | None = None
 
@@ -76,13 +77,14 @@ def _overlap_fraction(a: ROI, b: ROI) -> float:
     return float(dx * dy / (a.size * a.size))
 
 
-def select_rois(image: np.ndarray, mask: np.ndarray, config: NPSConfig) -> list[ROI]:
-    """Seleciona ROIs pulmonares compartilháveis, priorizando pouca estrutura.
+def candidate_rois(image: np.ndarray, mask: np.ndarray, config: NPSConfig) -> list[ROI]:
+    """Enumera ROIs válidas, ordenadas da menos para a mais estruturada.
 
     O escore é a energia do gradiente de uma versão suavizada da imagem real.
     A suavização reduz a influência da granulação e faz o ranking privilegiar
-    regiões sem vasos/bordas grandes. A mesma lista deve ser aplicada à imagem
-    real, sintética e ao residual do par.
+    regiões sem bordas ou tendências anatômicas grandes. ``max_structure_score``
+    permite rejeitar, em vez de apenas rebaixar no ranking, regiões que ainda
+    sejam heterogêneas. O limiar deve ser calibrado apenas nas imagens reais.
     """
     image = np.asarray(image, dtype=float)
     mask = np.asarray(mask, dtype=bool)
@@ -106,20 +108,39 @@ def select_rois(image: np.ndarray, mask: np.ndarray, config: NPSConfig) -> list[
             if tissue < config.min_tissue:
                 continue
             score = float(np.sqrt(np.mean(np.square(gradient[y : y + size, x : x + size][region]))))
+            if config.max_structure_score is not None and score > config.max_structure_score:
+                continue
             candidates.append(ROI(x=x, y=y, size=size, structure_score=score, tissue_fraction=tissue))
     candidates.sort(key=lambda roi: roi.structure_score)
-    if len(candidates) < config.min_rois:
-        raise ValueError(
-            f"apenas {len(candidates)} ROIs de {size}×{size} atendem min_tissue={config.min_tissue:.0%}; "
-            "reduza --roi-size ou --min-tissue"
-        )
+    return candidates
 
+
+def nonoverlapping_rois(candidates: Iterable[ROI], config: NPSConfig) -> list[ROI]:
+    """Aplica a regra de sobreposição à lista já ranqueada de candidatas."""
     selected: list[ROI] = []
     for candidate in candidates:
         if all(_overlap_fraction(candidate, existing) <= config.max_overlap_fraction for existing in selected):
             selected.append(candidate)
         if len(selected) == config.max_rois:
             break
+    return selected
+
+
+def select_rois(image: np.ndarray, mask: np.ndarray, config: NPSConfig) -> list[ROI]:
+    """Seleciona ROIs compartilháveis; a mesma lista deve ser usada em todos os métodos."""
+    size = config.roi_size
+    candidates = candidate_rois(image, mask, config)
+    if len(candidates) < config.min_rois:
+        threshold = (
+            f" e structure_score≤{config.max_structure_score:.6g}"
+            if config.max_structure_score is not None else ""
+        )
+        raise ValueError(
+            f"apenas {len(candidates)} ROIs de {size}×{size} atendem min_tissue={config.min_tissue:.0%}; "
+            f"reduza --roi-size, --min-tissue ou relaxe o limiar{threshold}"
+        )
+
+    selected = nonoverlapping_rois(candidates, config)
     if len(selected) < config.min_rois:
         raise ValueError(
             f"apenas {len(selected)} regiões de {size}×{size} sem sobreposição cabem no pulmão "
@@ -250,6 +271,29 @@ def estimate_local_nps(image: np.ndarray, rois: Iterable[ROI], config: NPSConfig
         features=features,
         roi_spectra=roi_spectra,
         residual_patches=np.asarray(residuals),
+    )
+
+
+def spectrum_from_roi_spectra(roi_spectra: np.ndarray, config: NPSConfig) -> SpectrumResult:
+    """Combina espectros de ROIs compatíveis, inclusive de cortes distintos.
+
+    Isso permite reproduzir a agregação volumétrica usada em métodos *in vivo*:
+    cada corte pode contribuir com poucas regiões, desde que o paciente acumule
+    amostras suficientes. As ROIs precisam ter o mesmo tamanho e espaçamento.
+    """
+    spectra = np.asarray(roi_spectra, dtype=float)
+    if spectra.ndim != 3 or spectra.shape[0] == 0 or spectra.shape[1:] != (config.roi_size, config.roi_size):
+        raise ValueError("roi_spectra deve ter forma (n, roi_size, roi_size), com n>0")
+    nps = np.mean(spectra, axis=0)
+    frequencies, radial_nps, radial_power, features = _summary(nps, config.sample_spacing)
+    return SpectrumResult(
+        nps_2d=nps,
+        frequencies=frequencies,
+        radial_nps=radial_nps,
+        radial_power=radial_power,
+        features=features,
+        roi_spectra=spectra,
+        residual_patches=np.empty((0, config.roi_size, config.roi_size)),
     )
 
 

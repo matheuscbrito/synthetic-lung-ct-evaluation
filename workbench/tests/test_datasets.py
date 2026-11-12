@@ -95,15 +95,15 @@ def test_path_argument_is_dsr_only(tmp_history):
     assert c.get("/api/versions", params={"dataset": "Dsr"}).status_code == 200
 
 
-def test_stale_when_nps_air_key_missing(tmp_path):
+def test_history_does_not_need_air_calibration(tmp_path):
     shutil.copy(HISTORY_DIR / "historico.json", tmp_path / "historico.json")
     shutil.copytree(HISTORY_DIR / "versoes", tmp_path / "versoes")
     path = tmp_path / "historico.json"
     history = json.loads(path.read_text(encoding="utf-8"))
-    del history["calibration"]["nps_reference"]["air_fallback_sigma"]
+    history["calibration"]["nps_reference"].pop("air_fallback_sigma", None)
     path.write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
     status = TestClient(create_app(tmp_path)).get("/api/status").json()
-    assert status["stale"] is True and status["has_history"] is True and status["reference"] == "Dsr"
+    assert status["stale"] is False and status["has_history"] is True and status["reference"] == "Dsr"
 
 
 def test_init_first_run_on_tmp_dataset(tmp_path):

@@ -11,6 +11,7 @@ interface Props {
   colors?: Record<string, string>;
   width?: number;
   height?: number;
+  endLabels?: boolean;
 }
 
 export const REAL_INK = "var(--ink2)";
@@ -27,7 +28,7 @@ export function curveColors(series: CurvesPayload["series"], colors?: Record<str
   });
 }
 
-export function Curves({ payload: p, colors, width: w = 560, height: h = 200 }: Props) {
+export function Curves({ payload: p, colors, width: w = 560, height: h = 200, endLabels = true }: Props) {
   const logy = p.y.scale === "log";
   const logx = p.x.scale === "log";
   const okY = (v: number | null | undefined): v is number => isNum(v) && (!logy || v > 0);
@@ -35,7 +36,7 @@ export function Curves({ payload: p, colors, width: w = 560, height: h = 200 }: 
 
   const xs = [...p.series.flatMap(s => s.x), ...(p.band?.x ?? [])].filter(okX);
   const ys = [...p.series.flatMap(s => s.y), ...(p.band ? [...p.band.lo, ...p.band.hi] : [])].filter(okY);
-  const pl = 46, pr = 110, pt = 10, pb = 28;
+  const pl = endLabels ? 46 : 64, pr = endLabels ? 110 : 12, pt = 10, pb = 28;
   if (xs.length === 0 || ys.length === 0) {
     return (
       <svg className="spec chart-curves" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet">
@@ -99,7 +100,7 @@ export function Curves({ payload: p, colors, width: w = 560, height: h = 200 }: 
     });
     return { s, d, color: palette[i], endY: last === null ? null : Y(last), delay: 0.15 * i };
   });
-  const ended = lines.filter(l => l.endY !== null);
+  const ended = endLabels ? lines.filter(l => l.endY !== null) : [];
   const labelYs = spreadLabels(ended.map(l => l.endY!), LABEL_GAP);
 
   return (
